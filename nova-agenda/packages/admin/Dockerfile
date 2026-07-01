@@ -1,10 +1,8 @@
-# Admin Dockerfile - runs from packages/admin/ context
+# Admin Dockerfile
 FROM node:20-alpine AS base
 WORKDIR /app
-
 COPY package.json ./
 RUN npm install
-
 COPY . .
 RUN npm run build
 
@@ -13,8 +11,8 @@ WORKDIR /app
 COPY --from=base /app/.next ./.next
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./
-COPY --from=base /app/public ./public
 COPY --from=base /app/next.config.js ./
+COPY --from=base /app/public ./public
 
 EXPOSE 3002
 CMD ["npm", "start"]
