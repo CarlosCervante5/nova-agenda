@@ -1,10 +1,95 @@
 import { Router, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { resolveTenant, TenantRequest } from '../middleware/auth';
 import { getPlanLevel } from '../middleware/plan-check';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Register new business
+router.post('/register', async (req, res: Response) => {
+  try {
+    const { businessName, ownerName, email, password, plan } = req.body;
+
+    if (!businessName || !ownerName || !email || !password) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Este correo ya está registrado' });
+    }
+
+    const slug = businessName
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    let finalSlug = slug;
+    let counter = 1;
+    while (await prisma.client.findUnique({ where: { slug: finalSlug } })) {
+      finalSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
+    const validPlan = ['FREE', 'BASIC', 'PRO'].includes(plan) ? plan : 'FREE';
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const client = await prisma.client.create({
+      data: {
+        name: businessName,
+        slug: finalSlug,
+        email,
+        plan: validPlan,
+        users: {
+          create: {
+            email,
+            password: hashedPassword,
+            name: ownerName,
+            role: 'ADMIN',
+          },
+        },
+        workingHours: {
+          create: [
+            { dayOfWeek: 1, openTime: '09:00', closeTime: '18:00', isOpen: true },
+            { dayOfWeek: 2, openTime: '09:00', closeTime: '18:00', isOpen: true },
+            { dayOfWeek: 3, openTime: '09:00', closeTime: '18:00', isOpen: true },
+            { dayOfWeek: 4, openTime: '09:00', closeTime: '18:00', isOpen: true },
+            { dayOfWeek: 5, openTime: '09:00', closeTime: '18:00', isOpen: true },
+            { dayOfWeek: 6, openTime: '10:00', closeTime: '14:00', isOpen: true },
+            { dayOfWeek: 0, openTime: '00:00', closeTime: '00:00', isOpen: false },
+          ],
+        },
+      },
+      include: { users: { select: { id: true, email: true, name: true, role: true } } },
+    });
+
+    const user = client.users[0];
+
+    const jwt = await import('jsonwebtoken');
+    const { config } = await import('../config');
+    const token = jwt.default.sign(
+      { id: user.id, email: user.email, role: user.role, clientId: client.id },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, clientId: client.id },
+      client: { id: client.id, name: client.name, slug: client.slug, plan: client.plan },
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 
 // Get available slots for a service on a specific date
 router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) => {

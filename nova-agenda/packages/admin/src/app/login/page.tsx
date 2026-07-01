@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
 export default function LoginPage() {
@@ -97,6 +98,11 @@ export default function LoginPage() {
             <span className="font-label-md text-label-md">Cliente:</span> client@demo.com / client123
           </p>
         </div>
+
+        <p className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
+          ¿No tienes cuenta?{' '}
+          <Link href="/register" className="text-primary font-bold hover:underline">Crear Gratis</Link>
+        </p>
       </div>
     </div>
   );
