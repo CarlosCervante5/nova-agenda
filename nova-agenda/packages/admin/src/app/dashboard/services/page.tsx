@@ -21,8 +21,9 @@ export default function ServicesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      if (editing) { await api.updateService(editing.id, form); }
-      else { await api.createService(form); }
+      const data = { ...form, duration: Number(form.duration), price: form.price ? Number(form.price) : undefined };
+      if (editing) { await api.updateService(editing.id, data); }
+      else { await api.createService(data); }
       setShowForm(false); setEditing(null);
       setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' });
       loadServices();
