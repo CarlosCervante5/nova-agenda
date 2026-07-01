@@ -44,7 +44,7 @@ export interface Booking {
   endTime: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
   notes?: string;
-  service: { name: string; color: string };
+  service: { name: string; color: string; duration?: number };
 }
 
 class ApiClient {
