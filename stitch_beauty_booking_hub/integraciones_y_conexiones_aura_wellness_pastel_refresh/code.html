@@ -1,0 +1,388 @@
+<html class="light" lang="en"><head></head><body class="text-on-surface">```html
+
+
+
+    <meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Integrations | Aura Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#191c1e",
+                    "surface-bright": "#f8f9fc",
+                    "primary": "#5950b6",
+                    "outline": "#787583",
+                    "inverse-surface": "#2e3133",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#edeef1",
+                    "inverse-on-surface": "#f0f1f4",
+                    "primary-fixed": "#e4dfff",
+                    "on-secondary-fixed-variant": "#00513f",
+                    "outline-variant": "#c8c4d4",
+                    "surface-variant": "#e1e2e5",
+                    "on-primary-fixed": "#150066",
+                    "secondary-fixed": "#9ef3d6",
+                    "on-primary-container": "#32258d",
+                    "secondary-fixed-dim": "#82d7ba",
+                    "surface-tint": "#5950b6",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#c6c0ff",
+                    "background": "#f8f9fc",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#d9dadd",
+                    "primary-container": "#9d94ff",
+                    "on-surface-variant": "#474552",
+                    "tertiary-fixed-dim": "#eabea0",
+                    "on-tertiary-fixed": "#2d1604",
+                    "on-secondary": "#ffffff",
+                    "surface": "#f8f9fc",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#41369d",
+                    "tertiary-fixed": "#ffdcc5",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#002118",
+                    "on-tertiary-fixed-variant": "#5f402a",
+                    "on-tertiary-container": "#4e311c",
+                    "tertiary": "#79573f",
+                    "on-error": "#ffffff",
+                    "primary-fixed-dim": "#c6c0ff",
+                    "on-secondary-container": "#0b7059",
+                    "secondary": "#006b55",
+                    "tertiary-container": "#c2997e",
+                    "surface-container-highest": "#e1e2e5",
+                    "error": "#ba1a1a",
+                    "on-surface": "#191c1e",
+                    "surface-container-low": "#f2f3f6",
+                    "secondary-container": "#9bf0d3",
+                    "surface-container-high": "#e7e8eb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "xl": "40px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Manrope"],
+                    "label-sm": ["JetBrains Mono"],
+                    "label-md": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Manrope"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-xl": ["Manrope"],
+                    "headline-lg-mobile": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fc;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Manrope', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .integration-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .integration-card:hover {
+            transform: translateY(-2px);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e1e2e5;
+            border-radius: 10px;
+        }
+    </style>
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface-container-low border-r border-outline-variant flex flex-col py-lg z-50">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">spa</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary leading-tight">Aura Wellness</h1>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Premium Spa &amp; Clinic</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-md text-label-md">Calendar</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Clients</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-label-md text-label-md">Marketing</span>
+</a>
+<a class="flex items-center gap-3 bg-primary-fixed text-on-primary-fixed border-l-4 border-primary px-4 py-3 rounded-r-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-4 border-t border-outline-variant pt-lg">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg mb-2" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-error">logout</span>
+<span class="font-label-md text-label-md">Log Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-[280px] min-h-screen">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-md flex justify-between items-center w-full px-lg h-16 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant font-body-md text-body-md">Settings</span>
+<span class="material-symbols-outlined text-outline-variant text-[18px]">chevron_right</span>
+<span class="font-bold text-primary font-body-md text-body-md">Integrations</span>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-all active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a business owner, elegant lighting, soft background, modern high-end studio photography style, minimalist and composed atmosphere to reflect Aura Wellness' premium brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2HcJiH8ZAb5oqVn_NvvO3WL8dX-Dapfgpte_S-IXNpm_r54U6KXk-H5J9tbDwFqX81kcQKn8xWd28WE6ft5Jv88pdjG2yFRt5KMceWbZwc88TVo41hvhkU3YbdVbMv1UnKaTYOrmuLYcX8u-WC3ty8vsoUupBQe0KFOiiqyNWxflCxCEP4nG-4Un5xgqRH9Ac4R_zd4iaiTWRWQkIIcwrJLeDW-kOK3WMxETDKjoLpFS_EikaJgnGEot7AB3yU51NW1kJe69t__0"/>
+</div>
+</div>
+</header>
+<div class="p-lg max-w-7xl mx-auto">
+<!-- Header Section -->
+<section class="mb-xl">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Integrations</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Connect your favorite CRM, marketing, and productivity tools to Aura Wellness. Streamline your workflow and synchronize client data effortlessly.</p>
+</div>
+</div>
+</section>
+<!-- Integration Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-lg mb-xl">
+<!-- Salesforce -->
+<div class="integration-card bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+<div>
+<div class="w-12 h-12 mb-md bg-[#00A1E0]/10 rounded-lg flex items-center justify-center p-2">
+<img class="w-full h-auto" data-alt="Salesforce Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKKw47LnEPOKwVFj7qGAaMvIpVdODaQZu-lnEKaa119loHK9dvZL_IJsNfi3B8GWRbqA-czvvDWMXHlkj0QgXMgdFq6XuFZBfOcFfN8NxJyx7uYNSqjPUoKYVt5xXs9ux3ZNaQLTGlzJj_x0xl2YikJtMgskst2bJ_MSeshwOT4w8p3PUqbMFoap3JkYJbimlYmxFZDj82zZ059zt3ZUXHs1CsqG1g48SX-d222mrePVn-tWbT1nasuDpurdNwFENIcNEewit1e8c"/>
+</div>
+<h3 class="font-headline-md text-[20px] text-on-surface mb-2">Salesforce</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Synchronize contacts, leads, and premium clinic revenue data directly to your CRM.</p>
+</div>
+<button class="w-full py-2.5 rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-95">
+                        Connect
+                    </button>
+</div>
+<!-- HubSpot -->
+<div class="integration-card bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+<div>
+<div class="w-12 h-12 mb-md bg-[#FF7A59]/10 rounded-lg flex items-center justify-center p-2">
+<img class="w-full h-auto" data-alt="HubSpot Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhupxzSOrqRF9o5AIwS0yMJzOBBMihL9hWIYQtY4X-dSfcSuVjPyOKLwYvrRI0jZPo_HUFU3VZbhU6pShHk6AWClvbycuoqK0t0YABS862EHsBOp-7d_qnm2Nk_gIBg-Nf4vRvXMWZa-BuSU5iPTJHQNkntlojfYA4_Z1XFwupYd60FWcKaTgss96d7h6JmTXfJbmsxRlkkmUvnelHUOOGaWmEFetfqRxCAiYcfjqQZxyiG7LuZ6DlbILDYVrAbjHiABdaD0CX718"/>
+</div>
+<h3 class="font-headline-md text-[20px] text-on-surface mb-2">HubSpot</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Automate client onboarding and track marketing performance for your wellness services.</p>
+</div>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 bg-surface-container-low hover:bg-surface-container-high transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px] text-secondary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Configure
+                    </button>
+</div>
+<!-- Mailchimp -->
+<div class="integration-card bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+<div>
+<div class="w-12 h-12 mb-md bg-[#FFE01B]/10 rounded-lg flex items-center justify-center p-2">
+<img class="w-full h-auto" data-alt="Mailchimp Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLtiWjFJifFwFfUZxCzceRwSWI3joeNscRnNlJ-7HaQEp6RxkXpBn3ngLoUWS4TybNKoW4xAYTbZ_qzG0N-KdvnYx9NYsrkx1Lz8QU0dwKuSZkL4DSjevkYz5wi96vB4aOCOCwDicZS7dQ0Sr8Dgxnvroma8BpzkvslmiO_c3ynxTfPzWwES7e3DTfYleMbSDoWn0xlCmgVJAcwJCtm0hrRCOXS7C6su_0Ebmdi8CsIsiSM37zTjdBdwu_C4vTvzgLK2ssOeH2DtE"/>
+</div>
+<h3 class="font-headline-md text-[20px] text-on-surface mb-2">Mailchimp</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Keep your client newsletter lists updated with appointment history and preferences.</p>
+</div>
+<button class="w-full py-2.5 rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-95">
+                        Connect
+                    </button>
+</div>
+<!-- Zapier -->
+<div class="integration-card bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+<div>
+<div class="w-12 h-12 mb-md bg-[#FF4F00]/10 rounded-lg flex items-center justify-center p-2">
+<img class="w-full h-auto" data-alt="Zapier Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwMqM_w3nUMrbJkfD7ZEz0Ub-3hYPfcXc1wFOfx3lCpIM_R2f7pV5I6UduLtHoZDgpymfLVR_i-ah-ILcIhF6E2QdVDnELHqJaVJ9WmZRIRMekJd_-oh3WQ72MIHRFkNHrdS9jBLJMadL8c0Tnztsw5bikAQqQxIWJtwiyEMzaGZOManDMHnK11vdllZKGoNPgFdG6fbBk0OFZqc_6VUzoAFwcVGH0wwTih_VEv69NVoAcNTb7EEw221ZVxTJaFgalyhWg9y2jUSE"/>
+</div>
+<h3 class="font-headline-md text-[20px] text-on-surface mb-2">Zapier</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Create custom workflows and connect Aura Wellness to over 5,000+ other apps.</p>
+</div>
+<button class="w-full py-2.5 rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-95">
+                        Connect
+                    </button>
+</div>
+</section>
+<!-- Webhook Management Section -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-[0px_1px_3px_rgba(0,0,0,0.05)] overflow-hidden">
+<div class="px-lg py-lg border-b border-outline-variant flex flex-col sm:flex-row justify-between items-start sm:items-center gap-md bg-surface-bright">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Webhooks</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Receive real-time notifications for appointment changes and payments.</p>
+</div>
+<button class="flex items-center gap-2 bg-secondary-fixed-dim text-on-secondary-fixed px-md py-2.5 rounded-lg font-label-md text-label-md shadow-sm hover:brightness-95 transition-all active:scale-95">
+<span class="material-symbols-outlined">add</span>
+                        Add Endpoint
+                    </button>
+</div>
+<!-- Webhook List -->
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-lg py-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Name &amp; Status</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Endpoint URL</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Events</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Client Portal Sync</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Active</div>
+</div>
+</div>
+</td>
+<td class="px-lg py-lg font-label-sm text-label-sm text-on-surface-variant font-mono">
+                                    https://api.internal-sync.io/v1/aura...
+                                </td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs">
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[11px] font-medium">appointment.created</span>
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[11px] font-medium">client.updated</span>
+</div>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">edit</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error-container text-error transition-all">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Custom Reporting</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Inactive</div>
+</div>
+</div>
+</td>
+<td class="px-lg py-lg font-label-sm text-label-sm text-on-surface-variant font-mono">
+                                    https://analytics.business-suite.com/web...
+                                </td>
+<td class="px-lg py-lg">
+<div class="flex flex-wrap gap-xs">
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full text-[11px] font-medium">payment.success</span>
+</div>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">edit</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-error-container text-error transition-all">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-lg py-md border-t border-outline-variant bg-surface-container-low">
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                        Learn more about <a class="text-primary hover:underline font-medium" href="#">Webhook Security</a> and payload signatures in our API documentation.
+                    </p>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full bg-surface-container-highest border-t border-outline-variant mt-xl">
+<div class="flex flex-col md:flex-row justify-between items-center px-lg py-xl gap-md">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md font-bold text-primary">Aura Wellness Management</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 Aura Wellness SaaS. All rights reserved.</p>
+</div>
+<div class="flex flex-wrap items-center gap-md">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline transition-colors" href="#">Contact Support</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline transition-colors" href="#">API Docs</a>
+</div>
+</div>
+</footer>
+</main>
+<!-- Micro-interactions Script -->
+<script>
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('mousedown', function() {
+                this.classList.add('scale-95');
+            });
+            button.addEventListener('mouseup', function() {
+                this.classList.remove('scale-95');
+            });
+            button</script></body></html>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aura Wellness | Calendar Management</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1e",
+                        "surface-bright": "#f8f9fc",
+                        "primary": "#5950b6",
+                        "outline": "#787583",
+                        "inverse-surface": "#2e3133",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeef1",
+                        "inverse-on-surface": "#f0f1f4",
+                        "primary-fixed": "#e4dfff",
+                        "on-secondary-fixed-variant": "#00513f",
+                        "outline-variant": "#c8c4d4",
+                        "surface-variant": "#e1e2e5",
+                        "on-primary-fixed": "#150066",
+                        "secondary-fixed": "#9ef3d6",
+                        "on-primary-container": "#32258d",
+                        "secondary-fixed-dim": "#82d7ba",
+                        "surface-tint": "#5950b6",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#c6c0ff",
+                        "background": "#f8f9fc",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d9dadd",
+                        "primary-container": "#9d94ff",
+                        "on-surface-variant": "#474552",
+                        "tertiary-fixed-dim": "#eabea0",
+                        "on-tertiary-fixed": "#2d1604",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8f9fc",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#41369d",
+                        "tertiary-fixed": "#ffdcc5",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#002118",
+                        "on-tertiary-fixed-variant": "#5f402a",
+                        "on-tertiary-container": "#4e311c",
+                        "tertiary": "#79573f",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#c6c0ff",
+                        "on-secondary-container": "#0b7059",
+                        "secondary": "#006b55",
+                        "tertiary-container": "#c2997e",
+                        "surface-container-highest": "#e1e2e5",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1e",
+                        "surface-container-low": "#f2f3f6",
+                        "secondary-container": "#9bf0d3",
+                        "surface-container-high": "#e7e8eb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xl": "40px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "margin-edge": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Manrope"],
+                        "label-sm": ["JetBrains Mono"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Manrope"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .calendar-grid-container {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+        }
+        .time-row {
+            height: 100px;
+            border-bottom: 1px solid #e1e2e5;
+        }
+        .appointment-card {
+            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+        }
+        .appointment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0px 10px 15px -3px rgba(89, 80, 182, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary-fixed">
+<!-- Layout Wrapper -->
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface-container-low border-r border-outline-variant flex flex-col py-lg z-40">
+<!-- Header/Logo -->
+<div class="px-lg mb-xl">
+<div class="flex items-center gap-md mb-xs">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
+<img alt="Business Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQ7t10hCqs1GnOjahXqqUnGzxaXIVGFJp-wLMLj4wOyr_Iv_IFEDZaNu8lSeubr-yYmbtHCr2_uLFklgu7wspA7ThUAZn5SraH_acN12y_Tny7J1SaNGIbhD7km2mpNgaVZ95g8LN-EWaPF-TsjPoZi67UnnSlsnQRuY9iTpjg7Cf1-unXSCHEJc83lASnxMjAWfWIO0QllYx8PkGzKzi4ykkdjOvRYDjrD3rPY0_yYweOCT8S9Soz9kittWKycO4NzxCePkNPIXs"/>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Aura Wellness</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Premium Spa &amp; Clinic</p>
+</div>
+</div>
+</div>
+<!-- Primary Nav -->
+<nav class="flex-1 space-y-1 px-sm">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 bg-primary-container text-on-primary-container border-l-4 border-primary px-4 py-3 rounded-r-lg active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-md text-label-md">Calendar</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md">Clients</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="font-label-md text-label-md">Marketing</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<!-- CTA -->
+<div class="px-lg mt-md">
+<button class="w-full bg-secondary text-on-secondary py-3 rounded-lg font-label-md text-label-md shadow-sm hover:opacity-90 active:scale-95 transition-all">
+                Book New Appointment
+            </button>
+</div>
+<!-- Footer Nav -->
+<div class="mt-auto px-sm space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-md text-label-md">Log Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[280px] flex-1 flex flex-col min-w-0">
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-margin-edge bg-surface border-b border-outline-variant sticky top-0 z-30">
+<div class="flex items-center gap-lg">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">June 2024</h2>
+<div class="flex items-center bg-surface-container rounded-lg p-1">
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="px-md py-1 font-label-md text-label-md text-primary">Today</button>
+<button class="p-2 hover:bg-surface-container-high rounded transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64 transition-all" placeholder="Find appointments..." type="text"/>
+</div>
+<div class="flex items-center bg-surface-container rounded-lg p-1">
+<button class="px-md py-2 font-label-md text-label-md bg-surface-container-lowest text-primary shadow-sm rounded-md">Week</button>
+<button class="px-md py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors">Day</button>
+<button class="px-md py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors">List</button>
+</div>
+</div>
+</header>
+<!-- Calendar Wrapper -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Week View -->
+<div class="flex-1 overflow-y-auto bg-surface-container-lowest relative">
+<!-- Day Headers -->
+<div class="calendar-grid-container sticky top-0 z-20 bg-surface border-b border-outline-variant">
+<div class="h-14 border-r border-outline-variant"></div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Mon</span>
+<span class="font-headline-md text-headline-md text-on-surface">17</span>
+</div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Tue</span>
+<span class="font-headline-md text-headline-md text-on-surface">18</span>
+</div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0 bg-primary-container/10">
+<span class="font-label-sm text-label-sm text-primary uppercase">Wed</span>
+<span class="font-headline-md text-headline-md text-primary">19</span>
+<div class="absolute bottom-0 w-full h-1 bg-primary"></div>
+</div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Thu</span>
+<span class="font-headline-md text-headline-md text-on-surface">20</span>
+</div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Fri</span>
+<span class="font-headline-md text-headline-md text-on-surface">21</span>
+</div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Sat</span>
+<span class="font-headline-md text-headline-md text-on-surface">22</span>
+</div>
+<div class="h-14 flex flex-col items-center justify-center border-r border-outline-variant last:border-r-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Sun</span>
+<span class="font-headline-md text-headline-md text-on-surface">23</span>
+</div>
+</div>
+<!-- Time Slots & Grid -->
+<div class="calendar-grid-container relative">
+<!-- Left Column: Hours -->
+<div class="col-start-1">
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">08:00 AM</span>
+</div>
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">09:00 AM</span>
+</div>
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">10:00 AM</span>
+</div>
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">11:00 AM</span>
+</div>
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">12:00 PM</span>
+</div>
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">01:00 PM</span>
+</div>
+<div class="time-row flex items-start justify-center pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">02:00 PM</span>
+</div>
+</div>
+<!-- Grid Lines -->
+<div class="col-span-7 grid grid-cols-7 border-l border-outline-variant">
+<div class="border-r border-outline-variant h-full"></div>
+<div class="border-r border-outline-variant h-full"></div>
+<div class="border-r border-outline-variant h-full bg-surface-container-low/30"></div>
+<div class="border-r border-outline-variant h-full"></div>
+<div class="border-r border-outline-variant h-full"></div>
+<div class="border-r border-outline-variant h-full"></div>
+<div class="border-r border-outline-variant h-full"></div>
+</div>
+<!-- Appointment Layer -->
+<div class="absolute inset-0 pointer-events-none pl-[80px]">
+<!-- Appt 1: Pastel Teal Accents -->
+<div class="appointment-card pointer-events-auto absolute left-[0%] top-[100px] w-[14.28%] h-[150px] px-1">
+<div class="h-full bg-secondary-container/60 border-l-4 border-secondary rounded-lg p-2 overflow-hidden">
+<div class="flex justify-between items-start">
+<p class="font-label-md text-label-md text-on-secondary-container truncate">Sarah Jenkins</p>
+<span class="material-symbols-outlined text-[16px] text-on-secondary-container" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-secondary-container/80">Aroma Therapy (90m)</p>
+</div>
+</div>
+<!-- Appt 2: Pastel Primary Accents -->
+<div class="appointment-card pointer-events-auto absolute left-[28.56%] top-[50px] w-[14.28%] h-[100px] px-1">
+<div class="h-full bg-primary-container/40 border-l-4 border-primary rounded-lg p-2 overflow-hidden shadow-sm">
+<p class="font-label-md text-label-md text-on-primary-container truncate">Marcus Aurelius</p>
+<p class="font-label-sm text-label-sm text-on-primary-fixed-variant">Deep Cleanse (60m)</p>
+</div>
+</div>
+<!-- Appt 3: Pastel Tertiary Accents -->
+<div class="appointment-card pointer-events-auto absolute left-[28.56%] top-[300px] w-[14.28%] h-[200px] px-1">
+<div class="h-full bg-tertiary-container/30 border-l-4 border-tertiary rounded-lg p-2 overflow-hidden">
+<div class="flex justify-between items-start">
+<p class="font-label-md text-label-md text-on-tertiary-container truncate">Elena Gilbert</p>
+<span class="material-symbols-outlined text-[16px] text-error" data-icon="history">history</span>
+</div>
+<p class="font-label-sm text-label-sm text-on-tertiary-fixed-variant">Premium Package (120m)</p>
+</div>
+</div>
+<!-- Current Time Indicator -->
+<div class="absolute left-0 top-[180px] w-full h-[2px] bg-error z-10 pointer-events-none">
+<div class="absolute -left-1.5 -top-1.5 w-3 h-3 bg-error rounded-full shadow-sm"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar -->
+<aside class="w-80 bg-surface border-l border-outline-variant flex flex-col p-lg gap-lg overflow-y-auto">
+<div class="space-y-md">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-label-md text-label-md text-on-surface">Staff Availability</h3>
+<button class="text-primary font-label-sm text-label-sm hover:underline">Manage</button>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center justify-between p-sm bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<img alt="Dr. Anna" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYJjVbPm73E_tXOvVx_g8ln515xg6iXJNHOk_e2-qsFE0pSK8CdmVWmIVwBu1cgEglzDBtmVPcNT9ZCtA0Z2f_YA9QopaPpiQzz1A2Wz-fzGYI59vcJig9eBu0VpFN8bA8Enohjmz3grcEE1A_6wwPAw0wK8KhzzVSyQk0gIxnjif7fIrafKZdP8NU1eqOcNoIiR67lUN3xa4jj8aB8aWZLktZB3SRP5Goo-gYrxaPfkBNqGjYozBHLF55upXC_L16vKXgU1Hqg_s"/>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface">Dr. Anna Smith</p>
+<p class="text-[10px] text-secondary">Active Now</p>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="flex items-center justify-between p-sm bg-surface-container-low rounded-lg border border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<img alt="David K." class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyJ_Mmh8Tih1uv48Cp6QIKyNTPhDOqvSZh6EAI3qj4Rx3WAEdeM2PG6ksaIczw2LIfgeEKqzr355jE8B9UohIwyWnhAiZ8xubvVm5zj6MUgYNAf3PfcHZDr-H8fTc2NffTJkJLqfIZsft1teHOygs0dDRO0hm4xXtz0-yFIiNm9GFJWVH8AQ2VodHnPECKtpVsuZbJjFWKLHw5p9X3uLO9Z_u5Gr1s0iJoXVqzLEJbIxKFOQhn6hZNqPU6AJrPyvylXL6brj5lkt4"/>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface">David Kim</p>
+<p class="text-[10px] text-on-surface-variant">In Session</p>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-error"></span>
+</div>
+</div>
+</div>
+<div class="space-y-md">
+<div class="flex items-center justify-between mb-sm">
+<h3 class="font-label-md text-label-md text-on-surface">Pending Requests</h3>
+<span class="px-2 py-0.5 bg-error-container text-on-error-container text-[10px] font-bold rounded-full">3</span>
+</div>
+<div class="space-y-sm">
+<div class="p-md bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm hover:border-primary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-xs">
+<p class="font-label-md text-label-md text-on-surface">Rachel Green</p>
+<span class="font-label-sm text-label-sm text-on-surface-variant">4:15 PM</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-md">Deep Tissue Massage (Staff: Any)</p>
+<div class="flex gap-sm">
+<button class="flex-1 py-1.5 bg-primary text-on-primary text-label-sm rounded-lg hover:opacity-90">Approve</button>
+<button class="flex-1 py-1.5 bg-surface-container text-on-surface-variant text-label-sm rounded-lg hover:bg-surface-container-high">Decline</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-auto p-md bg-primary-container/10 rounded-xl border border-primary/20">
+<p class="font-label-sm text-label-sm text-on-primary-container mb-xs">Daily Goal</p>
+<div class="flex justify-between items-end mb-sm">
+<p class="font-headline-md text-headline-md font-bold text-primary">$2,450</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">82% of $3k</p>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 82%"></div>
+</div>
+</div>
+</aside>
+</div>
+<footer class="flex flex-col md:flex-row justify-between items-center px-margin-edge py-md gap-md bg-surface border-t border-outline-variant z-30">
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 Aura Wellness SaaS. All rights reserved.</p>
+<div class="flex gap-lg">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">API Docs</a>
+</div>
+</footer>
+</main>
+</div>
+<!-- Floating Action Button -->
+<button class="fixed bottom-lg right-lg w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+</button>
+</body></html>

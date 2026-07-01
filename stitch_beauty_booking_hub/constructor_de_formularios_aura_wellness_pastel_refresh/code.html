@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aura Management | Form Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1e",
+                        "surface-bright": "#f8f9fc",
+                        "primary": "#5950b6",
+                        "outline": "#787583",
+                        "inverse-surface": "#2e3133",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeef1",
+                        "inverse-on-surface": "#f0f1f4",
+                        "primary-fixed": "#e4dfff",
+                        "on-secondary-fixed-variant": "#00513f",
+                        "outline-variant": "#c8c4d4",
+                        "surface-variant": "#e1e2e5",
+                        "on-primary-fixed": "#150066",
+                        "secondary-fixed": "#9ef3d6",
+                        "on-primary-container": "#32258d",
+                        "secondary-fixed-dim": "#82d7ba",
+                        "surface-tint": "#5950b6",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#c6c0ff",
+                        "background": "#f8f9fc",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d9dadd",
+                        "primary-container": "#9d94ff",
+                        "on-surface-variant": "#474552",
+                        "tertiary-fixed-dim": "#eabea0",
+                        "on-tertiary-fixed": "#2d1604",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8f9fc",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#41369d",
+                        "tertiary-fixed": "#ffdcc5",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#002118",
+                        "on-tertiary-fixed-variant": "#5f402a",
+                        "on-tertiary-container": "#4e311c",
+                        "tertiary": "#79573f",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#c6c0ff",
+                        "on-secondary-container": "#0b7059",
+                        "secondary": "#006b55",
+                        "tertiary-container": "#c2997e",
+                        "surface-container-highest": "#e1e2e5",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1e",
+                        "surface-container-low": "#f2f3f6",
+                        "secondary-container": "#9bf0d3",
+                        "surface-container-high": "#e7e8eb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "unit": "4px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xl": "40px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Manrope"],
+                        "label-sm": ["JetBrains Mono"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Manrope"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fc; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c8c4d4; border-radius: 10px; }
+        .form-drop-zone { border: 2px dashed #c8c4d4; transition: all 0.2s ease; }
+        .form-drop-zone.active { border-color: #5950b6; background-color: #e4dfff; }
+        .card-elevation { box-shadow: 0px 1px 3px rgba(89, 80, 182, 0.05); border: 1px solid #e1e2e5; }
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="text-on-surface overflow-hidden h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] bg-surface-container-low flex flex-col py-lg border-r border-outline-variant z-40">
+<div class="px-lg mb-xl">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined">spa</span>
+</div>
+<div>
+<h1 class="font-headline text-headline-md font-bold text-on-background">Aura Wellness</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Premium Spa &amp; Clinic</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-sm space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">calendar_month</span>
+<span class="font-label-md text-label-md">Calendar</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">group</span>
+<span class="font-label-md text-label-md">Clients</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">inventory_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+<a class="flex items-center gap-3 bg-secondary-container text-on-secondary-container border-l-4 border-secondary px-4 py-3 rounded-r-lg" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-label-md text-label-md">Marketing</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-4 py-md">
+<button class="w-full py-3 bg-secondary text-on-secondary rounded-lg font-label-md text-label-md active:translate-x-1 duration-200">
+            Book New Appointment
+        </button>
+</div>
+<div class="px-sm pt-md border-t border-outline-variant space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline">help</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:bg-surface-container transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-outline">logout</span>
+<span class="font-label-md text-label-md">Log Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-[280px] flex-1 flex flex-col h-full bg-background relative">
+<!-- Header -->
+<header class="h-16 px-lg flex items-center justify-between border-b border-outline-variant bg-surface sticky top-0 z-30">
+<div>
+<h2 class="font-headline text-headline-md font-bold text-on-background">Marketing &amp; Forms</h2>
+</div>
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-2 px-md py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:shadow-md transition-all" onclick="openBuilder()">
+<span class="material-symbols-outlined text-body-md">add</span>
+                Create New Form
+            </button>
+<div class="w-10 h-10 rounded-full border-2 border-surface-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Clinic manager profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcNTDjLUMGZ60dJI_BNTbc_qDGgzI_YccHgE9AthZ1LOKVx6l53MmJ1_wPDMQg_RlqwxBugIK-GsjDZQPzQI4r4ZQkhGjcGtJbvyi8fUTVDutWYijwBlgI22LRqh33rDPxO0EtOay0MJPZJrqelX1qQ_MtwkMwgi7KDry0-BIjeZwake6jTy8iBnGhRLhUOlKTW92bkx-3SrN0xKykBKjTzdNi7PsQU8nNNgrxaZV4pIfbFNcAelguE0IL_cj6jFWaEtxcC1ixIWs"/>
+</div>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-lg space-y-lg custom-scrollbar">
+<!-- Quick Stats Bento -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="card-elevation bg-primary-fixed/30 p-lg rounded-xl flex flex-col justify-between h-32 border-primary-container/20">
+<span class="font-label-sm text-label-sm text-on-primary-fixed-variant uppercase tracking-wider">Total Responses</span>
+<div class="flex items-end justify-between">
+<span class="font-headline text-headline-lg text-on-primary-fixed">1,284</span>
+<span class="text-primary font-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> 12%
+                    </span>
+</div>
+</div>
+<div class="card-elevation bg-white p-lg rounded-xl flex flex-col justify-between h-32">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Active Forms</span>
+<div class="flex items-end justify-between">
+<span class="font-headline text-headline-lg text-on-surface">8</span>
+<span class="text-on-surface-variant font-label-md">Current</span>
+</div>
+</div>
+<div class="card-elevation bg-secondary-container/40 p-lg rounded-xl flex flex-col justify-between h-32 border-secondary-fixed/20">
+<span class="font-label-sm text-label-sm text-on-secondary-fixed-variant uppercase tracking-wider">Completion Rate</span>
+<div class="flex items-end justify-between">
+<span class="font-headline text-headline-lg text-on-secondary-fixed">76%</span>
+<div class="w-12 h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[76%]"></div>
+</div>
+</div>
+</div>
+<div class="card-elevation bg-white p-lg rounded-xl flex flex-col justify-between h-32">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Avg. Time to Fill</span>
+<div class="flex items-end justify-between">
+<span class="font-headline text-headline-lg text-on-surface">2.4m</span>
+<span class="material-symbols-outlined text-outline">timer</span>
+</div>
+</div>
+</div>
+<!-- Forms List Table -->
+<div class="card-elevation bg-white rounded-xl overflow-hidden">
+<div class="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h3 class="font-headline text-label-md text-on-background">Your Intake Forms</h3>
+<div class="flex gap-sm">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="pl-9 pr-4 py-1.5 rounded-lg border-outline-variant bg-surface-bright text-body-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none w-64" placeholder="Search forms..." type="text"/>
+</div>
+</div>
+</div>
+<table class="w-full text-left">
+<thead class="bg-surface-container-lowest">
+<tr>
+<th class="px-lg py-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Form Name</th>
+<th class="px-lg py-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Status</th>
+<th class="px-lg py-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Responses</th>
+<th class="px-lg py-3 font-label-sm text-label-sm text-on-surface-variant uppercase">Last Updated</th>
+<th class="px-lg py-3 font-label-sm text-label-sm text-on-surface-variant uppercase text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-primary-fixed/10 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-md">description</span>
+</div>
+<div>
+<p class="font-headline text-label-md text-on-surface">Initial Consultation</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Client pre-screening requirements</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-2 py-1 rounded-full bg-secondary-container/50 text-on-secondary-fixed-variant font-label-sm text-[10px] uppercase font-bold">Active</span>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md">432</td>
+<td class="px-lg py-4 font-body-sm text-body-sm text-on-surface-variant">Oct 24, 2024</td>
+<td class="px-lg py-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">share</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-error transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-primary-fixed/10 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-md">rate_review</span>
+</div>
+<div>
+<p class="font-headline text-label-md text-on-surface">Post-Service Feedback</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Quality of care and experience survey</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-2 py-1 rounded-full bg-secondary-container/50 text-on-secondary-fixed-variant font-label-sm text-[10px] uppercase font-bold">Active</span>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md">812</td>
+<td class="px-lg py-4 font-body-sm text-body-sm text-on-surface-variant">Oct 22, 2024</td>
+<td class="px-lg py-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">share</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-error transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-primary-fixed/10 transition-colors group">
+<td class="px-lg py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-md">history_edu</span>
+</div>
+<div>
+<p class="font-headline text-label-md text-on-surface">Skincare History Form</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Detailed skin analysis and history</p>
+</div>
+</div>
+</td>
+<td class="px-lg py-4">
+<span class="px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-[10px] uppercase font-bold">Draft</span>
+</td>
+<td class="px-lg py-4 font-body-md text-body-md">0</td>
+<td class="px-lg py-4 font-body-sm text-body-sm text-on-surface-variant">Oct 15, 2024</td>
+<td class="px-lg py-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">share</span></button>
+<button class="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-error transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Premium Upsell -->
+<div class="relative overflow-hidden rounded-2xl bg-primary-container h-48 flex items-center px-xl">
+<div class="relative z-10 max-w-lg">
+<h3 class="font-headline text-headline-lg text-on-primary mb-sm">Analyze form data like a pro.</h3>
+<p class="font-body-md text-body-md text-primary-fixed">Unlock advanced analytics and AI-powered sentiment analysis for all your client feedback.</p>
+<button class="mt-md px-lg py-sm bg-secondary-fixed text-on-secondary-fixed rounded-lg font-label-md text-label-md hover:bg-secondary-fixed-dim transition-colors">Start 14-day Free Trial</button>
+</div>
+<!-- Decorative pastel element -->
+<div class="absolute -right-20 -bottom-20 w-80 h-80 bg-secondary-container/20 rounded-full blur-3xl"></div>
+</div>
+</div>
+</main>
+<!-- FORM BUILDER UI OVERLAY -->
+<div class="fixed inset-0 z-50 glass-panel flex flex-col hidden" id="formBuilder">
+<header class="h-16 px-lg flex items-center justify-between border-b border-outline-variant bg-white">
+<div class="flex items-center gap-md">
+<button class="p-2 hover:bg-surface-container rounded-full text-outline transition-colors" onclick="closeBuilder()">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="h-6 w-px bg-outline-variant"></div>
+<h2 class="font-headline text-headline-md font-bold text-on-background">New Client Intake Form</h2>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-body-sm text-body-sm text-outline">Auto-saved at 14:32</span>
+<button class="px-md py-sm border border-primary text-primary rounded-lg font-label-md text-label-md hover:bg-primary-fixed/30 transition-colors">Preview</button>
+<button class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md shadow-md hover:shadow-lg transition-all" onclick="closeBuilder()">Publish Form</button>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<!-- Builder Sidebar -->
+<aside class="w-80 bg-white border-r border-outline-variant flex flex-col custom-scrollbar overflow-y-auto">
+<div class="p-lg border-b border-outline-variant">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-md">Add Fields</h4>
+<div class="grid grid-cols-2 gap-sm">
+<div class="p-4 border border-outline-variant rounded-lg flex flex-col items-center gap-2 hover:border-primary hover:bg-primary-fixed/20 cursor-grab active:cursor-grabbing transition-all group" draggable="true">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">short_text</span>
+<span class="font-label-sm text-label-sm">Text</span>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg flex flex-col items-center gap-2 hover:border-primary hover:bg-primary-fixed/20 cursor-grab active:cursor-grabbing transition-all group" draggable="true">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">checklist</span>
+<span class="font-label-sm text-label-sm">Multi-Choice</span>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg flex flex-col items-center gap-2 hover:border-primary hover:bg-primary-fixed/20 cursor-grab active:cursor-grabbing transition-all group" draggable="true">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">calendar_today</span>
+<span class="font-label-sm text-label-sm">Date</span>
+</div>
+<div class="p-4 border border-outline-variant rounded-lg flex flex-col items-center gap-2 hover:border-primary hover:bg-primary-fixed/20 cursor-grab active:cursor-grabbing transition-all group" draggable="true">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">cloud_upload</span>
+<span class="font-label-sm text-label-sm">File Upload</span>
+</div>
+</div>
+</div>
+<div class="p-lg">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-md">Form Settings</h4>
+<div class="space-y-md">
+<label class="block">
+<span class="font-label-md text-label-md mb-xs block">Form Title</span>
+<input class="w-full px-4 py-2 rounded-lg border-outline-variant bg-surface-bright text-body-sm focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="New Client Intake Form"/>
+</label>
+<label class="block">
+<span class="font-label-md text-label-md mb-xs block">Description</span>
+<textarea class="w-full px-4 py-2 rounded-lg border-outline-variant bg-surface-bright text-body-sm focus:ring-2 focus:ring-primary/20 outline-none" rows="3">Please provide your medical history and treatment preferences.</textarea>
+</label>
+</div>
+</div>
+</aside>
+<!-- Builder Canvas -->
+<section class="flex-1 bg-surface-container-low p-xl overflow-y-auto custom-scrollbar flex flex-col items-center">
+<div class="w-full max-w-2xl bg-white min-h-[800px] card-elevation rounded-xl p-xl shadow-lg flex flex-col">
+<div class="mb-lg pb-lg border-b border-outline-variant">
+<h1 class="font-headline text-headline-lg text-on-background mb-xs">New Client Intake Form</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Please provide your medical history and treatment preferences.</p>
+</div>
+<div class="space-y-lg flex-1" id="builderCanvas">
+<!-- Field 1 -->
+<div class="group relative p-lg border border-transparent hover:border-primary hover:bg-primary-fixed/10 rounded-xl transition-all">
+<div class="absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
+<span class="material-symbols-outlined text-outline">drag_indicator</span>
+</div>
+<label class="block">
+<div class="flex justify-between mb-sm">
+<span class="font-label-md text-label-md">Full Name</span>
+<span class="text-error">*</span>
+</div>
+<input class="w-full px-4 py-3 rounded-lg border-outline-variant bg-surface-bright text-body-md outline-none" disabled="" placeholder="Enter your full name" type="text"/>
+</label>
+</div>
+<!-- Field 2 -->
+<div class="group relative p-lg border border-transparent hover:border-primary hover:bg-primary-fixed/10 rounded-xl transition-all">
+<div class="absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
+<span class="material-symbols-outlined text-outline">drag_indicator</span>
+</div>
+<label class="block">
+<div class="flex justify-between mb-sm">
+<span class="font-label-md text-label-md">Treatment Category</span>
+</div>
+<div class="space-y-sm">
+<div class="flex items-center gap-md px-4 py-3 rounded-lg border border-outline-variant bg-surface-bright">
+<div class="w-4 h-4 rounded-full border-2 border-primary"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Facial Therapy</span>
+</div>
+<div class="flex items-center gap-md px-4 py-3 rounded-lg border border-outline-variant bg-surface-bright">
+<div class="w-4 h-4 rounded-full border-2 border-outline"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Body Massage</span>
+</div>
+</div>
+</label>
+</div>
+<!-- Drop Zone -->
+<div class="form-drop-zone h-32 rounded-xl flex flex-col items-center justify-center gap-2 text-outline hover:text-primary group transition-all" id="dropZone">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 duration-200">add_circle</span>
+<p class="font-label-md text-label-md">Drag and drop fields here to add to your form</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<script>
+    function openBuilder() {
+        const builder = document.getElementById('formBuilder');
+        builder.classList.remove('hidden');
+    }
+
+    function closeBuilder() {
+        const builder = document.getElementById('formBuilder');
+        builder.classList.add('hidden');
+    }
+
+    // Drag and Drop simulation
+    const dropZone = document.getElementById('dropZone');
+    const draggables = document.querySelectorAll('[draggable="true"]');
+
+    draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', () => dropZone.classList.add('active'));
+        draggable.addEventListener('dragend', () => dropZone.classList.remove('active'));
+    });
+
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('active');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('active');
+        // Functional logic would go here
+    });
+
+    // SideNav active state
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            navLinks.forEach(l => {
+                l.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'border-l-4', 'border-secondary');
+                l.classList.add('text-on-surface-variant');
+            });
+            link.classList.add('bg-secondary-container', 'text-on-secondary-container', 'border-l-4', 'border-secondary');
+            link.classList.remove('text-on-surface-variant');
+        });
+    });
+</script>
+</body></html>

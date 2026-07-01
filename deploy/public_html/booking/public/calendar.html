@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fechas disponibles - Tapai</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f7f2ea;
+      --btn: #7d7f3e;
+      --btn-hover: #aaa66a;
+      --btn-light: #e8e9d4;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: #1c1c19;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .calendar-widget {
+      max-width: 420px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+
+    .widget-header {
+      background: linear-gradient(135deg, var(--btn) 0%, var(--btn-hover) 100%);
+      color: #fff;
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .widget-header h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .widget-header p {
+      font-size: 12px;
+      opacity: 0.9;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .widget-body {
+      padding: 20px;
+    }
+
+    .calendar-mini {
+      border: 1px solid #e5e2dd;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .calendar-header {
+      background: linear-gradient(135deg, var(--btn), var(--btn-hover));
+      color: #fff;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .calendar-header #current-month {
+      font-size: 17px;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .calendar-header button {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .calendar-header button:hover { background: rgba(255, 255, 255, 0.25); }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      padding: 12px;
+    }
+
+    .day-name {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #737872;
+      padding: 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .day-cell {
+      text-align: center;
+      padding: 10px 4px;
+      border-radius: 50%;
+      position: relative;
+      font-size: 14px;
+      color: #1c1c19;
+    }
+
+    .day-cell.disabled.past { color: #c3c8c1; }
+    .day-cell.disabled.unavailable {
+      color: #737872;
+      background: #f5f0eb;
+      border: 1px dashed #c3c8c1;
+    }
+
+    .day-cell.available::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--btn);
+    }
+
+    .day-cell.today {
+      border: 2px solid var(--btn);
+      font-weight: 600;
+    }
+
+    .day-cell.empty { visibility: hidden; }
+
+    .calendar-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 10px;
+      font-size: 11px;
+      color: #737872;
+      border-top: 1px solid #e5e2dd;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .widget-footer {
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .widget-footer a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: var(--btn);
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .widget-footer a:hover { opacity: 0.92; }
+
+    .loading, .error-msg {
+      text-align: center;
+      padding: 24px;
+      color: #737872;
+      font-size: 14px;
+    }
+
+    .error-msg { color: #ba1a1a; }
+  </style>
+</head>
+<body>
+  <div class="calendar-widget">
+    <div class="widget-header">
+      <h1 id="calendar-title">Fechas disponibles</h1>
+      <p>Consulta los días con agenda abierta</p>
+    </div>
+
+    <div class="widget-body">
+      <div id="error-display" class="error-msg" style="display: none;"></div>
+      <div id="calendar-container">
+        <div class="calendar-mini">
+          <div class="calendar-header">
+            <button id="prev-month" type="button" aria-label="Mes anterior">
+              <span class="material-symbols-outlined" style="font-size:20px">chevron_left</span>
+            </button>
+            <span id="current-month"></span>
+            <button id="next-month" type="button" aria-label="Mes siguiente">
+              <span class="material-symbols-outlined" style="font-size:20px">chevron_right</span>
+            </button>
+          </div>
+          <div class="calendar-grid" id="calendar-grid">
+            <div class="loading">Cargando calendario...</div>
+          </div>
+          <div class="calendar-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--btn)"></span> Disponible</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#c3c8c1"></span> No disponible</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#e5e2dd"></span> Pasado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="widget-footer">
+        <a id="booking-link" href="./">
+          <span class="material-symbols-outlined" style="font-size:18px">event</span>
+          Reservar cita
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.bookingConfig?.apiBase || (window.location.origin + '/booking');
+    const BOOKING_URL = window.bookingConfig?.bookingUrl || new URL('./', window.location.href).href;
+
+    let currentDate = new Date();
+    let monthAvailability = {};
+
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    function showError(message) {
+      const el = document.getElementById('error-display');
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    async function loadSiteSettings() {
+      try {
+        const response = await fetch(`${API_BASE}/api/public/settings`);
+        const data = await response.json();
+        if (data?.business_name) {
+          document.getElementById('calendar-title').textContent = `Fechas disponibles · ${data.business_name}`;
+        }
+      } catch (e) {}
+    }
+
+    async function loadMonthAvailability() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const url = `${API_BASE}/api/public/availability-month/${year}/${month}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        monthAvailability = data.days || data;
+      } catch (error) {
+        monthAvailability = {};
+        showError('No se pudo cargar la disponibilidad del calendario.');
+      }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const monthLabel = document.getElementById('current-month');
+
+      monthLabel.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      let html = dayNames.map(d => `<div class="day-name">${d}</div>`).join('');
+
+      for (let i = 0; i < firstDay.getDay(); i++) {
+        html += '<div class="day-cell empty"></div>';
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        const dateStr = date.toISOString().split('T')[0];
+        const isToday = date.getTime() === today.getTime();
+        const dayInfo = monthAvailability[dateStr];
+        const isAvailable = dayInfo ? dayInfo.available : false;
+        const isPast = dayInfo ? dayInfo.isPast : date < today;
+
+        let classes = 'day-cell';
+        if (isPast) classes += ' disabled past';
+        else if (!isAvailable) classes += ' disabled unavailable';
+        else classes += ' available';
+        if (isToday) classes += ' today';
+
+        html += `<div class="${classes}">${day}</div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    async function refreshCalendar() {
+      await loadMonthAvailability();
+      renderCalendar();
+    }
+
+    document.getElementById('prev-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      refreshCalendar();
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      refreshCalendar();
+    });
+
+    document.getElementById('booking-link').href = BOOKING_URL;
+
+    (async function init() {
+      await loadSiteSettings();
+      await refreshCalendar();
+    })();
+  </script>
+</body>
+</html>

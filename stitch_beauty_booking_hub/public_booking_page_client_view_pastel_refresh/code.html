@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Book Appointment | Aura Wellness</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#191c1e",
+                    "surface-bright": "#f8f9fc",
+                    "primary": "#5950b6",
+                    "outline": "#787583",
+                    "inverse-surface": "#2e3133",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#edeef1",
+                    "inverse-on-surface": "#f0f1f4",
+                    "primary-fixed": "#e4dfff",
+                    "on-secondary-fixed-variant": "#00513f",
+                    "outline-variant": "#c8c4d4",
+                    "surface-variant": "#e1e2e5",
+                    "on-primary-fixed": "#150066",
+                    "secondary-fixed": "#9ef3d6",
+                    "on-primary-container": "#32258d",
+                    "secondary-fixed-dim": "#82d7ba",
+                    "surface-tint": "#5950b6",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#c6c0ff",
+                    "background": "#f8f9fc",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#d9dadd",
+                    "primary-container": "#9d94ff",
+                    "on-surface-variant": "#474552",
+                    "tertiary-fixed-dim": "#eabea0",
+                    "on-tertiary-fixed": "#2d1604",
+                    "on-secondary": "#ffffff",
+                    "surface": "#f8f9fc",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#41369d",
+                    "tertiary-fixed": "#ffdcc5",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#002118",
+                    "on-tertiary-fixed-variant": "#5f402a",
+                    "on-tertiary-container": "#4e311c",
+                    "tertiary": "#79573f",
+                    "on-error": "#ffffff",
+                    "primary-fixed-dim": "#c6c0ff",
+                    "on-secondary-container": "#0b7059",
+                    "secondary": "#006b55",
+                    "tertiary-container": "#c2997e",
+                    "surface-container-highest": "#e1e2e5",
+                    "error": "#ba1a1a",
+                    "on-surface": "#191c1e",
+                    "surface-container-low": "#f2f3f6",
+                    "secondary-container": "#9bf0d3",
+                    "surface-container-high": "#e7e8eb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "8px",
+                    "lg": "12px",
+                    "xl": "16px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "unit": "4px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "xl": "40px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Manrope"],
+                    "label-sm": ["JetBrains Mono"],
+                    "label-md": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Manrope"],
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-xl": ["Manrope"],
+                    "headline-lg-mobile": ["Manrope"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "label-md": ["13px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen">
+<header class="sticky top-0 z-40 w-full border-b border-outline-variant bg-surface/80 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-lg">spa</span>
+</div>
+<span class="font-headline-md text-on-surface">Aura Wellness</span>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+<div class="flex flex-col lg:grid lg:grid-cols-12 gap-8">
+<!-- Left Column: Booking Flow -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Progress Stepper -->
+<nav class="flex items-center justify-between mb-8 overflow-x-auto pb-4 hide-scrollbar">
+<div class="flex items-center gap-4 flex-shrink-0">
+<div class="flex flex-col items-center gap-1">
+<span class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm">1</span>
+<span class="text-xs font-medium text-primary">Service</span>
+</div>
+<div class="w-12 h-px bg-outline-variant"></div>
+<div class="flex flex-col items-center gap-1 opacity-50">
+<span class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center font-bold text-sm">2</span>
+<span class="text-xs font-medium">Time</span>
+</div>
+<div class="w-12 h-px bg-outline-variant"></div>
+<div class="flex flex-col items-center gap-1 opacity-50">
+<span class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center font-bold text-sm">3</span>
+<span class="text-xs font-medium">Details</span>
+</div>
+</div>
+</nav>
+<section>
+<h1 class="font-headline-lg text-on-surface mb-2">Book Your Experience</h1>
+<p class="text-on-surface-variant mb-6">Select a treatment to begin your wellness journey.</p>
+<!-- Service Selection Tabs -->
+<div class="flex gap-2 mb-8 overflow-x-auto pb-2 hide-scrollbar">
+<button class="px-6 py-2 rounded-full bg-primary-container text-on-primary-container font-medium whitespace-nowrap">Popular</button>
+<button class="px-6 py-2 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors font-medium whitespace-nowrap">Massage</button>
+<button class="px-6 py-2 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors font-medium whitespace-nowrap">Facial</button>
+<button class="px-6 py-2 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors font-medium whitespace-nowrap">Yoga</button>
+</div>
+<!-- Services Grid -->
+<div class="grid sm:grid-cols-2 gap-4">
+<!-- Service Card 1 -->
+<div class="group relative p-6 rounded-xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-lg transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-secondary-container text-on-secondary-container rounded-lg">
+<span class="material-symbols-outlined">self_care</span>
+</span>
+<span class="text-sm font-label-md text-on-surface-variant">$120</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Deep Tissue Therapy</h3>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Focuses on realigning deeper layers of muscles and connective tissue.</p>
+<div class="flex items-center gap-4 text-xs font-medium text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span> 60 min
+                                </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">star</span> 4.9
+                                </span>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-medium hover:bg-primary-container/80 transition-colors">Select</button>
+</div>
+</div>
+<!-- Service Card 2 -->
+<div class="group relative p-6 rounded-xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-lg transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-tertiary-container text-on-tertiary-container rounded-lg">
+<span class="material-symbols-outlined">face</span>
+</span>
+<span class="text-sm font-label-md text-on-surface-variant">$95</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Hydrating Glow Facial</h3>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">Restore moisture and radiance with our signature botanical treatment.</p>
+<div class="flex items-center gap-4 text-xs font-medium text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span> 45 min
+                                </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">star</span> 4.8
+                                </span>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-medium hover:bg-primary-container/80 transition-colors">Select</button>
+</div>
+</div>
+<!-- Service Card 3 -->
+<div class="group relative p-6 rounded-xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-lg transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-secondary-container text-on-secondary-container rounded-lg">
+<span class="material-symbols-outlined">fitness_center</span>
+</span>
+<span class="text-sm font-label-md text-on-surface-variant">$40</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Private Yoga Session</h3>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">One-on-one mindfulness and movement tailored to your level.</p>
+<div class="flex items-center gap-4 text-xs font-medium text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span> 60 min
+                                </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">star</span> 5.0
+                                </span>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-medium hover:bg-primary-container/80 transition-colors">Select</button>
+</div>
+</div>
+<!-- Service Card 4 -->
+<div class="group relative p-6 rounded-xl border-2 border-primary bg-primary/5 shadow-md transition-all cursor-pointer">
+<div class="absolute -top-3 right-4 px-3 py-1 bg-primary text-on-primary text-[10px] uppercase font-bold tracking-widest rounded-full">Selected</div>
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-secondary-container text-on-secondary-container rounded-lg">
+<span class="material-symbols-outlined">hot_tub</span>
+</span>
+<span class="text-sm font-label-md text-on-surface-variant">$150</span>
+</div>
+<h3 class="font-headline-md text-on-surface mb-1">Aura Signature Retreat</h3>
+<p class="text-sm text-on-surface-variant line-clamp-2 mb-4">The ultimate package including massage, facial and aromatherapy.</p>
+<div class="flex items-center gap-4 text-xs font-medium text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">schedule</span> 120 min
+                                </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">star</span> 4.9
+                                </span>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-lg font-medium transition-colors">Selected</button>
+</div>
+</div>
+</div>
+</section>
+<div class="pt-6 border-t border-outline-variant flex justify-end">
+<button class="px-8 py-3 bg-primary text-on-primary rounded-xl font-semibold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                        Continue to Schedule
+                    </button>
+</div>
+</div>
+<!-- Right Column: Summary Card -->
+<aside class="lg:col-span-4">
+<div class="sticky top-24 space-y-6">
+<div class="bg-surface-container-low rounded-2xl p-6 border border-outline-variant">
+<h2 class="font-headline-md text-on-surface mb-6">Booking Summary</h2>
+<div class="space-y-4 mb-6">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-primary-fixed rounded-lg flex-shrink-0 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">hot_tub</span>
+</div>
+<div>
+<p class="font-medium text-on-surface">Aura Signature Retreat</p>
+<p class="text-xs text-on-surface-variant">120 mins • Senior Therapist</p>
+</div>
+<p class="ml-auto font-medium text-on-surface">$150</p>
+</div>
+</div>
+<div class="pt-6 border-t border-outline-variant space-y-3">
+<div class="flex justify-between text-sm text-on-surface-variant">
+<span>Subtotal</span>
+<span>$150.00</span>
+</div>
+<div class="flex justify-between text-sm text-on-surface-variant">
+<span>Tax</span>
+<span>$12.00</span>
+</div>
+<div class="flex justify-between font-headline-md text-on-surface pt-2">
+<span>Total</span>
+<span>$162.00</span>
+</div>
+</div>
+</div>
+<div class="bg-primary-fixed/30 rounded-2xl p-6 border border-primary-container">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-on-primary-container">info</span>
+<h3 class="font-medium text-on-primary-container">Flexible Cancellation</h3>
+</div>
+<p class="text-sm text-on-primary-fixed-variant leading-relaxed">
+                            Need to change? Cancel for free up to 24 hours before your appointment.
+                        </p>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<footer class="mt-12 bg-surface-container-lowest border-t border-outline-variant py-12">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-primary/20 rounded flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-sm">spa</span>
+</div>
+<span class="font-headline-md text-on-surface text-lg">Aura Wellness</span>
+</div>
+<div class="flex gap-8 text-sm font-medium text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Contact Us</a>
+</div>
+<p class="text-xs text-on-surface-variant">© 2024 Aura Wellness Spa &amp; Clinic</p>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,28 @@
+{
+  "name": "nova-agenda",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:api": "turbo dev --filter=api",
+    "dev:admin": "turbo dev --filter=admin",
+    "dev:website": "turbo dev --filter=nova-agenda-website",
+    "dev:client": "turbo dev --filter=client-sites",
+    "build": "turbo build",
+    "db:generate": "cd packages/api && npx prisma generate",
+    "db:push": "cd packages/api && npx prisma db push",
+    "db:migrate": "cd packages/api && npx prisma migrate dev",
+    "db:seed": "cd packages/api && npx prisma db seed"
+  },
+  "devDependencies": {
+    "@types/stripe": "^8.0.416",
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "npm@10.0.0",
+  "dependencies": {
+    "stripe": "^22.3.0"
+  }
+}

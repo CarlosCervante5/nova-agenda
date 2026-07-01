@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendar Cita - Tapai</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f7f2ea;
+      --btn: #7d7f3e;
+      --btn-hover: #aaa66a;
+      --btn-light: #e8e9d4;
+      --surface: #f0ebe3;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: #1c1c19;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding: 40px 16px;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .booking-widget {
+      max-width: 560px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .widget-header {
+      background: linear-gradient(135deg, var(--btn) 0%, var(--btn-hover) 100%);
+      color: white;
+      padding: 40px 32px;
+      text-align: center;
+    }
+
+    .widget-header h1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .widget-logo-wrap {
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .brand-logo {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 260px;
+      margin: 0 auto;
+    }
+
+    .widget-header p {
+      opacity: 0.85;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 300;
+    }
+
+    .widget-body {
+      padding: 32px;
+    }
+
+    .step { display: none; }
+    .step.active { display: block; }
+
+    .step-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 24px;
+      color: #1c1c19;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-number {
+      background: linear-gradient(135deg, var(--btn), var(--btn-hover));
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .services-grid { display: grid; gap: 12px; }
+
+    .categories-grid { display: grid; gap: 12px; }
+
+    .category-card {
+      border: 2px solid #e5e2dd;
+      border-radius: 0.75rem;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg);
+    }
+
+    .category-card:hover {
+      border-color: var(--btn-hover);
+      background: var(--surface);
+      box-shadow: 0 2px 12px rgba(125, 127, 62, 0.08);
+    }
+
+    .category-card.selected {
+      border-color: var(--btn);
+      background: var(--btn-light);
+    }
+
+    .category-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .category-info h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #1c1c19;
+    }
+
+    .category-info p {
+      font-size: 13px;
+      color: #434843;
+      line-height: 1.4;
+    }
+
+    .category-meta {
+      margin-left: auto;
+      font-size: 12px;
+      color: #737872;
+      white-space: nowrap;
+    }
+
+    .step-back-label {
+      font-size: 13px;
+      color: #737872;
+      margin-bottom: 12px;
+    }
+
+    .services-grid { display: grid; gap: 12px; }
+
+    .service-card {
+      border: 2px solid #e5e2dd;
+      border-radius: 0.75rem;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg);
+    }
+
+    .service-card-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .service-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .service-icon .material-symbols-outlined {
+      font-size: 22px;
+    }
+
+    .service-card:hover {
+      border-color: var(--btn-hover);
+      background: var(--surface);
+      box-shadow: 0 2px 12px rgba(125, 127, 62, 0.08);
+    }
+
+    .service-card.selected {
+      border-color: var(--btn);
+      background: var(--btn-light);
+    }
+
+    .service-info h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #1c1c19;
+    }
+
+    .service-info p {
+      font-size: 13px;
+      color: #434843;
+      line-height: 1.4;
+    }
+
+    .service-meta {
+      text-align: right;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+
+    .service-meta .price {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .service-meta .duration {
+      font-size: 12px;
+      color: #737872;
+      margin-top: 2px;
+    }
+
+    .calendar-mini {
+      border: 1px solid #e5e2dd;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .calendar-header {
+      background: linear-gradient(135deg, var(--btn), var(--btn-hover));
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .calendar-header #current-month {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 17px;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .calendar-header .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+    }
+
+    .calendar-header button {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .calendar-header button:hover { background: rgba(255,255,255,0.25); }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      padding: 12px;
+    }
+
+    .day-name {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #737872;
+      padding: 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .day-cell {
+      text-align: center;
+      padding: 10px 4px;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: all 0.2s;
+      position: relative;
+      font-size: 14px;
+      font-weight: 400;
+      color: #1c1c19;
+    }
+
+    .day-cell:hover:not(.disabled):not(.empty) {
+      background: var(--btn-light);
+    }
+
+    .day-cell.selected {
+      background: var(--btn);
+      color: white;
+      font-weight: 600;
+    }
+
+    .day-cell.disabled { cursor: not-allowed; }
+
+    .day-cell.disabled.past {
+      color: #c3c8c1;
+      cursor: not-allowed;
+    }
+
+    .day-cell.disabled.unavailable {
+      color: #737872;
+      background: #f5f0eb;
+      border: 1px dashed #c3c8c1;
+    }
+
+    .day-cell.available {
+      color: #1c1c19;
+      cursor: pointer;
+    }
+
+    .day-cell.available::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--btn);
+    }
+
+    .day-cell.today {
+      border: 2px solid var(--btn);
+      font-weight: 600;
+    }
+
+    .day-cell.empty { cursor: default; }
+
+    .calendar-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 10px;
+      font-size: 11px;
+      color: #737872;
+      border-top: 1px solid #e5e2dd;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .time-slot {
+      padding: 11px 8px;
+      text-align: center;
+      border: 1px solid #e5e2dd;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--bg);
+      color: #1c1c19;
+    }
+
+    .time-slot:hover:not(.unavailable) {
+      border-color: var(--btn);
+      background: var(--surface);
+    }
+
+    .time-slot.selected {
+      background: var(--btn);
+      color: white;
+      border-color: var(--btn);
+    }
+
+    .time-slot.unavailable {
+      background: #f0ede8;
+      color: #c3c8c1;
+      cursor: not-allowed;
+      text-decoration: line-through;
+      border-color: #e5e2dd;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      color: #434843;
+      letter-spacing: 0.02em;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 0.75rem;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      color: #1c1c19;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      background: #fff;
+      box-shadow: 0 0 0 2px var(--btn-light);
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: #737872;
+    }
+
+    .btn {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 0.75rem;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary {
+      background: var(--btn);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: var(--btn-hover);
+      box-shadow: 0 4px 12px rgba(125, 127, 62, 0.25);
+    }
+
+    .btn-primary:active {
+      background: var(--btn);
+    }
+
+    .btn-primary:disabled {
+      background: #c3c8c1;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #434843;
+      border: 1px solid #c3c8c1;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface);
+      border-color: #737872;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn-group .btn { flex: 1; }
+
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .home-link-wrap {
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .home-link-wrap .btn-home {
+      width: auto;
+      min-width: 200px;
+    }
+
+    .success-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px;
+    }
+
+    .success-actions .btn {
+      width: auto;
+      min-width: 200px;
+      flex: 0 1 auto;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border-radius: 0.75rem;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e2dd;
+    }
+
+    .summary-row:last-child { border-bottom: none; }
+
+    .summary-label {
+      color: #737872;
+      font-size: 13px;
+    }
+
+    .summary-value {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1c1c19;
+    }
+
+    .success-message {
+      text-align: center;
+      padding: 48px 24px;
+    }
+
+    .success-icon {
+      width: 88px;
+      height: 88px;
+      background: linear-gradient(135deg, var(--btn-light), #dcdcb8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .success-icon .material-symbols-outlined {
+      font-size: 44px;
+      color: var(--btn);
+    }
+
+    .success-message h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--btn);
+      margin-bottom: 10px;
+    }
+
+    .success-message p {
+      color: #737872;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #737872;
+      font-size: 14px;
+    }
+
+    .error-msg {
+      background: #fef2f2;
+      color: #ba1a1a;
+      padding: 14px 16px;
+      border-radius: 0.75rem;
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 14px;
+      border: 1px solid #fecaca;
+    }
+
+    .slot-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #434843;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 16px 8px; }
+      .widget-header { padding: 32px 24px; }
+      .widget-header h1 { font-size: 26px; }
+      .widget-body { padding: 24px 20px; }
+      .time-slots { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .professional-profile {
+      display: none;
+      align-items: center;
+      gap: 16px;
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 0.875rem;
+      background: rgba(255, 255, 255, 0.12);
+      text-align: left;
+    }
+
+    .professional-profile.visible {
+      display: flex;
+    }
+
+    .professional-photo,
+    .professional-photo-fallback {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 3px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .professional-photo-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .professional-info h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .professional-info p {
+      opacity: 0.9;
+      font-size: 13px;
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+  <div class="booking-widget">
+    <div class="widget-header">
+      <div class="widget-logo-wrap">
+        <img src="assets/tapai_logo_blanco.png" alt="Tapai Centro de Sanación" class="brand-logo">
+      </div>
+      <p id="widget-subtitle">Selecciona categoría, servicio y horario</p>
+      <div id="professional-profile" class="professional-profile">
+        <img id="professional-photo" class="professional-photo" alt="" style="display:none;">
+        <div id="professional-photo-fallback" class="professional-photo-fallback" style="display:none;"></div>
+        <div class="professional-info">
+          <h2 id="professional-name"></h2>
+          <p id="professional-bio"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="widget-body">
+      <div id="error-display" class="error-msg" style="display: none;"></div>
+
+      <!-- Step 1: Categoría -->
+      <div id="step-1" class="step active">
+        <div class="step-title">
+          <span class="step-number">1</span>
+          Selecciona una Categoría
+        </div>
+        <div id="categories-list" class="categories-grid">
+          <div class="loading">Cargando categorías...</div>
+        </div>
+        <div class="home-link-wrap">
+          <a href="https://tapaicentro.com/" id="home-link-start" class="btn btn-secondary btn-home">
+            <span class="material-symbols-outlined" style="font-size:18px;margin-right:4px">home</span>
+            <span id="home-link-start-label">Volver al inicio</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Step 2: Servicio -->
+      <div id="step-2" class="step">
+        <div class="step-title">
+          <span class="step-number">2</span>
+          Selecciona un Servicio
+        </div>
+        <div id="selected-category-label" class="step-back-label"></div>
+        <div id="services-list" class="services-grid">
+          <div class="loading">Cargando servicios...</div>
+        </div>
+        <div class="btn-group" style="margin-top: 20px;">
+          <button class="btn btn-secondary" onclick="prevStep(1)"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px">arrow_back</span>Categorías</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Fecha -->
+      <div id="step-3" class="step">
+        <div class="step-title">
+          <span class="step-number">3</span>
+          Selecciona una Fecha
+        </div>
+        <div class="calendar-mini">
+          <div class="calendar-header">
+            <button id="prev-month"><span class="material-symbols-outlined" style="font-size:20px">chevron_left</span></button>
+            <span id="current-month"></span>
+            <button id="next-month"><span class="material-symbols-outlined" style="font-size:20px">chevron_right</span></button>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+          <div class="calendar-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:var(--btn)"></span> Disponible</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#c3c8c1"></span> No disponible</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#e5e2dd"></span> Pasado</span>
+          </div>
+        </div>
+        <div id="time-slots-container" style="margin-top: 20px;"></div>
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="prevStep(2)"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px">arrow_back</span>Atrás</button>
+          <button class="btn btn-primary" id="btn-to-step4" disabled onclick="nextStep(4)">Continuar</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Datos Personales -->
+      <div id="step-4" class="step">
+        <div class="step-title">
+          <span class="step-number">4</span>
+          Tus Datos
+        </div>
+
+        <div class="summary-card" id="booking-summary"></div>
+
+        <form id="booking-form">
+          <div id="dynamic-form-fields"></div>
+
+          <div class="btn-group">
+            <button type="button" class="btn btn-secondary" onclick="prevStep(3)"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px">arrow_back</span>Atrás</button>
+            <button type="submit" class="btn btn-primary">Confirmar Reserva</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Step 5: Confirmación -->
+      <div id="step-5" class="step">
+        <div class="success-message">
+          <div class="success-icon">
+            <span class="material-symbols-outlined">check</span>
+          </div>
+          <h2>¡Gracias! Tu registro se ha completado con éxito!</h2>
+          <p id="success-email-text">Hemos enviado un correo de confirmación con toda la información. Si no lo recibes en unos minutos, por favor revisa tu carpeta de <strong>Spam</strong> o <strong>Correo no deseado</strong>.</p>
+          <p id="success-contact-text" style="margin-top: 12px; color: #737872;">Para cualquier cambio o cancelación, ponte en contacto directamente con <strong>TAPAI Centro de Sanación</strong> al WhatsApp: <a href="https://wa.me/527713793868" style="color:#7d7f3e;font-weight:600;text-decoration:none;">771.379.3868</a></p>
+          <div class="success-actions">
+            <button class="btn btn-primary" onclick="resetBooking()">
+              <span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;margin-right:4px">event</span>Agendar otra cita
+            </button>
+            <a href="https://tapaicentro.com/" id="home-link-success" class="btn btn-secondary btn-home">
+              <span class="material-symbols-outlined" style="font-size:18px;margin-right:4px">home</span>
+              <span id="home-link-success-label">Volver al inicio</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.bookingConfig?.apiBase || (window.location.origin + '/booking');
+
+    console.log('[Tapai] API_BASE:', API_BASE);
+    console.log('[Tapai] Location:', window.location.href);
+
+    let currentStep = 1;
+    let selectedCategory = null;
+    let selectedService = null;
+    let selectedDate = null;
+    let selectedTime = null;
+    let currentDate = new Date();
+    let availableSlots = [];
+    let formQuestions = [];
+    let monthAvailability = {};
+    let selectedProfessional = null;
+    let siteSettings = {
+      business_name: 'TAPAI Centro de Sanación',
+      website_url: 'https://tapaicentro.com/',
+      whatsapp_number: '527713793868',
+      whatsapp_display: '771.379.3868',
+      whatsapp_url: 'https://wa.me/527713793868',
+      home_button_label: 'Volver al inicio',
+    };
+
+    async function init() {
+      console.log('[Tapai] init() starting...');
+      await loadSiteSettings();
+      await loadProfessional();
+      await loadCategories();
+      await loadFormQuestions();
+      setupEventListeners();
+      console.log('[Tapai] init() complete');
+    }
+
+    function professionalQueryString() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('p')) return `p=${encodeURIComponent(params.get('p'))}`;
+      if (params.get('professional')) return `professional=${encodeURIComponent(params.get('professional'))}`;
+      if (selectedProfessional?.booking_slug) return `p=${encodeURIComponent(selectedProfessional.booking_slug)}`;
+      if (selectedProfessional?.id) return `professional=${selectedProfessional.id}`;
+      return '';
+    }
+
+    function withProfessionalQuery(url) {
+      const query = professionalQueryString();
+      if (!query) return url;
+      return `${url}${url.includes('?') ? '&' : '?'}${query}`;
+    }
+
+    function getProfessionalInitials(name) {
+      return (name || '?').split(' ').filter(Boolean).map(part => part[0]).join('').toUpperCase().slice(0, 2);
+    }
+
+    function renderProfessionalProfile() {
+      const container = document.getElementById('professional-profile');
+      const subtitle = document.getElementById('widget-subtitle');
+      if (!selectedProfessional) {
+        container.classList.remove('visible');
+        subtitle.textContent = 'Selecciona categoría, servicio y horario';
+        return;
+      }
+
+      container.classList.add('visible');
+      subtitle.textContent = 'Agenda tu cita con este profesional';
+      document.getElementById('professional-name').textContent = selectedProfessional.full_name;
+
+      const bio = selectedProfessional.profile_bio || 'Servicios disponibles según la agenda de este profesional.';
+      document.getElementById('professional-bio').textContent = bio;
+
+      const photo = document.getElementById('professional-photo');
+      const fallback = document.getElementById('professional-photo-fallback');
+
+      if (selectedProfessional.profile_photo_url) {
+        photo.src = selectedProfessional.profile_photo_url;
+        photo.alt = selectedProfessional.full_name;
+        photo.style.display = 'block';
+        fallback.style.display = 'none';
+      } else {
+        photo.style.display = 'none';
+        fallback.style.display = 'flex';
+        fallback.textContent = getProfessionalInitials(selectedProfessional.full_name);
+      }
+    }
+
+    async function loadProfessional() {
+      if (!professionalQueryString()) return;
+
+      const url = withProfessionalQuery(`${API_BASE}/api/public/professional-profile`);
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          showError('No se pudo cargar el perfil del profesional.');
+          return;
+        }
+        selectedProfessional = await response.json();
+        renderProfessionalProfile();
+      } catch (error) {
+        console.error('[Tapai] loadProfessional() error:', error.message);
+        showError('No se pudo cargar el perfil del profesional.');
+      }
+    }
+
+    async function loadSiteSettings() {
+      const url = `${API_BASE}/api/public/settings`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data && data.business_name) {
+          siteSettings = { ...siteSettings, ...data };
+          applySiteSettings();
+        }
+      } catch (e) {
+        console.warn('[Tapai] Could not load public settings', e);
+      }
+    }
+
+    function applySiteSettings() {
+      const homeUrl = siteSettings.website_url || 'https://tapaicentro.com/';
+      const homeLabel = siteSettings.home_button_label || 'Volver al inicio';
+      const businessName = siteSettings.business_name || 'TAPAI Centro de Sanación';
+      const whatsappUrl = siteSettings.whatsapp_url || ('https://wa.me/' + (siteSettings.whatsapp_number || '527713793868'));
+      const whatsappDisplay = siteSettings.whatsapp_display || '771.379.3868';
+
+      ['home-link-start', 'home-link-success'].forEach(id => {
+        const link = document.getElementById(id);
+        if (link) link.href = homeUrl;
+      });
+
+      ['home-link-start-label', 'home-link-success-label'].forEach(id => {
+        const label = document.getElementById(id);
+        if (label) label.textContent = homeLabel;
+      });
+
+      const contactText = document.getElementById('success-contact-text');
+      if (contactText) {
+        contactText.innerHTML = `Para cualquier cambio o cancelación, ponte en contacto directamente con <strong>${businessName}</strong> al WhatsApp: <a href="${whatsappUrl}" style="color:#7d7f3e;font-weight:600;text-decoration:none;">${whatsappDisplay}</a>`;
+      }
+    }
+
+    function setupEventListeners() {
+      document.getElementById('prev-month').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        loadMonthAvailability().then(() => renderCalendar());
+      });
+      document.getElementById('next-month').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        loadMonthAvailability().then(() => renderCalendar());
+      });
+      document.getElementById('booking-form').addEventListener('submit', handleBooking);
+    }
+
+    async function loadCategories() {
+      const url = withProfessionalQuery(`${API_BASE}/api/public/categories`);
+      try {
+        const response = await fetch(url);
+        const categories = await response.json();
+        renderCategories(Array.isArray(categories) ? categories : []);
+      } catch (error) {
+        console.error('[Tapai] loadCategories() error:', error.message);
+        showError('Error al cargar categorías: ' + error.message);
+      }
+    }
+
+    let categoriesCache = [];
+
+    function renderCategories(categories) {
+      categoriesCache = categories;
+      const container = document.getElementById('categories-list');
+      if (!categories.length) {
+        container.innerHTML = '<p style="text-align:center;color:#737872;">No hay categorías disponibles</p>';
+        return;
+      }
+
+      container.innerHTML = categories.map(category => `
+        <div class="category-card" onclick="selectCategoryById(${category.id})" data-id="${category.id}">
+          <div class="category-icon" style="background:${category.color}20;color:${category.color}">
+            <span class="material-symbols-outlined">${category.icon || 'spa'}</span>
+          </div>
+          <div class="category-info">
+            <h3>${category.name}</h3>
+            <p>${category.description || ''}</p>
+          </div>
+          <div class="category-meta">${category.services_count || 0} servicios</div>
+        </div>
+      `).join('');
+    }
+
+    function selectCategoryById(id) {
+      const category = categoriesCache.find(c => String(c.id) === String(id));
+      if (category) selectCategory(category);
+    }
+
+    function selectCategory(category) {
+      selectedCategory = category;
+      selectedService = null;
+      selectedDate = null;
+      selectedTime = null;
+
+      document.querySelectorAll('.category-card').forEach(card => card.classList.remove('selected'));
+      const card = document.querySelector(`.category-card[data-id="${category.id}"]`);
+      if (card) card.classList.add('selected');
+
+      document.getElementById('selected-category-label').textContent = 'Categoría: ' + category.name;
+      loadServices(category.id);
+      nextStep(2);
+    }
+
+    async function loadServices(categoryId) {
+      const container = document.getElementById('services-list');
+      container.innerHTML = '<div class="loading">Cargando servicios...</div>';
+
+      const url = withProfessionalQuery(`${API_BASE}/api/public/services?category_id=${categoryId}`);
+      console.log('[Tapai] loadServices() URL:', url);
+      try {
+        const response = await fetch(url);
+        const text = await response.text();
+        try {
+          const services = JSON.parse(text);
+          renderServices(Array.isArray(services) ? services : []);
+        } catch (e) {
+          showError('Error al cargar servicios (respuesta no válida)');
+        }
+      } catch (error) {
+        console.error('[Tapai] loadServices() fetch error:', error.message, error);
+        showError('Error al cargar servicios: ' + error.message);
+      }
+    }
+
+    async function loadFormQuestions() {
+      const url = `${API_BASE}/api/public/form-questions`;
+      console.log('[Tapai] loadFormQuestions() URL:', url);
+      try {
+        const response = await fetch(url);
+        console.log('[Tapai] loadFormQuestions() status:', response.status);
+        const text = await response.text();
+        console.log('[Tapai] loadFormQuestions() response:', text.substring(0, 300));
+        formQuestions = JSON.parse(text);
+        renderDynamicForm();
+      } catch (error) {
+        console.error('[Tapai] loadFormQuestions() error:', error.message, error);
+        console.log('[Tapai] Using default form questions');
+        formQuestions = [
+          { id: 1, label: 'Nombre completo', field_type: 'text', required: true },
+          { id: 2, label: 'Email', field_type: 'email', required: true },
+          { id: 3, label: 'Telefono', field_type: 'phone', required: false },
+          { id: 4, label: 'Notas adicionales', field_type: 'textarea', required: false }
+        ];
+        renderDynamicForm();
+      }
+    }
+
+    async function loadMonthAvailability() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const url = withProfessionalQuery(`${API_BASE}/api/public/availability-month/${year}/${month}`);
+      console.log('[Tapai] loadMonthAvailability() URL:', url);
+      try {
+        const response = await fetch(url);
+        console.log('[Tapai] loadMonthAvailability() status:', response.status);
+        const text = await response.text();
+        console.log('[Tapai] loadMonthAvailability() response:', text.substring(0, 500));
+        const data = JSON.parse(text);
+        monthAvailability = data.days || data;
+        console.log('[Tapai] loadMonthAvailability() days count:', Object.keys(monthAvailability).length);
+      } catch (error) {
+        console.error('[Tapai] loadMonthAvailability() error:', error.message, error);
+        monthAvailability = {};
+      }
+    }
+
+    function renderDynamicForm() {
+      const container = document.getElementById('dynamic-form-fields');
+      if (!container) return;
+
+      container.innerHTML = formQuestions.map(q => {
+        const options = q.options ? (typeof q.options === 'string' ? JSON.parse(q.options) : q.options) : [];
+        const reqAttr = q.required ? 'required' : '';
+        const reqMark = q.required ? ' <span style="color: #ba1a1a;">*</span>' : '';
+
+        let inputHtml = '';
+        switch (q.field_type) {
+          case 'text':
+            inputHtml = `<input type="text" id="field-${q.id}" data-question-id="${q.id}" placeholder="${q.label}" ${reqAttr}>`;
+            break;
+          case 'email':
+            inputHtml = `<input type="email" id="field-${q.id}" data-question-id="${q.id}" placeholder="${q.label}" ${reqAttr}>`;
+            break;
+          case 'phone':
+            inputHtml = `<input type="tel" id="field-${q.id}" data-question-id="${q.id}" placeholder="${q.label}" ${reqAttr}>`;
+            break;
+          case 'number':
+            inputHtml = `<input type="number" id="field-${q.id}" data-question-id="${q.id}" placeholder="${q.label}" ${reqAttr}>`;
+            break;
+          case 'date':
+            inputHtml = `<input type="date" id="field-${q.id}" data-question-id="${q.id}" ${reqAttr}>`;
+            break;
+          case 'textarea':
+            inputHtml = `<textarea id="field-${q.id}" data-question-id="${q.id}" rows="3" placeholder="${q.label}" ${reqAttr}></textarea>`;
+            break;
+          case 'select':
+            inputHtml = `<select id="field-${q.id}" data-question-id="${q.id}" ${reqAttr}>
+              <option value="">Selecciona...</option>
+              ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+            </select>`;
+            break;
+          default:
+            inputHtml = `<input type="text" id="field-${q.id}" data-question-id="${q.id}" placeholder="${q.label}" ${reqAttr}>`;
+        }
+
+        return `<div class="form-group">
+          <label for="field-${q.id}">${q.label}${reqMark}</label>
+          ${inputHtml}
+        </div>`;
+      }).join('');
+    }
+
+    function renderServices(services) {
+      const container = document.getElementById('services-list');
+      if (services.length === 0) {
+        container.innerHTML = '<p>No hay servicios disponibles</p>';
+        return;
+      }
+
+      container.innerHTML = services.map(service => {
+        const color = service.color || '#7d7f3e';
+        return `
+        <div class="service-card" style="border-left: 4px solid ${color}" onclick="selectService(${JSON.stringify(service).replace(/"/g, '&quot;')})" data-id="${service.id}" data-color="${color}">
+          <div class="service-card-main">
+            <div class="service-icon" style="background:${color}20;color:${color}">
+              <span class="material-symbols-outlined">spa</span>
+            </div>
+            <div class="service-info">
+              <h3>${service.name}</h3>
+              <p>${service.description || ''}</p>
+            </div>
+          </div>
+          <div class="service-meta">
+            <div class="price" style="color:${color}">$${service.price}</div>
+            <div class="duration">${service.duration_minutes} min</div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    function selectService(service) {
+      console.log('[Tapai] selectService():', JSON.stringify(service));
+      selectedService = service;
+      selectedDate = null;
+      selectedTime = null;
+
+      document.querySelectorAll('.service-card').forEach(card => {
+        card.classList.remove('selected');
+        card.style.borderColor = '#e5e2dd';
+        card.style.background = 'var(--bg)';
+      });
+      const selectedCard = document.querySelector(`[data-id="${service.id}"]`);
+      if (selectedCard) {
+        selectedCard.classList.add('selected');
+        const color = service.color || selectedCard.dataset.color || '#7d7f3e';
+        selectedCard.style.borderColor = color;
+        selectedCard.style.background = `${color}15`;
+      }
+
+      nextStep(3);
+      loadMonthAvailability().then(() => renderCalendar());
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const monthLabel = document.getElementById('current-month');
+
+      const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+      monthLabel.textContent = `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+      let html = dayNames.map(d => `<div class="day-name">${d}</div>`).join('');
+
+      for (let i = 0; i < firstDay.getDay(); i++) {
+        html += '<div class="day-cell empty"></div>';
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        const dateStr = date.toISOString().split('T')[0];
+        const isToday = date.getTime() === today.getTime();
+        const isSelected = selectedDate === dateStr;
+
+        const dayInfo = monthAvailability[dateStr];
+        const isAvailable = dayInfo ? dayInfo.available : false;
+        const isPast = dayInfo ? dayInfo.isPast : date < today;
+
+        let classes = 'day-cell';
+        if (isPast) classes += ' disabled past';
+        else if (!isAvailable) classes += ' disabled unavailable';
+        else classes += ' available';
+        if (isToday) classes += ' today';
+        if (isSelected) classes += ' selected';
+
+        const clickable = isAvailable && !isPast;
+        html += `<div class="${classes}" ${clickable ? `onclick="selectDate('${dateStr}')"` : ''}>${day}</div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    async function selectDate(dateStr) {
+      selectedDate = dateStr;
+      selectedTime = null;
+      renderCalendar();
+      await loadTimeSlots(dateStr);
+    }
+
+    async function loadTimeSlots(date) {
+      const container = document.getElementById('time-slots-container');
+      container.innerHTML = '<div class="loading">Cargando horarios...</div>';
+
+      const url = withProfessionalQuery(`${API_BASE}/api/public/available/${selectedService.id}/${date}`);
+      console.log('[Tapai] loadTimeSlots() URL:', url);
+      try {
+        const response = await fetch(url);
+        console.log('[Tapai] loadTimeSlots() status:', response.status);
+        const text = await response.text();
+        console.log('[Tapai] loadTimeSlots() response:', text.substring(0, 500));
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          container.innerHTML = '<p style="color: #ba1a1a; text-align:center;">Error al cargar horarios (respuesta no válida)</p>';
+          console.error('[Tapai] loadTimeSlots() JSON parse error:', e.message);
+          console.error('[Tapai] loadTimeSlots() raw:', text.substring(0, 500));
+          return;
+        }
+
+        if (!data.available) {
+          container.innerHTML = `<p style="text-align: center; color: #737872;">${data.message || 'No hay disponibilidad para esta fecha'}</p>`;
+          document.getElementById('btn-to-step4').disabled = true;
+          return;
+        }
+
+        availableSlots = data.slots;
+        renderTimeSlots(data.slots);
+      } catch (error) {
+        console.error('[Tapai] loadTimeSlots() fetch error:', error.message, error);
+        container.innerHTML = '<p style="color: #ba1a1a; text-align:center;">Error al cargar horarios: ' + error.message + '</p>';
+      }
+    }
+
+    function renderTimeSlots(slots) {
+      const container = document.getElementById('time-slots-container');
+
+      if (slots.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #737872;">No hay horarios disponibles</p>';
+        return;
+      }
+
+      const html = slots.map(slot => `
+        <div class="time-slot ${!slot.available ? 'unavailable' : ''} ${selectedTime === slot.time ? 'selected' : ''}"
+             ${slot.available ? `onclick="selectTime('${slot.time}')"` : ''}>
+          ${slot.time}
+        </div>
+      `).join('');
+
+      container.innerHTML = `<div class="slot-label">Horarios disponibles</div><div class="time-slots">${html}</div>`;
+    }
+
+    function selectTime(time) {
+      console.log('[Tapai] selectTime():', time);
+      selectedTime = time;
+      renderTimeSlots(availableSlots);
+      document.getElementById('btn-to-step4').disabled = false;
+      updateSummary();
+    }
+
+    function updateSummary() {
+      const container = document.getElementById('booking-summary');
+      const dateObj = new Date(selectedDate + 'T12:00:00');
+      const dateFormatted = dateObj.toLocaleDateString('es-ES', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+
+      container.innerHTML = `
+        <div class="summary-row">
+          <span class="summary-label">Servicio</span>
+          <span class="summary-value">${selectedService.name}</span>
+        </div>
+        ${selectedProfessional ? `
+        <div class="summary-row">
+          <span class="summary-label">Profesional</span>
+          <span class="summary-value">${selectedProfessional.full_name}</span>
+        </div>` : ''}
+        <div class="summary-row">
+          <span class="summary-label">Fecha</span>
+          <span class="summary-value">${dateFormatted}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Hora</span>
+          <span class="summary-value">${selectedTime}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Duración</span>
+          <span class="summary-value">${selectedService.duration_minutes} minutos</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Precio</span>
+          <span class="summary-value" style="color: var(--btn); font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 600;">$${selectedService.price}</span>
+        </div>
+      `;
+    }
+
+    async function handleBooking(e) {
+      e.preventDefault();
+      console.log('[Tapai] handleBooking() START');
+
+      const dynamicFields = document.querySelectorAll('#dynamic-form-fields [data-question-id]');
+      let clientName = '';
+      let clientEmail = '';
+      let clientPhone = '';
+      const customAnswers = [];
+
+      dynamicFields.forEach(field => {
+        const questionId = field.dataset.questionId;
+        const question = formQuestions.find(q => String(q.id) === String(questionId));
+        const value = field.value?.trim() || '';
+        const label = (question?.label || '').toLowerCase();
+
+        if (question && !clientName && (label.includes('nombre') || label.includes('name')) && !label.includes('correo') && !label.includes('email')) {
+          clientName = value;
+        } else if (question && question.field_type === 'email') {
+          clientEmail = value;
+        } else if (question && question.field_type === 'phone') {
+          clientPhone = value;
+        }
+        customAnswers.push({ question_id: questionId, answer: value });
+      });
+
+      const bookingData = {
+        name: clientName,
+        email: clientEmail,
+        phone: clientPhone,
+        service_id: selectedService.id,
+        date: selectedDate,
+        time: selectedTime,
+        duration_minutes: selectedService.duration_minutes,
+        notes: '',
+        custom_answers: customAnswers
+      };
+
+      if (selectedProfessional?.id) {
+        bookingData.professional_id = selectedProfessional.id;
+      }
+
+      console.log('[Tapai] handleBooking() data:', JSON.stringify(bookingData, null, 2));
+
+      const url = `${API_BASE}/api/public/book`;
+      console.log('[Tapai] handleBooking() URL:', url);
+      console.log('[Tapai] handleBooking() method: POST');
+      console.log('[Tapai] handleBooking() Content-Type: application/json');
+
+      try {
+        console.log('[Tapai] handleBooking() sending fetch...');
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookingData)
+        });
+
+        console.log('[Tapai] handleBooking() response status:', response.status, response.statusText);
+        console.log('[Tapai] handleBooking() response headers:');
+        response.headers.forEach((val, key) => console.log('  ', key, ':', val));
+
+        const text = await response.text();
+        console.log('[Tapai] handleBooking() raw response:', text.substring(0, 1000));
+
+        let result;
+        try {
+          result = JSON.parse(text);
+          console.log('[Tapai] handleBooking() parsed result:', JSON.stringify(result, null, 2));
+        } catch (parseErr) {
+          console.error('[Tapai] handleBooking() JSON parse FAILED:', parseErr.message);
+          showError('Error del servidor (respuesta no válida). Status: ' + response.status);
+          return;
+        }
+
+        if (response.ok && result.message) {
+          console.log('[Tapai] handleBooking() SUCCESS!');
+          updateSuccessEmailMessage(result);
+          nextStep(5);
+        } else {
+          console.error('[Tapai] handleBooking() API error:', result.error);
+          showError(result.error || 'Error al reservar (status ' + response.status + ')');
+        }
+      } catch (error) {
+        console.error('[Tapai] handleBooking() CATCH ERROR:', error.message);
+        console.error('[Tapai] handleBooking() error object:', error);
+        showError('Error de conexión: ' + error.message);
+      }
+    }
+
+    function updateSuccessEmailMessage(result) {
+      const el = document.getElementById('success-email-text');
+      if (!el) return;
+
+      if (result.email_sent) {
+        el.innerHTML = 'Hemos enviado un correo de confirmación con toda la información. Si no lo recibes en unos minutos, revisa tu carpeta de <strong>Spam</strong> o <strong>Correo no deseado</strong>.';
+        return;
+      }
+
+      const reason = result.email_status?.client?.reason;
+      if (reason === 'invalid_client_email') {
+        el.textContent = 'Tu cita quedó registrada, pero no pudimos enviar el correo porque el email indicado no es válido. Contáctanos por WhatsApp para confirmar los detalles.';
+      } else if (reason === 'mail_not_configured') {
+        el.textContent = 'Tu cita quedó registrada. Te contactaremos pronto para confirmar los detalles.';
+      } else {
+        el.textContent = 'Tu cita quedó registrada. Si no recibes el correo de confirmación en unos minutos, contáctanos por WhatsApp para validar tu reserva.';
+      }
+    }
+
+    function nextStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(`step-${step}`).classList.add('active');
+    }
+
+    function prevStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById(`step-${step}`).classList.add('active');
+    }
+
+    function showError(message) {
+      const el = document.getElementById('error-display');
+      el.textContent = message;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+
+    function resetBooking() {
+      selectedCategory = null;
+      selectedService = null;
+      selectedDate = null;
+      selectedTime = null;
+      document.getElementById('booking-form').reset();
+      document.querySelectorAll('.service-card').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById('selected-category-label').textContent = '';
+      renderDynamicForm();
+      loadCategories();
+      nextStep(1);
+    }
+
+    init();
+  </script>
+</body>
+</html>
