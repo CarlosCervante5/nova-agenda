@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-on-background overflow-x-hidden">
       {/* TopNavBar */}
-      <header className="bg-surface sticky top-0 z-50 border-b border-outline-variant shadow-sm flex justify-between items-center w-full px-margin-desktop h-16">
+      <header className="bg-surface sticky top-0 z-50 border-b border-outline-variant shadow-sm flex justify-between items-center w-full px-4 md:px-16 h-14 md:h-16">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-on-primary shadow-sm shadow-primary/20">
@@ -30,7 +30,7 @@ export default function HomePage() {
       <main>
         {/* Hero Section */}
         <section className="relative py-12 lg:py-20 overflow-hidden">
-          <div className="container mx-auto px-margin-desktop relative z-10 grid lg:grid-cols-2 gap-xl items-center">
+          <div className="container mx-auto px-4 md:px-16 relative z-10 grid lg:grid-cols-2 gap-xl items-center">
             <div className="max-w-2xl">
               <span className="inline-block py-1 px-3 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm mb-md uppercase tracking-wider">El Futuro del Bienestar</span>
               <h1 className="font-headline-xl text-headline-xl text-on-background mb-lg leading-tight">
@@ -70,7 +70,7 @@ export default function HomePage() {
 
         {/* Features Bento Grid */}
         <section className="py-xl bg-surface-container-low" id="features">
-          <div className="container mx-auto px-margin-desktop">
+          <div className="container mx-auto px-4 md:px-16">
             <div className="text-center max-w-3xl mx-auto mb-xl">
               <h2 className="font-headline-lg text-headline-lg text-on-background mb-md">Todo lo que necesitas para crecer</h2>
               <p className="font-body-md text-body-md text-on-surface-variant">Deja de usar múltiples herramientas. Nova Agenda unifica todo tu negocio de belleza en un solo flujo de trabajo elegante.</p>
@@ -130,7 +130,7 @@ export default function HomePage() {
 
         {/* Mockup Gallery */}
         <section className="py-xl">
-          <div className="container mx-auto px-margin-desktop">
+          <div className="container mx-auto px-4 md:px-16">
             <div className="text-center max-w-3xl mx-auto mb-xl">
               <h2 className="font-headline-lg text-headline-lg text-on-background mb-md">Diseñado para impresionar</h2>
               <p className="font-body-md text-body-md text-on-surface-variant">Interfaces elegantes que tus clientes amarán usar para reservar citas.</p>
@@ -170,7 +170,7 @@ export default function HomePage() {
 
         {/* Pricing Section */}
         <section className="py-xl bg-surface-container-low" id="pricing">
-          <div className="container mx-auto px-margin-desktop">
+          <div className="container mx-auto px-4 md:px-16">
             <div className="text-center max-w-3xl mx-auto mb-xl">
               <h2 className="font-headline-lg text-headline-lg text-on-background mb-md">Planes para cada escala</h2>
               <p className="font-body-md text-body-md text-on-surface-variant">Elige el plan perfecto para tu negocio. Precios transparentes, sin costos ocultos.</p>
@@ -234,7 +234,7 @@ export default function HomePage() {
 
         {/* CTA Section */}
         <section className="py-xl">
-          <div className="container mx-auto px-margin-desktop">
+          <div className="container mx-auto px-4 md:px-16">
             <div className="bg-primary p-xl rounded-3xl relative overflow-hidden flex flex-col items-center text-center">
               <div className="relative z-10 max-w-2xl">
                 <h2 className="font-headline-xl text-headline-xl text-on-primary mb-md">¿Listo para elevar tu negocio de bienestar?</h2>
@@ -254,7 +254,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="bg-surface-container-highest border-t border-outline-variant mt-xl">
-        <div className="container mx-auto px-margin-desktop py-xl flex flex-col md:flex-row justify-between gap-xl">
+        <div className="container mx-auto px-4 md:px-16 py-xl flex flex-col md:flex-row justify-between gap-xl">
           <div className="max-w-sm">
             <div className="flex items-center gap-3 mb-md">
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-on-primary shadow-sm">
@@ -285,7 +285,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="container mx-auto px-margin-desktop py-lg border-t border-outline-variant flex flex-col md:flex-row justify-between items-center gap-md">
+        <div className="container mx-auto px-4 md:px-16 py-lg border-t border-outline-variant flex flex-col md:flex-row justify-between items-center gap-md">
           <p className="font-body-sm text-body-sm text-on-surface-variant">&copy; {new Date().getFullYear()} Nova Agenda. Todos los derechos reservados.</p>
           <div className="flex gap-6">
             <a className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Cookies</a>

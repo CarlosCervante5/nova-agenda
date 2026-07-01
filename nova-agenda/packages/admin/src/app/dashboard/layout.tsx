@@ -36,15 +36,17 @@ function Sidebar() {
     return true;
   });
 
+  const bottomTabs = filteredLinks.slice(0, 5);
+
   return (
     <>
-      <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-surface border-b border-outline-variant flex items-center px-4 z-50">
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-surface border-b border-outline-variant flex items-center px-3 z-50">
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 hover:bg-surface-container-high rounded-lg">
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <div className="flex items-center gap-3 ml-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
-            <span className="material-symbols-outlined text-lg">spa</span>
+        <div className="flex items-center gap-2 ml-2">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+            <span className="material-symbols-outlined text-sm">spa</span>
           </div>
           <span className="font-headline-md text-headline-md font-bold text-primary">Nova Agenda</span>
         </div>
@@ -99,6 +101,25 @@ function Sidebar() {
           </button>
         </div>
       </aside>
+
+      {/* Mobile Bottom Tab Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-outline-variant flex items-center justify-around z-50 safe-bottom">
+        {bottomTabs.map((link) => {
+          const isActive = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ${
+                isActive ? 'text-primary' : 'text-on-surface-variant'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[22px]">{link.icon}</span>
+              <span className="text-[10px] font-medium leading-none">{link.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }
@@ -132,13 +153,13 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 md:ml-[280px] min-h-screen flex flex-col">
-        <header className="flex justify-between items-center w-full px-lg h-16 sticky top-0 z-30 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md bg-opacity-90">
+        <header className="hidden md:flex justify-between items-center w-full px-lg h-16 sticky top-0 z-30 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md bg-opacity-90">
           <div className="flex items-center gap-4">
             <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Resumen</h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pl-4 border-l border-outline-variant">
-              <div className="text-right hidden sm:block">
+              <div className="text-right">
                 <p className="font-label-md text-label-md text-on-surface">{user.name}</p>
                 <p className="font-label-sm text-label-sm text-on-surface-variant">{user.role}</p>
               </div>
@@ -148,7 +169,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <div className="p-lg lg:p-xl flex-1">
+        <div className="p-3 pt-17 md:p-lg lg:p-xl flex-1 pb-24 md:pb-lg">
           {children}
         </div>
       </main>
