@@ -39,9 +39,9 @@ export default function SettingsPage() {
   async function loadConfig() {
     try {
       const data = await api.getPlatformConfig();
-      if (data.stripe) setStripe(data.stripe);
-      if (data.evo_cloud) setEvoCloud(data.evo_cloud);
-      if (data.openai) setOpenai(data.openai);
+      if (data.stripe) setStripe(data.stripe as typeof stripe);
+      if (data.evo_cloud) setEvoCloud(data.evo_cloud as typeof evoCloud);
+      if (data.openai) setOpenai(data.openai as typeof openai);
     } catch (error) {
       console.error('Error loading config:', error);
     } finally {
