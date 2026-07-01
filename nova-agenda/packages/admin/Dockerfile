@@ -15,4 +15,4 @@ COPY --from=base /app/next.config.js ./
 COPY --from=base /app/public ./public
 
 EXPOSE 3002
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npm start -- -p ${PORT:-3002}"]

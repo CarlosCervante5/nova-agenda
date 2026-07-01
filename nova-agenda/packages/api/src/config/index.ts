@@ -11,7 +11,7 @@ const defaultOrigins = [
 ];
 
 export const config = {
-  port: parseInt(process.env.API_PORT || '3001', 10),
+  port: parseInt(process.env.PORT || process.env.API_PORT || '3001', 10),
   jwtSecret: process.env.JWT_SECRET || 'dev-secret',
   corsOrigin: process.env.CORS_ORIGIN?.split(',') || defaultOrigins,
   baseDomain: process.env.MULTI_TENANT_BASE_DOMAIN || 'localhost',
