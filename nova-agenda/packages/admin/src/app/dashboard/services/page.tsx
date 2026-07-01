@@ -106,52 +106,83 @@ export default function ServicesPage() {
         </div>
       )}
 
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-surface-container-low">
-              <tr>
-                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Nombre</th>
-                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Duración</th>
-                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Precio</th>
-                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Estado</th>
-                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase text-right">Acciones</th>
+      {/* Desktop Table */}
+      <div className="hidden md:block bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead className="bg-surface-container-low">
+            <tr>
+              <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Nombre</th>
+              <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Duración</th>
+              <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Precio</th>
+              <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Estado</th>
+              <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-outline-variant">
+            {services.map((service) => (
+              <tr key={service.id} className="hover:bg-surface-container-low/50 transition-colors">
+                <td className="p-lg">
+                  <div className="flex items-center gap-md">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-on-primary" style={{ backgroundColor: service.color }}>
+                      <span className="material-symbols-outlined">spa</span>
+                    </div>
+                    <div>
+                      <span className="font-label-md text-label-md text-on-surface block">{service.name}</span>
+                      {service.description && <span className="font-body-sm text-body-sm text-on-surface-variant block">{service.description}</span>}
+                    </div>
+                  </div>
+                </td>
+                <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">{service.duration} Min</td>
+                <td className="p-lg font-label-md text-label-md text-on-surface">{service.price ? `$${service.price.toFixed(2)}` : 'Gratis'}</td>
+                <td className="p-lg">
+                  <button onClick={() => toggleActive(service)}>
+                    <span className={`px-3 py-1 rounded-full font-label-sm text-label-sm ${service.isActive ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                      {service.isActive ? 'Activo' : 'Oculto'}
+                    </span>
+                  </button>
+                </td>
+                <td className="p-lg text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <button onClick={() => startEdit(service)} className="text-primary hover:underline font-label-md text-label-md mr-md">Editar</button>
+                    <button onClick={() => handleDelete(service.id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined">delete</span></button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant">
-              {services.map((service) => (
-                <tr key={service.id} className="hover:bg-surface-container-low/50 transition-colors">
-                  <td className="p-lg">
-                    <div className="flex items-center gap-md">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-on-primary" style={{ backgroundColor: service.color }}>
-                        <span className="material-symbols-outlined">spa</span>
-                      </div>
-                      <div>
-                        <span className="font-label-md text-label-md text-on-surface block">{service.name}</span>
-                        {service.description && <span className="font-body-sm text-body-sm text-on-surface-variant block">{service.description}</span>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">{service.duration} Min</td>
-                  <td className="p-lg font-label-md text-label-md text-on-surface">{service.price ? `$${service.price.toFixed(2)}` : 'Gratis'}</td>
-                  <td className="p-lg">
-                    <button onClick={() => toggleActive(service)}>
-                      <span className={`px-3 py-1 rounded-full font-label-sm text-label-sm ${service.isActive ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-surface-variant'}`}>
-                        {service.isActive ? 'Activo' : 'Oculto'}
-                      </span>
-                    </button>
-                  </td>
-                  <td className="p-lg text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => startEdit(service)} className="text-primary hover:underline font-label-md text-label-md mr-md">Editar</button>
-                      <button onClick={() => handleDelete(service.id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {services.map((service) => (
+          <div key={service.id} className="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-on-primary flex-shrink-0" style={{ backgroundColor: service.color }}>
+                <span className="material-symbols-outlined">spa</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="font-label-md text-label-md text-on-surface block truncate">{service.name}</span>
+                {service.description && <span className="font-body-sm text-body-sm text-on-surface-variant block truncate">{service.description}</span>}
+              </div>
+              <button onClick={() => toggleActive(service)} className="flex-shrink-0">
+                <span className={`px-3 py-1 rounded-full font-label-sm text-label-sm ${service.isActive ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                  {service.isActive ? 'Activo' : 'Oculto'}
+                </span>
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4 text-on-surface-variant">
+                <span className="font-body-sm text-body-sm">{service.duration} min</span>
+                <span className="font-label-md text-label-md text-on-surface">{service.price ? `$${service.price.toFixed(2)}` : 'Gratis'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => startEdit(service)} className="text-primary hover:underline font-label-md text-label-md">Editar</button>
+                <button onClick={() => handleDelete(service.id)} className="p-2 hover:bg-error-container rounded-lg text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

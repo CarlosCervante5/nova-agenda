@@ -108,7 +108,8 @@ export default function ClientsPage() {
         </div>
       )}
 
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+      {/* Desktop Table */}
+      <div className="hidden md:block bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low border-b border-outline-variant">
@@ -147,7 +148,7 @@ export default function ClientsPage() {
                     </span>
                   </td>
                   <td className="px-lg py-4">
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-2">
                       <button onClick={() => startEdit(client)} className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">edit</span></button>
                       <button onClick={() => handleDelete(client.id)} className="p-2 hover:bg-error-container rounded-lg text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
                     </div>
@@ -160,6 +161,34 @@ export default function ClientsPage() {
         <div className="px-lg py-4 bg-surface-container-low flex justify-between items-center">
           <p className="font-label-sm text-label-sm text-on-surface-variant">Mostrando {clients.length} de {clients.length} negocios</p>
         </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {clients.map((client) => (
+          <div key={client.id} className="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-on-primary font-bold flex-shrink-0" style={{ backgroundColor: client.primaryColor }}>
+                {client.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-label-md text-label-md text-on-surface truncate">{client.name}</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">{client.email}</p>
+              </div>
+              <span className="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-[10px] font-bold uppercase flex-shrink-0">{client.plan}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-4 text-on-surface-variant">
+                <span className="font-body-sm text-body-sm">{client._count?.services || 0} servicios</span>
+                <span className="font-body-sm text-body-sm">{client._count?.bookings || 0} citas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => startEdit(client)} className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors"><span className="material-symbols-outlined text-[20px]">edit</span></button>
+                <button onClick={() => handleDelete(client.id)} className="p-2 hover:bg-error-container rounded-lg text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

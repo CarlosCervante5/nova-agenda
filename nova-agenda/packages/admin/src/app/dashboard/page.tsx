@@ -131,13 +131,13 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-        <div className="lg:col-span-2 glass-card rounded-xl p-lg flex flex-col h-[400px]">
-          <div className="flex justify-between items-center mb-xl">
+        <div className="lg:col-span-2 glass-card rounded-xl p-lg flex flex-col h-[300px] sm:h-[400px]">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-xl gap-3">
             <div>
               <h3 className="font-headline-md text-headline-md text-on-surface">Crecimiento de Ingresos</h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Análisis mensual de suscripciones</p>
             </div>
-            <div className="flex bg-surface-container rounded-lg p-1">
+            <div className="flex bg-surface-container rounded-lg p-1 self-start">
               <button className="px-3 py-1 bg-surface-container-lowest shadow-sm rounded-md text-label-sm font-label-sm text-primary">Mensual</button>
               <button className="px-3 py-1 text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors">Trimestral</button>
             </div>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="glass-card rounded-xl overflow-hidden shadow-sm">
-        <div className="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+        <div className="px-lg py-md border-b border-outline-variant flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-surface-container-low">
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface">Agenda de Hoy</h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">{recentBookings.length} citas programadas</p>
@@ -229,26 +229,28 @@ export default function DashboardPage() {
             <div className="p-lg text-center text-on-surface-variant font-body-sm text-body-sm">No hay citas hoy</div>
           ) : (
             recentBookings.map((booking) => (
-              <div key={booking.id} className="flex items-center gap-lg p-md hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
-                <div className="w-20 text-center">
-                  <span className="font-label-md text-label-md block text-primary">{booking.startTime}</span>
+              <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-lg p-md hover:bg-surface-container-low/50 transition-colors cursor-pointer group">
+                <div className="flex sm:block items-center gap-3 sm:gap-0 sm:w-20 sm:text-center">
+                  <span className="font-label-md text-label-md text-primary">{booking.startTime}</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant">{booking.service?.duration || 60} min</span>
                 </div>
-                <div className="flex-1 border-l-2 border-secondary-container pl-lg">
+                <div className="flex-1 sm:border-l-2 sm:border-secondary-container sm:pl-lg">
                   <h4 className="font-label-md text-label-md text-on-surface">{booking.service?.name}</h4>
                   <p className="font-body-sm text-body-sm text-on-surface-variant">Cliente: {booking.customerName}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full font-label-sm text-label-sm ${
-                  booking.status === 'CONFIRMED' ? 'bg-secondary-container text-on-secondary-container' :
-                  booking.status === 'PENDING' ? 'bg-tertiary-fixed/30 text-on-tertiary-fixed-variant' :
-                  booking.status === 'CANCELLED' ? 'bg-error-container text-on-error-container' :
-                  'bg-surface-container-high text-on-surface-variant'
-                }`}>
-                  {booking.status === 'CONFIRMED' ? 'Confirmada' :
-                   booking.status === 'PENDING' ? 'Pendiente' :
-                   booking.status === 'CANCELLED' ? 'Cancelada' : booking.status}
-                </span>
-                <span className="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full font-label-sm text-label-sm ${
+                    booking.status === 'CONFIRMED' ? 'bg-secondary-container text-on-secondary-container' :
+                    booking.status === 'PENDING' ? 'bg-tertiary-fixed/30 text-on-tertiary-fixed-variant' :
+                    booking.status === 'CANCELLED' ? 'bg-error-container text-on-error-container' :
+                    'bg-surface-container-high text-on-surface-variant'
+                  }`}>
+                    {booking.status === 'CONFIRMED' ? 'Confirmada' :
+                     booking.status === 'PENDING' ? 'Pendiente' :
+                     booking.status === 'CANCELLED' ? 'Cancelada' : booking.status}
+                  </span>
+                  <span className="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
+                </div>
               </div>
             ))
           )}
