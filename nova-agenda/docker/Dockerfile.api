@@ -28,6 +28,7 @@ COPY --from=base /app/packages/api/dist ./dist
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages/api/package.json ./
 COPY --from=base /app/packages/api/prisma ./prisma
+COPY --from=base /app/packages/api/node_modules ./packages/api/node_modules
 
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/index.js"]
+CMD ["sh", "-c", "cd packages/api && npx prisma db push && cd /app && node dist/index.js"]
