@@ -87,7 +87,6 @@ router.post('/', async (req, res: Response) => {
 
     const booking = await prisma.booking.create({
       data: {
-        clientSlug,
         clientId: client.id,
         serviceId,
         customerName,

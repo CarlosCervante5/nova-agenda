@@ -1,27 +1,33 @@
-# API Dockerfile
+# API Dockerfile - Build from monorepo root
 FROM node:20-alpine AS base
 WORKDIR /app
 
-# Install dependencies
-COPY package.json ./
+# Copy workspace root
+COPY package.json turbo.json ./
+
+# Copy API package.json and prisma schema
+COPY packages/api/package.json ./packages/api/
+COPY packages/api/prisma ./packages/api/prisma/
+
+# Install all dependencies
 RUN npm install
 
-# Copy source
-COPY . .
+# Copy API source
+COPY packages/api ./packages/api/
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN cd packages/api && npx prisma generate
 
-# Build
-RUN npm run build
+# Build API
+RUN cd packages/api && npm run build
 
 # Production
 FROM node:20-alpine AS production
 WORKDIR /app
-COPY --from=base /app/dist ./dist
+COPY --from=base /app/packages/api/dist ./dist
 COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/package.json ./
-COPY --from=base /app/prisma ./prisma
+COPY --from=base /app/packages/api/package.json ./
+COPY --from=base /app/packages/api/prisma ./prisma
 
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

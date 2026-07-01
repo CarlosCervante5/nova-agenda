@@ -144,7 +144,7 @@ export class WhatsAppHandler {
     const service = await prisma.service.findFirst({
       where: {
         clientId,
-        name: { contains: data.serviceName, mode: 'insensitive' },
+        name: { contains: data.serviceName },
         isActive: true,
       },
     });
