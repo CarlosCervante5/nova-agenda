@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import PasswordInput from '@/components/PasswordInput';
+import { useAuth } from '@/lib/auth';
 
 const PLANS = {
   FREE: { name: 'Gratuito', price: 0, color: 'bg-surface-container-high text-on-surface-variant', icon: 'spa' },
@@ -23,6 +24,7 @@ function RegisterForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { refreshUser } = useAuth();
 
   const selectedPlan = PLANS[plan as keyof typeof PLANS] || PLANS.FREE;
 
@@ -32,6 +34,7 @@ function RegisterForm() {
     setLoading(true);
     try {
       await api.register(businessName, ownerName, email, password, plan);
+      await refreshUser();
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Error al crear la cuenta');
