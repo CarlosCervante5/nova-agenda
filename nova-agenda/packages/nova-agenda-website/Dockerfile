@@ -5,7 +5,7 @@ COPY package.json ./
 RUN npm install
 COPY . .
 
-ARG NEXT_PUBLIC_ADMIN_URL=https://adorable-learning-production.up.railway.app
+ARG NEXT_PUBLIC_ADMIN_URL=https://spirited-determination-production-a075.up.railway.app
 ENV NEXT_PUBLIC_ADMIN_URL=${NEXT_PUBLIC_ADMIN_URL}
 
 RUN npm run build
