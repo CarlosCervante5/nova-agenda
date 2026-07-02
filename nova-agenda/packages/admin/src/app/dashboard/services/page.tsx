@@ -11,11 +11,35 @@ export default function ServicesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
   const [form, setForm] = useState({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' });
+  const [currentPlan, setCurrentPlan] = useState('FREE');
+  const [serviceUsage, setServiceUsage] = useState<{ used: number; limit: number | null } | null>(null);
 
   useEffect(() => { loadServices(); }, []);
 
   async function loadServices() {
-    try { setServices(await api.getServices()); } finally { setLoading(false); }
+    try {
+      const [servicesData, plansData] = await Promise.all([
+        api.getServices(),
+        user?.clientId ? api.getPlans().catch(() => null) : Promise.resolve(null),
+      ]);
+      setServices(servicesData);
+      if (plansData) {
+        setCurrentPlan(plansData.currentPlan);
+        setServiceUsage(plansData.usage?.services ?? null);
+      }
+    } finally { setLoading(false); }
+  }
+
+  const serviceLimit = serviceUsage?.limit ?? null;
+  const serviceUsed = serviceUsage?.used ?? services.length;
+  const atServiceLimit = serviceLimit !== null && serviceUsed >= serviceLimit;
+  const upgradePlan = currentPlan === 'FREE' ? 'Profesional' : 'Business';
+
+  function openCreateForm() {
+    if (atServiceLimit) return;
+    setShowForm(true);
+    setEditing(null);
+    setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,15 +85,57 @@ export default function ServicesPage() {
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Servicios</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">Configura tu menú de servicios y precios</p>
+          {serviceLimit !== null && (
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              {serviceUsed} de {serviceLimit} servicios en tu plan
+            </p>
+          )}
         </div>
         <button
-          onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' }); }}
-          className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          onClick={openCreateForm}
+          disabled={atServiceLimit}
+          className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
           Agregar Servicio
         </button>
       </div>
+
+      {serviceLimit !== null && (
+        <div className={`p-lg rounded-xl border flex flex-col sm:flex-row sm:items-center gap-md ${
+          atServiceLimit
+            ? 'bg-error-container/20 border-error-container text-on-error-container'
+            : 'bg-surface-container-low border-outline-variant'
+        }`}>
+          <div className="flex items-start gap-3 flex-1">
+            <span className="material-symbols-outlined mt-0.5">{atServiceLimit ? 'block' : 'info'}</span>
+            <div>
+              <p className="font-label-md text-label-md text-on-surface mb-1">
+                {atServiceLimit ? 'Límite de servicios alcanzado' : 'Uso de servicios de tu plan'}
+              </p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                {atServiceLimit
+                  ? `Tu plan permite hasta ${serviceLimit} servicios. Actualiza a ${upgradePlan} para agregar más.`
+                  : `Te quedan ${serviceLimit - serviceUsed} servicio${serviceLimit - serviceUsed === 1 ? '' : 's'} disponible${serviceLimit - serviceUsed === 1 ? '' : 's'} en tu plan actual.`}
+              </p>
+              <div className="mt-3 h-2 rounded-full bg-surface-container-high overflow-hidden max-w-xs">
+                <div
+                  className={`h-full rounded-full transition-all ${atServiceLimit ? 'bg-error' : 'bg-primary'}`}
+                  style={{ width: `${Math.min((serviceUsed / serviceLimit) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          {atServiceLimit && (
+            <a
+              href="/dashboard/billing"
+              className="px-lg py-2.5 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold text-center whitespace-nowrap hover:opacity-90 transition-all"
+            >
+              Ver planes
+            </a>
+          )}
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
