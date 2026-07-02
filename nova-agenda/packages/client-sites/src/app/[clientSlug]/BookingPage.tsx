@@ -2,16 +2,19 @@
 
 import { useState } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { getAvailableSlots, createBooking, ClientInfo } from '@/lib/api';
+import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram } from '@/lib/api';
+import LoyaltySection from './LoyaltySection';
 
 interface Props {
   client: ClientInfo;
   clientSlug: string;
+  loyaltyProgram?: LoyaltyProgram | null;
 }
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-export default function BookingPage({ client, clientSlug }: Props) {
+export default function BookingPage({ client, clientSlug, loyaltyProgram }: Props) {
+  const [activeTab, setActiveTab] = useState<'booking' | 'loyalty'>('booking');
   const [step, setStep] = useState<'service' | 'datetime' | 'confirm' | 'success'>('service');
   const [selectedService, setSelectedService] = useState<ClientInfo['services'][0] | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -78,14 +81,47 @@ export default function BookingPage({ client, clientSlug }: Props) {
             <span className="material-symbols-outlined text-3xl text-on-secondary-container">check_circle</span>
           </div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">¡Reserva Confirmada!</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-xl">
+          <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
             Tu cita de <strong>{selectedService?.name}</strong> el{' '}
             <strong>{format(selectedDate, "d 'de' MMMM, yyyy")}</strong> a las <strong>{selectedSlot}</strong> ha sido reservada.
           </p>
-          <button onClick={() => { setStep('service'); setSelectedService(null); setSelectedSlot(null); setForm({ customerName: '', customerEmail: '', customerPhone: '', notes: '' }); }}
-            className="px-lg py-3 border border-primary text-primary rounded-lg font-label-md text-label-md font-bold hover:bg-primary/5 transition-all">
-            Reservar Otra Cita
-          </button>
+
+          {loyaltyProgram && (
+            <div
+              className="mb-xl p-4 rounded-xl border text-left flex items-start gap-3"
+              style={{ backgroundColor: (loyaltyProgram.stampColor || client.primaryColor) + '15', borderColor: (loyaltyProgram.stampColor || client.primaryColor) + '40' }}
+            >
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-on-primary"
+                style={{ backgroundColor: loyaltyProgram.stampColor || client.primaryColor }}
+              >
+                <span className="material-symbols-outlined">{loyaltyProgram.stampIcon}</span>
+              </div>
+              <div>
+                <p className="font-medium text-on-surface text-sm mb-1">¡Gana un sello de fidelidad!</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Cuando completes tu visita, recibirás un sello en <strong>{loyaltyProgram.name}</strong>.
+                  {form.customerPhone ? ' Consulta tu tarjeta con tu teléfono.' : ' Usa tu teléfono para consultar tu tarjeta.'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3">
+            {loyaltyProgram && (
+              <button
+                onClick={() => { setActiveTab('loyalty'); setStep('service'); setSelectedService(null); setSelectedSlot(null); }}
+                className="w-full px-lg py-3 text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg hover:opacity-90 transition-all"
+                style={{ backgroundColor: client.primaryColor }}
+              >
+                Ver Programa de Fidelidad
+              </button>
+            )}
+            <button onClick={() => { setStep('service'); setSelectedService(null); setSelectedSlot(null); setForm({ customerName: '', customerEmail: '', customerPhone: '', notes: '' }); }}
+              className="px-lg py-3 border border-primary text-primary rounded-lg font-label-md text-label-md font-bold hover:bg-primary/5 transition-all">
+              Reservar Otra Cita
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -101,12 +137,57 @@ export default function BookingPage({ client, clientSlug }: Props) {
             </div>
             <span className="font-headline-md text-on-surface">{client.name}</span>
           </div>
-          <button className="text-on-surface-variant hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">help_outline</span>
-          </button>
+          {loyaltyProgram && (
+            <nav className="flex items-center gap-1 bg-surface-container-low rounded-lg p-1">
+              <button
+                onClick={() => setActiveTab('booking')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  activeTab === 'booking'
+                    ? 'bg-surface-container-lowest text-on-surface shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Reservar
+              </button>
+              <button
+                onClick={() => setActiveTab('loyalty')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === 'loyalty'
+                    ? 'bg-surface-container-lowest text-on-surface shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">loyalty</span>
+                Fidelidad
+              </button>
+            </nav>
+          )}
         </div>
       </header>
 
+      {activeTab === 'loyalty' && loyaltyProgram ? (
+        <>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+          <LoyaltySection
+            clientId={client.id}
+            clientName={client.name}
+            primaryColor={client.primaryColor}
+            program={loyaltyProgram}
+          />
+        </main>
+        <footer className="mt-12 bg-surface-container-lowest border-t border-outline-variant py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: client.primaryColor + '30', color: client.primaryColor }}>
+                <span className="material-symbols-outlined text-sm">spa</span>
+              </div>
+              <span className="font-headline-md text-on-surface text-lg">{client.name}</span>
+            </div>
+          </div>
+        </footer>
+        </>
+      ) : (
+      <>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-8">
@@ -254,6 +335,30 @@ export default function BookingPage({ client, clientSlug }: Props) {
                   </div>
                 </div>
 
+                {loyaltyProgram && (
+                  <div
+                    className="mb-xl p-4 rounded-xl border flex items-start gap-3"
+                    style={{ backgroundColor: (loyaltyProgram.stampColor || client.primaryColor) + '12', borderColor: (loyaltyProgram.stampColor || client.primaryColor) + '35' }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-on-primary"
+                      style={{ backgroundColor: loyaltyProgram.stampColor || client.primaryColor }}
+                    >
+                      <span className="material-symbols-outlined">{loyaltyProgram.stampIcon}</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-on-surface text-sm mb-1">
+                        Sello de fidelidad al completar tu visita
+                      </p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                        Al asistir a tu cita, recibirás un sello en <strong>{loyaltyProgram.name}</strong>.
+                        Necesitas <strong>{loyaltyProgram.stampsToReward} sellos</strong> para desbloquear recompensas.
+                        {!form.customerPhone && ' Agrega tu teléfono para vincular tu tarjeta.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {error && (
                   <div className="p-4 bg-error-container text-on-error-container rounded-lg flex items-center gap-3 mb-lg">
                     <span className="material-symbols-outlined">error</span>
@@ -340,6 +445,29 @@ export default function BookingPage({ client, clientSlug }: Props) {
                   ¿Necesitas cambiar? Cancela gratis hasta 24 horas antes de tu cita.
                 </p>
               </div>
+
+              {loyaltyProgram && (
+                <button
+                  onClick={() => setActiveTab('loyalty')}
+                  className="w-full rounded-2xl p-lg border border-outline-variant bg-surface-container-lowest text-left hover:shadow-md transition-all"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-on-primary"
+                      style={{ backgroundColor: loyaltyProgram.stampColor || client.primaryColor }}
+                    >
+                      <span className="material-symbols-outlined">{loyaltyProgram.stampIcon}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-on-surface">{loyaltyProgram.name}</h3>
+                      <p className="text-xs text-on-surface-variant">Programa de fidelidad</p>
+                    </div>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    Acumula sellos con cada visita y desbloquea recompensas.
+                  </p>
+                </button>
+              )}
             </div>
           </aside>
         </div>
@@ -360,6 +488,8 @@ export default function BookingPage({ client, clientSlug }: Props) {
           </div>
         </div>
       </footer>
+      </>
+      )}
     </div>
   );
 }

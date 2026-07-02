@@ -30,6 +30,7 @@ model Client {
   workingHours  WorkingHours[]
   whatsappConfig WhatsAppConfig?
   whatsappLogs   WhatsAppLog[]
+  loyaltyProgram LoyaltyProgram?
 
   @@map("clients")
 }
@@ -85,6 +86,7 @@ model Booking {
   clientId      String
   service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   serviceId     String
+  loyaltyStamp  LoyaltyStamp?
 
   @@map("bookings")
 }
@@ -135,6 +137,87 @@ model WhatsAppLog {
   client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@map("whatsapp_logs")
+}
+
+model LoyaltyProgram {
+  id            String    @id @default(cuid())
+  clientId      String    @unique
+  name          String
+  description   String?
+  stampsToReward Int      @default(10)
+  isActive      Boolean   @default(false)
+  stampIcon     String    @default("local_fire_department")
+  stampColor    String    @default("#5950b6")
+  backgroundColor String  @default("#ffffff")
+  textColor     String    @default("#191c1e")
+  enableWhatsApp Boolean  @default(false)
+  welcomeMessage String?  @default("¡Bienvenido al programa de fidelidad! Recibirás un sello por cada visita.")
+  rewardMessage  String?  @default("¡Felicitaciones! Has completado tu tarjeta y ganado una recompensa.")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  rewards       LoyaltyReward[]
+  cards         LoyaltyCard[]
+
+  @@map("loyalty_programs")
+}
+
+model LoyaltyReward {
+  id            String    @id @default(cuid())
+  programId     String
+  name          String
+  description   String?
+  stampsRequired Int
+  rewardType    String    @default("SERVICE_DISCOUNT") // SERVICE_DISCOUNT, FREE_SERVICE, PERCENTAGE_DISCOUNT, FIXED_AMOUNT, CUSTOM
+  value         Float     // discount amount, percentage, or service ID reference
+  serviceId     String?   // for FREE_SERVICE type
+  isActive      Boolean   @default(true)
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  program       LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_rewards")
+}
+
+model LoyaltyCard {
+  id            String    @id @default(cuid())
+  programId     String
+  customerName  String
+  customerEmail String?
+  customerPhone String?
+  stampsEarned  Int       @default(0)
+  stampsRedeemed Int      @default(0)
+  lastVisitAt   DateTime?
+  completedAt   DateTime?
+  isCompleted   Boolean   @default(false)
+  metadata      String?   // JSON for extra data
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  program       LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  stamps        LoyaltyStamp[]
+
+  @@unique([programId, customerPhone])
+  @@unique([programId, customerEmail])
+  @@map("loyalty_cards")
+}
+
+model LoyaltyStamp {
+  id            String    @id @default(cuid())
+  cardId        String
+  bookingId     String?   @unique
+  serviceId     String?
+  stampsGiven   Int       @default(1)
+  note          String?
+  createdAt     DateTime  @default(now())
+
+  card          LoyaltyCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@map("loyalty_stamps")
 }
 
 model PlatformConfig {

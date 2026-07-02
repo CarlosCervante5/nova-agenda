@@ -211,6 +211,23 @@ class ApiClient {
   async createPortalSession() {
     return this.request<{ url: string }>('/api/stripe/portal', { method: 'POST' });
   }
+
+  // Loyalty
+  async getPrograms() {
+    return this.request<any[]>('/api/loyalty/programs');
+  }
+  async createProgram(data: Record<string, unknown>) {
+    return this.request<any>('/api/loyalty/programs', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateProgram(clientId: string, data: Record<string, unknown>) {
+    return this.request<any>(`/api/loyalty/programs/${clientId}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteProgram(clientId: string) {
+    return this.request(`/api/loyalty/programs/${clientId}`, { method: 'DELETE' });
+  }
+  async toggleLoyaltyProgram(clientId: string) {
+    return this.request<any>(`/api/loyalty/programs/${clientId}/toggle`, { method: 'PATCH' });
+  }
 }
 
 export const api = new ApiClient();

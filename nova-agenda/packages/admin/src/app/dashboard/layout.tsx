@@ -22,6 +22,7 @@ function Sidebar() {
     { href: '/dashboard', label: 'Panel', icon: 'dashboard' },
     { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN', 'ADMIN'] },
     { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
+    { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
     { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat', minPlan: 'PRO' },
     { href: '/dashboard/billing', label: 'Facturación', icon: 'payments' },
     { href: '/dashboard/settings', label: 'Configuración', icon: 'settings', roles: ['SUPER_ADMIN'] },

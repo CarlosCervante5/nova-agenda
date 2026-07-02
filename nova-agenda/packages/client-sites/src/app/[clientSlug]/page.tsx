@@ -1,4 +1,4 @@
-import { getClientInfo } from '@/lib/api';
+import { getClientInfo, getLoyaltyProgram } from '@/lib/api';
 import BookingPage from './BookingPage';
 import { notFound } from 'next/navigation';
 
@@ -35,5 +35,7 @@ export default async function ClientPage({ params }: { params: { clientSlug: str
     );
   }
 
-  return <BookingPage client={client} clientSlug={params.clientSlug} />;
+  const loyaltyProgram = await getLoyaltyProgram(client.id);
+
+  return <BookingPage client={client} clientSlug={params.clientSlug} loyaltyProgram={loyaltyProgram} />;
 }

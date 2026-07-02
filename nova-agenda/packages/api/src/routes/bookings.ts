@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { awardLoyaltyStampForBooking } from '../services/loyalty';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -133,6 +134,12 @@ router.patch('/:id/status', authenticate, async (req: AuthRequest, res: Response
       data: { status },
       include: { service: { select: { name: true, color: true } } },
     });
+
+    if (status === 'COMPLETED') {
+      awardLoyaltyStampForBooking(id).catch(err =>
+        console.error('[Loyalty] Error awarding stamp for booking:', err)
+      );
+    }
 
     res.json(updated);
   } catch (error) {

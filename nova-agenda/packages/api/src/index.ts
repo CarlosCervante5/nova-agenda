@@ -9,6 +9,7 @@ import publicRoutes from './routes/public';
 import whatsappRoutes from './routes/whatsapp';
 import platformConfigRoutes from './routes/platform-config';
 import stripeRoutes from './routes/stripe';
+import loyaltyRoutes from './routes/loyalty';
 import { whatsappHandler } from './services/whatsapp-handler';
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/platform-config', platformConfigRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/loyalty', loyaltyRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
