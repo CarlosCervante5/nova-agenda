@@ -6,7 +6,7 @@ export const PLAN_LIMITS = {
   FREE: {
     maxServices: 3,
     maxBookingsPerMonth: 50,
-    publicBooking: false,
+    publicBooking: true,
   },
   BASIC: {
     maxServices: 20,
@@ -110,7 +110,7 @@ export async function assertCanCreateBooking(
       ok: false,
       status: 403,
       code: 'PLAN_UPGRADE_REQUIRED',
-      error: 'El portal de reservas requiere el plan Profesional o superior.',
+      error: 'El portal de reservas no está disponible en tu plan actual.',
       currentPlan: plan,
       requiredPlan: 'BASIC',
     };

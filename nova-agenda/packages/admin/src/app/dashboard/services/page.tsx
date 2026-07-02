@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { api, Service } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -85,6 +86,10 @@ export default function ServicesPage() {
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Servicios</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">Configura tu menú de servicios y precios</p>
+          <Link href="/dashboard/booking" className="inline-flex items-center gap-1 mt-2 font-label-sm text-label-sm text-primary font-bold hover:underline">
+            <span className="material-symbols-outlined text-base">share</span>
+            Compartir formulario de agenda
+          </Link>
           {serviceLimit !== null && (
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
               {serviceUsed} de {serviceLimit} servicios en tu plan

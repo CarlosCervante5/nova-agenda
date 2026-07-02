@@ -2,7 +2,6 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { resolveTenant, TenantRequest } from '../middleware/auth';
-import { getPlanLevel } from '../middleware/plan-check';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -99,19 +98,6 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
 
     if (!client) {
       return res.status(400).json({ error: 'Client not found' });
-    }
-
-    // Plan check: FREE plan cannot use booking page
-    const fullClient = await prisma.client.findUnique({
-      where: { id: client.id },
-      select: { plan: true },
-    });
-
-    if (getPlanLevel(fullClient?.plan || 'FREE') < getPlanLevel('BASIC')) {
-      return res.status(403).json({
-        error: 'Este negocio no tiene acceso al sistema de reservas',
-        requiredPlan: 'BASIC',
-      });
     }
 
     if (!serviceId || !date) {
@@ -214,22 +200,6 @@ router.get('/client/:slug', async (req, res: Response) => {
 
     if (!client) {
       return res.status(404).json({ error: 'Client not found' });
-    }
-
-    // If FREE plan, return limited info (no booking capability)
-    if (getPlanLevel(client.plan) < getPlanLevel('BASIC')) {
-      return res.json({
-        id: client.id,
-        name: client.name,
-        slug: client.slug,
-        logo: client.logo,
-        primaryColor: client.primaryColor,
-        plan: client.plan,
-        services: [],
-        workingHours: [],
-        bookingDisabled: true,
-        message: 'Este negocio no tiene página de reservas. Actualiza a un plan Profesional.',
-      });
     }
 
     res.json(client);

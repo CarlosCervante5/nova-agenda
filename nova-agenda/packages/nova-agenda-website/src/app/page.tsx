@@ -185,7 +185,7 @@ export default function HomePage() {
                   <span className="text-on-surface-variant">/siempre</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Agenda de Citas Inteligente', 'Hasta 3 servicios', 'Hasta 50 citas/mes', 'Gestión básica de clientes'].map(f => (
+                  {['Agenda de Citas Inteligente', 'Formulario de reservas compartible', 'Hasta 3 servicios', 'Hasta 50 citas/mes'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm">{f}</span>
