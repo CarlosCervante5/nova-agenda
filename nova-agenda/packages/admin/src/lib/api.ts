@@ -1,4 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+/** En el navegador usamos rutas relativas; Next.js las proxya a la API vía middleware. */
+function getApiBaseUrl() {
+  if (typeof window !== 'undefined') return '';
+  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+}
 
 export interface User {
   id: string;
@@ -66,7 +70,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    const res = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers });
 
     if (res.status === 401) {
       this.token = null;
