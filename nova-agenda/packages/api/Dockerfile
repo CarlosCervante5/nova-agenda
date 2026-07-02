@@ -16,6 +16,7 @@ COPY --from=base /app/dist ./dist
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./
 COPY --from=base /app/prisma ./prisma
+COPY --from=base /app/scripts ./scripts
 
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]
+CMD ["sh", "scripts/start.sh"]

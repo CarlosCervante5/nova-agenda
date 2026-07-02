@@ -14,6 +14,11 @@ import { whatsappHandler } from './services/whatsapp-handler';
 
 const app = express();
 
+// Health check (before middleware — Railway probes this path)
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // CORS: allow all localhost origins including subdomains (e.g., demo.localhost:3002)
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
@@ -49,15 +54,21 @@ app.use('/api/platform-config', platformConfigRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// Start server — bind 0.0.0.0 for Railway/Docker
+const host = '0.0.0.0';
+app.listen(config.port, host, () => {
+  console.log(`🚀 API server running on http://${host}:${config.port}`);
 
-// Start server
-app.listen(config.port, () => {
-  console.log(`🚀 API server running on http://localhost:${config.port}`);
-  
   // Start WhatsApp reminder scheduler
   whatsappHandler.startReminderScheduler();
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Fatal] Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Fatal] Unhandled rejection:', reason);
+  process.exit(1);
 });
