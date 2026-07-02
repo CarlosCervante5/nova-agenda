@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
-const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const productionApi = 'https://nova-agenda-production.up.railway.app';
+const apiUrl =
+  process.env.API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production' ? productionApi : 'http://localhost:3001');
 
 const nextConfig = {
   async rewrites() {

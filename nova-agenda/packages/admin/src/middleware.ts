@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const PRODUCTION_API_URL = 'https://nova-agenda-production.up.railway.app';
+
 function getApiBaseUrl() {
-  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  const configured = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (configured) return configured.replace(/\/$/, '');
+
+  if (process.env.NODE_ENV === 'production') {
+    return PRODUCTION_API_URL;
+  }
+
+  return 'http://localhost:3001';
 }
 
 export function middleware(request: NextRequest) {
