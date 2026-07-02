@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { getClientPlanUsage } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -76,6 +77,7 @@ router.get('/plans', authenticate, async (req: AuthRequest, res: Response) => {
       currentPlan: client.plan,
       plans: PLANS,
       subscription,
+      usage: await getClientPlanUsage(clientId, client.plan),
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

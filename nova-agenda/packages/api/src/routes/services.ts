@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, AuthRequest } from '../middleware/auth';
+import { assertCanCreateService, sendPlanLimitError } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -48,6 +49,20 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     if (!name || !duration) {
       return res.status(400).json({ error: 'Name and duration are required' });
+    }
+
+    const owner = await prisma.client.findUnique({
+      where: { id: targetClientId },
+      select: { plan: true },
+    });
+
+    if (!owner) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+
+    const serviceLimit = await assertCanCreateService(targetClientId!, owner.plan);
+    if (!serviceLimit.ok) {
+      return sendPlanLimitError(res, serviceLimit);
     }
 
     const service = await prisma.service.create({

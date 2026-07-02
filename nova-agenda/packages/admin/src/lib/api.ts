@@ -200,7 +200,16 @@ class ApiClient {
 
   // Billing / Stripe
   async getPlans() {
-    return this.request<{ currentPlan: string; plans: Record<string, { name: string; price: number; features: string[] }>; subscription: any }>('/api/stripe/plans');
+    return this.request<{
+      currentPlan: string;
+      plans: Record<string, { name: string; price: number; features: string[] }>;
+      subscription: any;
+      usage?: {
+        services: { used: number; limit: number | null };
+        bookingsThisMonth: { used: number; limit: number | null };
+        publicBooking: boolean;
+      };
+    }>('/api/stripe/plans');
   }
   async createCheckoutSession(plan: string) {
     return this.request<{ sessionId: string; url: string }>('/api/stripe/checkout', {

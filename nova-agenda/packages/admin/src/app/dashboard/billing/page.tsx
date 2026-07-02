@@ -36,6 +36,11 @@ export default function BillingPage() {
   const [currentPlan, setCurrentPlan] = useState('FREE');
   const [plans, setPlans] = useState<Record<string, PlanInfo>>({});
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [usage, setUsage] = useState<{
+    services: { used: number; limit: number | null };
+    bookingsThisMonth: { used: number; limit: number | null };
+    publicBooking: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -60,6 +65,7 @@ export default function BillingPage() {
       setCurrentPlan(data.currentPlan);
       setPlans(data.plans);
       setSubscription(data.subscription);
+      setUsage(data.usage || null);
     } catch (error) {
       console.error('Error loading plans:', error);
     } finally {
@@ -146,6 +152,24 @@ export default function BillingPage() {
             </div>
           )}
         </div>
+        {usage && (
+          <div className="mt-lg pt-lg border-t border-outline-variant grid grid-cols-1 sm:grid-cols-2 gap-md">
+            <div className="p-md rounded-lg bg-surface-container-low">
+              <p className="font-label-sm text-label-sm text-on-surface-variant mb-1">Servicios</p>
+              <p className="font-headline-md text-on-surface">
+                {usage.services.used}
+                {usage.services.limit !== null ? ` / ${usage.services.limit}` : ' (ilimitados)'}
+              </p>
+            </div>
+            <div className="p-md rounded-lg bg-surface-container-low">
+              <p className="font-label-sm text-label-sm text-on-surface-variant mb-1">Citas este mes</p>
+              <p className="font-headline-md text-on-surface">
+                {usage.bookingsThisMonth.used}
+                {usage.bookingsThisMonth.limit !== null ? ` / ${usage.bookingsThisMonth.limit}` : ' (ilimitadas)'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Plan Cards */}

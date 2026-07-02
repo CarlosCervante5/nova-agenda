@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
+import { assertCanCreateBooking, sendPlanLimitError } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -45,6 +46,80 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Create booking (authenticated — panel admin)
+router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const clientId = req.user!.clientId;
+    if (!clientId && req.user!.role !== 'SUPER_ADMIN') {
+      return res.status(400).json({ error: 'No client associated with this user' });
+    }
+
+    const targetClientId = req.user!.role === 'SUPER_ADMIN'
+      ? (req.body.clientId || clientId)
+      : clientId;
+
+    const { serviceId, customerName, customerEmail, customerPhone, date, startTime, notes } = req.body;
+
+    if (!targetClientId || !serviceId || !customerName || !date || !startTime) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const client = await prisma.client.findUnique({ where: { id: targetClientId } });
+    if (!client || !client.isActive) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+
+    const bookingLimit = await assertCanCreateBooking(client.id, client.plan);
+    if (!bookingLimit.ok) {
+      return sendPlanLimitError(res, bookingLimit);
+    }
+
+    const service = await prisma.service.findUnique({ where: { id: serviceId } });
+    if (!service || service.clientId !== client.id) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const endMinutes = hours * 60 + minutes + service.duration;
+    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+
+    const bookingDate = new Date(date);
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        clientId: client.id,
+        date: bookingDate,
+        status: { not: 'CANCELLED' },
+        OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
+      },
+    });
+
+    if (conflict) {
+      return res.status(409).json({ error: 'Time slot is already booked' });
+    }
+
+    const booking = await prisma.booking.create({
+      data: {
+        clientId: client.id,
+        serviceId,
+        customerName,
+        customerEmail,
+        customerPhone,
+        date: bookingDate,
+        startTime,
+        endTime,
+        notes,
+        status: 'PENDING',
+      },
+      include: { service: { select: { name: true, color: true } } },
+    });
+
+    res.status(201).json(booking);
+  } catch (error) {
+    console.error('Create admin booking error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Create booking (public - for client portals)
 router.post('/', async (req, res: Response) => {
   try {
@@ -62,6 +137,11 @@ router.post('/', async (req, res: Response) => {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service || !service.isActive || service.clientId !== client.id) {
       return res.status(404).json({ error: 'Service not found' });
+    }
+
+    const bookingLimit = await assertCanCreateBooking(client.id, client.plan, { viaPublicPortal: true });
+    if (!bookingLimit.ok) {
+      return sendPlanLimitError(res, bookingLimit);
     }
 
     // Calculate end time
