@@ -1,3 +1,26 @@
+export interface LoyaltyStamp {
+  id: string;
+  cardId: string;
+  bookingId?: string;
+  createdAt: string;
+}
+
+export interface LoyaltyCard {
+  id: string;
+  programId: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  stampsEarned: number;
+  visitsCount?: number;
+  stampsRedeemed: number;
+  lastVisitAt?: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  stamps?: LoyaltyStamp[];
+  _count?: { stamps: number };
+}
+
 export interface LoyaltyReward {
   id: string;
   programId: string;

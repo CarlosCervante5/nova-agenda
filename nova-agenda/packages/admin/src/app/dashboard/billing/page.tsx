@@ -66,8 +66,9 @@ export default function BillingPage() {
       setPlans(data.plans);
       setSubscription(data.subscription);
       setUsage(data.usage || null);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading plans:', error);
+      setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudieron cargar los planes'));
     } finally {
       setLoading(false);
     }
@@ -75,13 +76,17 @@ export default function BillingPage() {
 
   async function handleUpgrade(plan: string) {
     setCheckoutLoading(plan);
+    setMessage('');
     try {
       const { url } = await api.createCheckoutSession(plan);
       if (url) {
         window.location.href = url;
+        return;
       }
-    } catch (error: any) {
-      setMessage('Error: ' + error.message);
+      setMessage('Error: Stripe no devolvió URL de checkout');
+    } catch (error: unknown) {
+      setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudo iniciar el pago'));
+    } finally {
       setCheckoutLoading(null);
     }
   }
@@ -121,6 +126,19 @@ export default function BillingPage() {
         }`}>
           <span className="material-symbols-outlined">{message.startsWith('Error') ? 'error' : 'check_circle'}</span>
           <p className="font-body-sm text-body-sm">{message}</p>
+        </div>
+      )}
+
+      {message.startsWith('Error') && message.includes('Stripe') && (
+        <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant">
+          <p className="font-label-md text-label-md text-on-surface mb-1">Configuración requerida</p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            El administrador de la plataforma debe configurar Stripe en{' '}
+            <strong>Configuración → Stripe</strong> o agregar las variables{' '}
+            <code className="text-xs">STRIPE_SECRET_KEY</code>,{' '}
+            <code className="text-xs">STRIPE_PRICE_ID_BASIC</code> y{' '}
+            <code className="text-xs">STRIPE_PRICE_ID_PRO</code> en el servicio API.
+          </p>
         </div>
       )}
 

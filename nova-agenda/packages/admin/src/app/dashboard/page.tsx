@@ -40,6 +40,15 @@ export default function DashboardPage() {
     }
   }
 
+  async function markCompleted(bookingId: string) {
+    try {
+      await api.updateBookingStatus(bookingId, 'COMPLETED');
+      await loadData();
+    } catch (error) {
+      console.error('Error al completar cita:', error);
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-gutter animate-pulse">
@@ -242,13 +251,24 @@ export default function DashboardPage() {
                   <span className={`px-3 py-1 rounded-full font-label-sm text-label-sm ${
                     booking.status === 'CONFIRMED' ? 'bg-secondary-container text-on-secondary-container' :
                     booking.status === 'PENDING' ? 'bg-tertiary-fixed/30 text-on-tertiary-fixed-variant' :
+                    booking.status === 'COMPLETED' ? 'bg-primary-container/30 text-primary' :
                     booking.status === 'CANCELLED' ? 'bg-error-container text-on-error-container' :
                     'bg-surface-container-high text-on-surface-variant'
                   }`}>
                     {booking.status === 'CONFIRMED' ? 'Confirmada' :
                      booking.status === 'PENDING' ? 'Pendiente' :
+                     booking.status === 'COMPLETED' ? 'Completada' :
                      booking.status === 'CANCELLED' ? 'Cancelada' : booking.status}
                   </span>
+                  {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
+                    <button
+                      onClick={() => markCompleted(booking.id)}
+                      className="px-2 py-1 rounded-lg text-xs font-bold bg-primary text-on-primary hover:opacity-90 transition-all"
+                      title="Marca la visita como completada y otorga 1 sello de fidelidad"
+                    >
+                      + Sello
+                    </button>
+                  )}
                   <span className="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
                 </div>
               </div>

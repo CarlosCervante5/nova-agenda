@@ -87,8 +87,10 @@ export default function LoyaltySection({ clientId, clientName, primaryColor, pro
     setLoading(false);
   };
 
-  const stampsToShow = Math.max(program.stampsToReward, card?.stampsEarned || 0);
   const earned = card?.stampsEarned || 0;
+  const visits = card?.visitsCount ?? earned;
+  const stampsToShow = Math.max(program.stampsToReward, earned);
+  const visitHistory = card?.stamps || [];
   const progress = Math.min((earned / program.stampsToReward) * 100, 100);
 
   return (
@@ -234,7 +236,7 @@ export default function LoyaltySection({ clientId, clientName, primaryColor, pro
 
             <div className="mb-md">
               <div className="flex justify-between text-sm mb-2 opacity-80">
-                <span>{earned} de {program.stampsToReward} sellos</span>
+                <span>{visits} {visits === 1 ? 'visita' : 'visitas'} · {earned} de {program.stampsToReward} sellos</span>
                 <span>{Math.round(progress)}%</span>
               </div>
               <div className="h-2 rounded-full bg-black/10 overflow-hidden">
@@ -270,6 +272,42 @@ export default function LoyaltySection({ clientId, clientName, primaryColor, pro
               </p>
             )}
           </div>
+
+          {visitHistory.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant">
+              <h3 className="font-headline-md text-on-surface mb-md flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">history</span>
+                Historial de visitas
+              </h3>
+              <div className="space-y-2">
+                {visitHistory.map((stamp, index) => (
+                  <div
+                    key={stamp.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-on-primary"
+                        style={{ backgroundColor: program.stampColor || primaryColor }}
+                      >
+                        <span className="material-symbols-outlined text-sm">{program.stampIcon}</span>
+                      </div>
+                      <span className="font-medium text-on-surface text-sm">
+                        Visita #{visitHistory.length - index}
+                      </span>
+                    </div>
+                    <span className="text-xs text-on-surface-variant">
+                      {new Date(stamp.createdAt).toLocaleDateString('es-MX', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {program.rewards.length > 0 && (
             <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant">

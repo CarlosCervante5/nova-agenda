@@ -241,6 +241,16 @@ class ApiClient {
   async toggleLoyaltyProgram(clientId: string) {
     return this.request<any>(`/api/loyalty/programs/${clientId}/toggle`, { method: 'PATCH' });
   }
+  async getLoyaltyCards(clientId?: string) {
+    const params = clientId ? `?clientId=${clientId}` : '';
+    return this.request<any[]>(`/api/loyalty/cards${params}`);
+  }
+  async addLoyaltyStamp(cardId: string, data?: { bookingId?: string; serviceId?: string }) {
+    return this.request<any>(`/api/loyalty/cards/${cardId}/stamps`, {
+      method: 'POST',
+      body: JSON.stringify(data || {}),
+    });
+  }
 }
 
 export const api = new ApiClient();

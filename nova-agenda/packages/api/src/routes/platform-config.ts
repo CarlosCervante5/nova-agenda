@@ -11,7 +11,9 @@ const CONFIG_SCHEMA: Record<string, Array<{ key: string; label: string; type: st
     { key: 'stripe_secret_key', label: 'Secret Key', type: 'password' },
     { key: 'stripe_publishable_key', label: 'Publishable Key', type: 'text' },
     { key: 'stripe_webhook_secret', label: 'Webhook Secret', type: 'password' },
-    { key: 'stripe_price_id', label: 'Price ID (suscripción)', type: 'text' },
+    { key: 'stripe_price_id_basic', label: 'Price ID — Plan Profesional ($49)', type: 'text' },
+    { key: 'stripe_price_id_pro', label: 'Price ID — Plan Business ($99)', type: 'text' },
+    { key: 'stripe_price_id', label: 'Price ID (legacy / fallback BASIC)', type: 'text' },
   ],
   evo_cloud: [
     { key: 'evo_cloud_api_url', label: 'API URL', type: 'text' },
@@ -37,6 +39,8 @@ router.get('/', authenticate, authorize('SUPER_ADMIN'), async (req, res) => {
         stripe_secret_key: configMap['stripe_secret_key'] || '',
         stripe_publishable_key: configMap['stripe_publishable_key'] || '',
         stripe_webhook_secret: configMap['stripe_webhook_secret'] || '',
+        stripe_price_id_basic: configMap['stripe_price_id_basic'] || configMap['stripe_price_id'] || '',
+        stripe_price_id_pro: configMap['stripe_price_id_pro'] || '',
         stripe_price_id: configMap['stripe_price_id'] || '',
       },
       evo_cloud: {

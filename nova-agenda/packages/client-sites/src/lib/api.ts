@@ -44,8 +44,10 @@ export interface LoyaltyCard {
   customerEmail?: string;
   customerPhone?: string;
   stampsEarned: number;
+  visitsCount?: number;
   isCompleted: boolean;
-  stamps?: { id: string; createdAt: string }[];
+  lastVisitAt?: string;
+  stamps?: { id: string; createdAt: string; bookingId?: string }[];
   program?: LoyaltyProgram;
 }
 

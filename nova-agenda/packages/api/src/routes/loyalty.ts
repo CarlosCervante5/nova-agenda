@@ -217,6 +217,42 @@ router.delete('/programs/:clientId', authenticate, async (req: AuthRequest, res:
   }
 });
 
+// List loyalty cards for a client (authenticated)
+router.get('/cards', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const clientId = (req.query.clientId as string) || req.user!.clientId;
+
+    if (!clientId) {
+      return res.status(400).json({ error: 'Client ID is required' });
+    }
+
+    if (!canAccessClient(req, clientId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const program = await prisma.loyaltyProgram.findUnique({ where: { clientId } });
+    if (!program) {
+      return res.json([]);
+    }
+
+    const cards = await prisma.loyaltyCard.findMany({
+      where: { programId: program.id },
+      include: {
+        stamps: { orderBy: { createdAt: 'desc' }, take: 10 },
+        _count: { select: { stamps: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    res.json(cards.map((card) => ({
+      ...card,
+      visitsCount: card.stampsEarned,
+    })));
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get client loyalty program (public)
 router.get('/programs/client/:clientId', async (req: AuthRequest, res: Response) => {
   try {
@@ -384,10 +420,14 @@ router.get('/cards/check', async (req: AuthRequest, res: Response) => {
           customerPhone: phone,
         },
       },
-      include: { stamps: true },
+      include: { stamps: { orderBy: { createdAt: 'desc' } } },
     });
 
-    res.json(card);
+    if (!card) {
+      return res.json(null);
+    }
+
+    res.json({ ...card, visitsCount: card.stampsEarned });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -401,7 +441,7 @@ router.get('/cards/customer/:cardId', async (req: AuthRequest, res: Response) =>
     const card = await prisma.loyaltyCard.findUnique({
       where: { id: cardId },
       include: {
-        stamps: true,
+        stamps: { orderBy: { createdAt: 'desc' } },
         program: { include: { rewards: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } } },
       },
     });
@@ -410,7 +450,7 @@ router.get('/cards/customer/:cardId', async (req: AuthRequest, res: Response) =>
       return res.status(404).json({ error: 'Card not found' });
     }
 
-    res.json(card);
+    res.json({ ...card, visitsCount: card.stampsEarned });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

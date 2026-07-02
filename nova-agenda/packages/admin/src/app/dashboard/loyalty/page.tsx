@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { LoyaltyProgram } from './interface';
 import { useAuth } from '@/lib/auth';
+import LoyaltyCardsPanel from './LoyaltyCardsPanel';
 
 export default function LoyaltyPage() {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export default function LoyaltyPage() {
   const [showProgramForm, setShowProgramForm] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<LoyaltyProgram | null>(null);
   const [formData, setFormData] = useState<Partial<LoyaltyProgram>>({});
+  const [activeTab, setActiveTab] = useState<'program' | 'cards'>('program');
 
   useEffect(() => {
     loadPrograms();
@@ -118,7 +120,7 @@ export default function LoyaltyPage() {
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Programa de Fidelidad</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Configura tu programa y actívalo cuando quieras mostrarlo a tus clientes en el portal público.
+            Tarjeta virtual con sellos: 1 sello por cada visita completada. Actívalo cuando quieras mostrarlo en el portal.
           </p>
         </div>
         <button
@@ -130,7 +132,32 @@ export default function LoyaltyPage() {
         </button>
       </div>
 
-      {showProgramForm && (
+      {programs.length > 0 && (
+        <div className="flex gap-2 border-b border-outline-variant">
+          <button
+            onClick={() => setActiveTab('program')}
+            className={`px-4 py-2 font-label-md text-label-md border-b-2 transition-colors ${
+              activeTab === 'program' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'
+            }`}
+          >
+            Configuración
+          </button>
+          <button
+            onClick={() => setActiveTab('cards')}
+            className={`px-4 py-2 font-label-md text-label-md border-b-2 transition-colors ${
+              activeTab === 'cards' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'
+            }`}
+          >
+            Tarjetas de clientes ({programs[0]?._count?.cards || 0})
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'cards' && programs[0] && (
+        <LoyaltyCardsPanel program={programs[0]} clientId={programs[0].clientId} />
+      )}
+
+      {activeTab === 'program' && showProgramForm && (
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-lg">
             {selectedProgram ? 'Editar Programa' : 'Crear Programa'}
@@ -146,12 +173,12 @@ export default function LoyaltyPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                   required
-                  placeholder="Ej: Puntos Feliz"
+                  placeholder="Ej: Tarjeta de Visitas"
                 />
               </div>
 
               <div>
-                <label className="font-label-md text-label-md text-on-surface mb-xs block">Puntos para Recompensar</label>
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Sellos por tarjeta (1 por visita)</label>
                 <input
                   type="number"
                   value={formData.stampsToReward}
@@ -160,6 +187,9 @@ export default function LoyaltyPage() {
                   min="1"
                   required
                 />
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Cada cita completada suma 1 sello. Al llenar la tarjeta el cliente gana la recompensa.
+                </p>
               </div>
 
               <div className="md:col-span-2">
@@ -250,6 +280,7 @@ export default function LoyaltyPage() {
         </div>
       )}
 
+      {activeTab === 'program' && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
         {programs.map((program) => (
           <div
@@ -335,6 +366,7 @@ export default function LoyaltyPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

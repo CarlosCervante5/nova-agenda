@@ -18,6 +18,8 @@ export default function SettingsPage() {
     stripe_secret_key: '',
     stripe_publishable_key: '',
     stripe_webhook_secret: '',
+    stripe_price_id_basic: '',
+    stripe_price_id_pro: '',
     stripe_price_id: '',
   });
 
@@ -176,14 +178,31 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID</label>
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID — Profesional ($49/mes)</label>
+                <input
+                  value={stripe.stripe_price_id_basic}
+                  onChange={(e) => setStripe({ ...stripe, stripe_price_id_basic: e.target.value })}
+                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                  placeholder="price_..."
+                />
+              </div>
+              <div>
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID — Business ($99/mes)</label>
+                <input
+                  value={stripe.stripe_price_id_pro}
+                  onChange={(e) => setStripe({ ...stripe, stripe_price_id_pro: e.target.value })}
+                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                  placeholder="price_..."
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID legacy (opcional, fallback BASIC)</label>
                 <input
                   value={stripe.stripe_price_id}
                   onChange={(e) => setStripe({ ...stripe, stripe_price_id: e.target.value })}
                   className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   placeholder="price_..."
                 />
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">ID del precio de suscripción</p>
               </div>
             </div>
 
