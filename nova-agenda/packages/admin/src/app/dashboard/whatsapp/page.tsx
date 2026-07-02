@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import PasswordInput from '@/components/PasswordInput';
 
 interface WhatsAppConfig {
   id?: string;
@@ -263,11 +264,9 @@ export default function WhatsAppPage() {
               </div>
               <div>
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">API Key *</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={config.apiKey}
                   onChange={(e) => setConfig({ ...config, apiKey: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   placeholder="Tu API Key de Evo Cloud"
                 />
               </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import PasswordInput from '@/components/PasswordInput';
 
 type Tab = 'stripe' | 'evo_cloud' | 'openai';
 
@@ -150,11 +151,9 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
               <div>
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">Secret Key</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={stripe.stripe_secret_key}
                   onChange={(e) => setStripe({ ...stripe, stripe_secret_key: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   placeholder="sk_live_..."
                 />
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Nunca compartas esta clave</p>
@@ -170,11 +169,9 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">Webhook Secret</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={stripe.stripe_webhook_secret}
                   onChange={(e) => setStripe({ ...stripe, stripe_webhook_secret: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   placeholder="whsec_..."
                 />
               </div>
@@ -228,11 +225,9 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">API Key</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={evoCloud.evo_cloud_api_key}
                   onChange={(e) => setEvoCloud({ ...evoCloud, evo_cloud_api_key: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   placeholder="Tu API Key de Evo Cloud"
                 />
               </div>
@@ -271,11 +266,9 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
               <div className="md:col-span-2">
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">API Key</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={openai.openai_api_key}
                   onChange={(e) => setOpenai({ ...openai, openai_api_key: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                   placeholder="sk-..."
                 />
               </div>

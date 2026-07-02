@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import PasswordInput from '@/components/PasswordInput';
 
 const PLANS = {
   FREE: { name: 'Gratuito', price: 0, color: 'bg-surface-container-high text-on-surface-variant', icon: 'spa' },
@@ -138,11 +139,9 @@ function RegisterForm() {
 
             <div>
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Contraseña</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                 placeholder="Mínimo 6 caracteres"
                 minLength={6}
                 required
