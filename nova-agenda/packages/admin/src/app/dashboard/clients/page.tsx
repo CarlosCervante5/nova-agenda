@@ -1,16 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { api, Client } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 
 export default function ClientsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState({ name: '', slug: '', email: '', phone: '', primaryColor: '#5950b6', plan: 'FREE' });
 
-  useEffect(() => { loadClients(); }, []);
+  useEffect(() => {
+    if (authLoading) return;
+    if (user?.role !== 'SUPER_ADMIN') {
+      router.replace('/dashboard');
+      return;
+    }
+    loadClients();
+  }, [authLoading, user, router]);
 
   async function loadClients() {
     try { setClients(await api.getClients()); } finally { setLoading(false); }

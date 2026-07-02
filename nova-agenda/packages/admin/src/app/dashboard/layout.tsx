@@ -20,7 +20,7 @@ function Sidebar() {
 
   const navLinks = [
     { href: '/dashboard', label: 'Panel', icon: 'dashboard' },
-    { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN', 'ADMIN'] },
+    { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN'] },
     { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
     { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
     { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat', minPlan: 'PRO' },

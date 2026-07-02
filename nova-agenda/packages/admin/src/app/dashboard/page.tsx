@@ -11,25 +11,30 @@ export default function DashboardPage() {
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (user) loadData();
+  }, [user]);
 
   async function loadData() {
+    if (!user) return;
     try {
-      if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
+      const today = format(new Date(), 'yyyy-MM-dd');
+
+      if (user.role === 'SUPER_ADMIN') {
         const [clients, services, bookings] = await Promise.all([
           api.getClients(),
           api.getServices(),
-          api.getBookings({ date: format(new Date(), 'yyyy-MM-dd') }),
+          api.getBookings({ date: today }),
         ]);
-        const revenue = bookings.reduce((sum, b) => sum + ((b as any).service?.price || 0), 0);
+        const revenue = bookings.reduce((sum, b) => sum + ((b as { service?: { price?: number } }).service?.price || 0), 0);
         setStats({ clients: clients.length, services: services.length, bookings: bookings.length, revenue });
         setRecentBookings(bookings.slice(0, 5));
       } else {
         const [services, bookings] = await Promise.all([
           api.getServices(),
-          api.getBookings({ date: format(new Date(), 'yyyy-MM-dd') }),
+          api.getBookings({ date: today }),
         ]);
-        const revenue = bookings.reduce((sum, b) => sum + ((b as any).service?.price || 0), 0);
+        const revenue = bookings.reduce((sum, b) => sum + ((b as { service?: { price?: number } }).service?.price || 0), 0);
         setStats({ clients: 0, services: services.length, bookings: bookings.length, revenue });
         setRecentBookings(bookings.slice(0, 5));
       }
@@ -63,13 +68,13 @@ export default function DashboardPage() {
   }
 
   const kpis = [
-    ...(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' ? [{
+    ...(user?.role === 'SUPER_ADMIN' ? [{
       label: 'Negocios Totales',
       value: stats.clients.toString(),
       icon: 'business',
-      trend: '+4 nuevos',
-      trendIcon: 'add_circle',
-      trendColor: 'text-secondary',
+      trend: 'Plataforma',
+      trendIcon: '',
+      trendColor: 'text-on-surface-variant',
       iconBg: 'bg-secondary-container/30',
       iconColor: 'text-secondary',
     }] : []),
@@ -112,7 +117,9 @@ export default function DashboardPage() {
           Bienvenido de nuevo, {user?.name?.split(' ')[0]}
         </h2>
         <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-          Aquí está lo que está pasando con tu plataforma hoy.
+          {user?.role === 'SUPER_ADMIN'
+            ? 'Aquí está lo que está pasando con la plataforma hoy.'
+            : 'Aquí está lo que está pasando con tu negocio hoy.'}
         </p>
       </div>
 
@@ -207,17 +214,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Vistas Previa del Sistema */}
+      {/* Vistas previa */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-        <div className="glass-card rounded-xl overflow-hidden shadow-sm bento-hover">
-          <img src="/mockups/calendar-preview.svg" alt="Calendario de citas" className="w-full h-48 object-cover" />
+        <div className="glass-card rounded-xl overflow-hidden shadow-sm">
+          <div className="h-48 bg-primary-container/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-6xl text-primary">calendar_month</span>
+          </div>
           <div className="p-lg">
             <h3 className="font-headline-md text-headline-md text-on-surface mb-sm">Calendario Inteligente</h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">Gestiona todas las citas de tus clientes en una vista visual intuitiva.</p>
           </div>
         </div>
-        <div className="glass-card rounded-xl overflow-hidden shadow-sm bento-hover">
-          <img src="/mockups/booking-preview.svg" alt="Sistema de reservas" className="w-full h-48 object-cover" />
+        <div className="glass-card rounded-xl overflow-hidden shadow-sm">
+          <div className="h-48 bg-secondary-container/20 flex items-center justify-center">
+            <span className="material-symbols-outlined text-6xl text-secondary">event_available</span>
+          </div>
           <div className="p-lg">
             <h3 className="font-headline-md text-headline-md text-on-surface mb-sm">Reservas en Línea</h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">Tus clientes pueden reservar citas 24/7 desde cualquier dispositivo.</p>
