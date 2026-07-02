@@ -4,6 +4,10 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
+
+ARG NEXT_PUBLIC_ADMIN_URL=https://adorable-learning-production.up.railway.app
+ENV NEXT_PUBLIC_ADMIN_URL=${NEXT_PUBLIC_ADMIN_URL}
+
 RUN npm run build
 
 FROM node:20-alpine AS production
