@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { adminUrl } from '@/lib/urls';
 
 export default function HomePage() {
   return (
@@ -22,8 +23,8 @@ export default function HomePage() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/login" className="hidden sm:block font-label-md text-label-md text-primary hover:underline px-4 py-2 transition-all active:scale-95">Iniciar Sesión</Link>
-          <Link href="/register?plan=FREE" className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-sm hover:opacity-90 transition-all active:scale-95">Comenzar Gratis</Link>
+          <Link href={adminUrl('/login')} className="hidden sm:block font-label-md text-label-md text-primary hover:underline px-4 py-2 transition-all active:scale-95">Iniciar Sesión</Link>
+          <Link href={adminUrl('/register', { plan: 'FREE' })} className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-sm hover:opacity-90 transition-all active:scale-95">Comenzar Gratis</Link>
         </div>
       </header>
 
@@ -40,11 +41,11 @@ export default function HomePage() {
                 La plataforma todo-en-uno diseñada para salones y clínicas premium. Gestiona citas, clientes y crecimiento con elegancia sin esfuerzo.
               </p>
               <div className="flex flex-col sm:flex-row gap-md">
-                <Link href="/register?plan=FREE" className="bg-primary text-on-primary px-8 py-4 rounded-lg font-label-md text-label-md font-bold shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
+                <Link href={adminUrl('/register', { plan: 'FREE' })} className="bg-primary text-on-primary px-8 py-4 rounded-lg font-label-md text-label-md font-bold shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2">
                   Prueba Gratis
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </Link>
-                <Link href="/login" className="bg-white border border-outline text-on-surface px-8 py-4 rounded-lg font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all active:scale-95 flex items-center justify-center gap-2">
+                <Link href={adminUrl('/login')} className="bg-white border border-outline text-on-surface px-8 py-4 rounded-lg font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all active:scale-95 flex items-center justify-center gap-2">
                   Ver Demo
                   <span className="material-symbols-outlined">play_circle</span>
                 </Link>
@@ -191,7 +192,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/register?plan=FREE" className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Comenzar Gratis</Link>
+                <Link href={adminUrl('/register', { plan: 'FREE' })} className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Comenzar Gratis</Link>
               </div>
               {/* Professional (Featured) */}
               <div className="bg-primary-container p-xl rounded-xl border-2 border-primary flex flex-col relative scale-105 z-10 shadow-xl">
@@ -209,7 +210,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/register?plan=BASIC" className="w-full py-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold hover:opacity-90 transition-all text-center block">Seleccionar Profesional</Link>
+                <Link href={adminUrl('/register', { plan: 'BASIC' })} className="w-full py-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold hover:opacity-90 transition-all text-center block">Seleccionar Profesional</Link>
               </div>
               {/* Business */}
               <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant flex flex-col transition-all hover:border-primary">
@@ -226,7 +227,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/register?plan=PRO" className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Seleccionar Business</Link>
+                <Link href={adminUrl('/register', { plan: 'PRO' })} className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Seleccionar Business</Link>
               </div>
             </div>
           </div>
@@ -240,8 +241,8 @@ export default function HomePage() {
                 <h2 className="font-headline-xl text-headline-xl text-on-primary mb-md">¿Listo para elevar tu negocio de bienestar?</h2>
                 <p className="font-body-lg text-body-lg text-primary-fixed mb-xl">Únete a miles de salones y clínicas que usan Nova Agenda para optimizar operaciones y deleitar a sus clientes.</p>
                 <div className="flex flex-col sm:flex-row gap-md justify-center">
-                  <Link href="/register?plan=FREE" className="bg-surface-container-lowest text-primary px-8 py-4 rounded-lg font-label-md text-label-md font-bold shadow-lg hover:bg-surface-bright transition-all active:scale-95 text-center">Crear Cuenta Gratis</Link>
-                  <Link href="/login" className="bg-transparent border-2 border-primary-fixed text-primary-fixed px-8 py-4 rounded-lg font-label-md text-label-md font-bold hover:bg-white/10 transition-all active:scale-95 text-center">Agendar una Demo</Link>
+                  <Link href={adminUrl('/register', { plan: 'FREE' })} className="bg-surface-container-lowest text-primary px-8 py-4 rounded-lg font-label-md text-label-md font-bold shadow-lg hover:bg-surface-bright transition-all active:scale-95 text-center">Crear Cuenta Gratis</Link>
+                  <Link href={adminUrl('/login')} className="bg-transparent border-2 border-primary-fixed text-primary-fixed px-8 py-4 rounded-lg font-label-md text-label-md font-bold hover:bg-white/10 transition-all active:scale-95 text-center">Agendar una Demo</Link>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-primary mt-lg opacity-80">Sin tarjeta de crédito. 14 días de prueba gratis.</p>
               </div>
