@@ -70,12 +70,35 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const res = await fetch(`${getApiBaseUrl()}${path}`, { ...options, headers });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    let res: Response;
+    try {
+      res = await fetch(`${getApiBaseUrl()}${path}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new Error('La API no respondió a tiempo. Verifica la conexión o API_URL.');
+      }
+      throw new Error('No se pudo conectar con la API. Verifica que el servicio esté en línea.');
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (res.status === 401) {
       this.token = null;
-      if (typeof window !== 'undefined') localStorage.removeItem('token');
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        const path = window.location.pathname;
+        const isAuthPage = path === '/login' || path === '/register';
+        if (!isAuthPage) {
+          window.location.href = '/login';
+        }
+      }
       throw new Error('Unauthorized');
     }
 
