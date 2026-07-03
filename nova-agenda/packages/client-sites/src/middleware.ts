@@ -1,4 +1,5 @@
-/** @type {import('next').NextConfig} */
+import { NextRequest, NextResponse } from 'next/server';
+
 const PRODUCTION_API_URL = 'https://nova-agenda-production.up.railway.app';
 
 function resolveApiBaseUrl() {
@@ -11,11 +12,12 @@ function resolveApiBaseUrl() {
   return configured || 'http://localhost:3001';
 }
 
-const nextConfig = {
-  async rewrites() {
-    const apiUrl = resolveApiBaseUrl();
-    return [{ source: '/api/:path*', destination: `${apiUrl}/api/:path*` }];
-  },
-};
+export function middleware(request: NextRequest) {
+  const apiBase = resolveApiBaseUrl();
+  const path = request.nextUrl.pathname + request.nextUrl.search;
+  return NextResponse.rewrite(new URL(path, `${apiBase}/`));
+}
 
-module.exports = nextConfig;
+export const config = {
+  matcher: '/api/:path*',
+};

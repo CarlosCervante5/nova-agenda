@@ -1,4 +1,14 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const PRODUCTION_API_URL = 'https://nova-agenda-production.up.railway.app';
+
+function getApiBaseUrl() {
+  if (typeof window !== 'undefined') return '';
+  const configured = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isLocalhost = /localhost|127\.0\.0\.1/i.test(configured);
+  if (configured && !(isProduction && isLocalhost)) return configured;
+  if (isProduction) return PRODUCTION_API_URL;
+  return configured || 'http://localhost:3001';
+}
 
 export interface ClientInfo {
   id: string;
@@ -53,7 +63,7 @@ export interface LoyaltyCard {
 
 export async function getClientInfo(slug: string): Promise<ClientInfo | null> {
   try {
-    const res = await fetch(`${API_URL}/api/public/client/${slug}`, { cache: 'no-store' });
+    const res = await fetch(`${getApiBaseUrl()}/api/public/client/${slug}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch { return null; }
@@ -61,7 +71,7 @@ export async function getClientInfo(slug: string): Promise<ClientInfo | null> {
 
 export async function getAvailableSlots(clientSlug: string, serviceId: string, date: string) {
   try {
-    const res = await fetch(`${API_URL}/api/public/slots?clientSlug=${clientSlug}&serviceId=${serviceId}&date=${date}`);
+    const res = await fetch(`${getApiBaseUrl()}/api/public/slots?clientSlug=${clientSlug}&serviceId=${serviceId}&date=${date}`);
     if (!res.ok) return { slots: [] };
     return res.json();
   } catch { return { slots: [] }; }
@@ -72,7 +82,7 @@ export async function createBooking(data: {
   customerEmail?: string; customerPhone?: string; date: string;
   startTime: string; notes?: string;
 }) {
-  const res = await fetch(`${API_URL}/api/bookings`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/bookings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -86,7 +96,7 @@ export async function createBooking(data: {
 
 export async function getLoyaltyProgram(clientId: string): Promise<LoyaltyProgram | null> {
   try {
-    const res = await fetch(`${API_URL}/api/loyalty/programs/client/${clientId}`, { cache: 'no-store' });
+    const res = await fetch(`${getApiBaseUrl()}/api/loyalty/programs/client/${clientId}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const program = await res.json();
     return program?.isActive ? program : null;
@@ -97,7 +107,7 @@ export async function getLoyaltyProgram(clientId: string): Promise<LoyaltyProgra
 
 export async function checkLoyaltyCard(clientId: string, phone: string): Promise<LoyaltyCard | null> {
   try {
-    const res = await fetch(`${API_URL}/api/loyalty/cards/check?clientId=${clientId}&phone=${encodeURIComponent(phone)}`);
+    const res = await fetch(`${getApiBaseUrl()}/api/loyalty/cards/check?clientId=${clientId}&phone=${encodeURIComponent(phone)}`);
     if (!res.ok) return null;
     const card = await res.json();
     return card || null;
@@ -108,7 +118,7 @@ export async function checkLoyaltyCard(clientId: string, phone: string): Promise
 
 export async function getLoyaltyCard(cardId: string): Promise<LoyaltyCard | null> {
   try {
-    const res = await fetch(`${API_URL}/api/loyalty/cards/customer/${cardId}`, { cache: 'no-store' });
+    const res = await fetch(`${getApiBaseUrl()}/api/loyalty/cards/customer/${cardId}`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -122,7 +132,7 @@ export async function createLoyaltyCard(data: {
   customerEmail?: string;
   customerPhone?: string;
 }): Promise<LoyaltyCard> {
-  const res = await fetch(`${API_URL}/api/loyalty/cards`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/loyalty/cards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
