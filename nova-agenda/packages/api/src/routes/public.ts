@@ -138,13 +138,11 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
 
     const { start, end, dayOfWeek } = parseDateOnly(date as string);
 
-    let workingHours = await prisma.workingHours.findUnique({
+    const dbHours = await prisma.workingHours.findUnique({
       where: { clientId_dayOfWeek: { clientId: client.id, dayOfWeek } },
     });
 
-    if (!workingHours) {
-      workingHours = DEFAULT_WORKING_HOURS.find((wh) => wh.dayOfWeek === dayOfWeek) ?? null;
-    }
+    const workingHours = dbHours ?? DEFAULT_WORKING_HOURS.find((wh) => wh.dayOfWeek === dayOfWeek) ?? null;
 
     if (!workingHours || !workingHours.isOpen) {
       return res.json({ slots: [], message: 'Closed on this day' });
