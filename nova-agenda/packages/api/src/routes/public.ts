@@ -2,9 +2,33 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { resolveTenant, TenantRequest } from '../middleware/auth';
+import { parseDateOnly, bookingStorageDate } from '../utils/date-only';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+const clientSelect = { id: true, name: true, slug: true, primaryColor: true, isActive: true } as const;
+
+async function resolvePublicClient(req: TenantRequest) {
+  const slug = (req.query.clientSlug || req.query.tenant) as string | undefined;
+  if (slug) {
+    return prisma.client.findUnique({ where: { slug, isActive: true }, select: clientSelect });
+  }
+  if (req.client) {
+    return prisma.client.findUnique({ where: { id: req.client.id, isActive: true }, select: clientSelect });
+  }
+  return null;
+}
+
+const DEFAULT_WORKING_HOURS = [
+  { dayOfWeek: 1, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 2, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 3, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 4, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 5, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 6, openTime: '10:00', closeTime: '14:00', isOpen: true },
+  { dayOfWeek: 0, openTime: '00:00', closeTime: '00:00', isOpen: false },
+];
 
 // Register new business
 router.post('/register', async (req, res: Response) => {
@@ -93,7 +117,7 @@ router.post('/register', async (req, res: Response) => {
 // Get available slots for a service on a specific date
 router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) => {
   try {
-    const client = req.client;
+    const client = await resolvePublicClient(req);
     const { serviceId, date } = req.query;
 
     if (!client) {
@@ -108,38 +132,42 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
       where: { id: serviceId as string },
     });
 
-    if (!service || service.clientId !== client.id) {
+    if (!service || service.clientId !== client.id || !service.isActive) {
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    // Get working hours for the day
-    const bookingDate = new Date(date as string);
-    const dayOfWeek = bookingDate.getDay();
+    const { start, end, dayOfWeek } = parseDateOnly(date as string);
 
-    const workingHours = await prisma.workingHours.findUnique({
+    let workingHours = await prisma.workingHours.findUnique({
       where: { clientId_dayOfWeek: { clientId: client.id, dayOfWeek } },
     });
+
+    if (!workingHours) {
+      workingHours = DEFAULT_WORKING_HOURS.find((wh) => wh.dayOfWeek === dayOfWeek) ?? null;
+    }
 
     if (!workingHours || !workingHours.isOpen) {
       return res.json({ slots: [], message: 'Closed on this day' });
     }
 
-    // Get existing bookings for the day
     const existingBookings = await prisma.booking.findMany({
       where: {
         clientId: client.id,
-        date: bookingDate,
+        date: { gte: start, lte: end },
         status: { not: 'CANCELLED' },
       },
       select: { startTime: true, endTime: true },
     });
 
-    // Generate available slots
     const [openHour, openMin] = workingHours.openTime.split(':').map(Number);
     const [closeHour, closeMin] = workingHours.closeTime.split(':').map(Number);
     const openMinutes = openHour * 60 + openMin;
     const closeMinutes = closeHour * 60 + closeMin;
     const duration = service.duration;
+
+    const now = new Date();
+    const isToday = start.toDateString() === now.toDateString();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
     const slots: string[] = [];
     let current = openMinutes;
@@ -154,8 +182,8 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
       const endMins = String(endMinutes % 60).padStart(2, '0');
       const slotEnd = `${endHours}:${endMins}`;
 
-      // Check if slot conflicts with existing bookings
-      const isAvailable = !existingBookings.some(
+      const isPast = isToday && current <= nowMinutes;
+      const isAvailable = !isPast && !existingBookings.some(
         (booking) => booking.startTime < slotEnd && booking.endTime > slotStart
       );
 
@@ -163,7 +191,7 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
         slots.push(slotStart);
       }
 
-      current += 30; // 30-minute intervals
+      current += 30;
     }
 
     res.json({ slots, service: { name: service.name, duration: service.duration } });

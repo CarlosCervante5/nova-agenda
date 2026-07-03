@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram } from '@/lib/api';
 import LoyaltySection from './LoyaltySection';
@@ -26,20 +26,26 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const loadSlots = async () => {
+  const loadSlots = useCallback(async () => {
     if (!selectedService) return;
     setLoadingSlots(true);
     try {
       const data = await getAvailableSlots(clientSlug, selectedService.id, format(selectedDate, 'yyyy-MM-dd'));
       setSlots(data.slots || []);
-    } catch { setSlots([]); }
-    setLoadingSlots(false);
-  };
+    } catch {
+      setSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [clientSlug, selectedService, selectedDate]);
 
-  const goToStep = (newStep: typeof step) => {
-    if (newStep === 'datetime') {
+  useEffect(() => {
+    if (step === 'datetime' && selectedService) {
       loadSlots();
     }
+  }, [step, selectedService, selectedDate, loadSlots]);
+
+  const goToStep = (newStep: typeof step) => {
     setStep(newStep);
   };
 

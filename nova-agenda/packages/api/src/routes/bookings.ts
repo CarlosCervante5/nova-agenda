@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
 import { assertCanCreateBooking, sendPlanLimitError } from '../middleware/plan-limits';
+import { parseDateOnly, bookingStorageDate } from '../utils/date-only';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -27,21 +28,14 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     if (dateFrom || dateTo) {
       where.date = {};
       if (dateFrom) {
-        const start = new Date(dateFrom as string);
-        start.setHours(0, 0, 0, 0);
-        where.date.gte = start;
+        where.date.gte = parseDateOnly(dateFrom as string).start;
       }
       if (dateTo) {
-        const end = new Date(dateTo as string);
-        end.setHours(23, 59, 59, 999);
-        where.date.lte = end;
+        where.date.lte = parseDateOnly(dateTo as string).end;
       }
     } else if (date) {
-      const startOfDay = new Date(date as string);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date as string);
-      endOfDay.setHours(23, 59, 59, 999);
-      where.date = { gte: startOfDay, lte: endOfDay };
+      const { start, end } = parseDateOnly(date as string);
+      where.date = { gte: start, lte: end };
     }
 
     if (status) where.status = status;
@@ -96,11 +90,12 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
     const endMinutes = hours * 60 + minutes + service.duration;
     const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
 
-    const bookingDate = new Date(date);
+    const bookingDate = bookingStorageDate(date);
+    const { start, end } = parseDateOnly(date);
     const conflict = await prisma.booking.findFirst({
       where: {
         clientId: client.id,
-        date: bookingDate,
+        date: { gte: start, lte: end },
         status: { not: 'CANCELLED' },
         OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
       },
@@ -163,11 +158,12 @@ router.post('/', async (req, res: Response) => {
     const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
 
     // Check for conflicts
-    const bookingDate = new Date(date);
+    const bookingDate = bookingStorageDate(date);
+    const { start, end } = parseDateOnly(date);
     const conflict = await prisma.booking.findFirst({
       where: {
         clientId: client.id,
-        date: bookingDate,
+        date: { gte: start, lte: end },
         status: { not: 'CANCELLED' },
         OR: [
           { startTime: { lt: endTime }, endTime: { gt: startTime } },
