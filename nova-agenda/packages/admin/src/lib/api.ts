@@ -28,6 +28,14 @@ export interface Client {
   _count?: { users: number; services: number; bookings: number };
 }
 
+export interface WorkingHoursEntry {
+  id?: string;
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
+  isOpen: boolean;
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -151,6 +159,15 @@ class ApiClient {
   }
   async updateClient(id: string, data: Partial<Client>) {
     return this.request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async getWorkingHours(clientId: string) {
+    return this.request<WorkingHoursEntry[]>(`/api/clients/${clientId}/working-hours`);
+  }
+  async updateWorkingHours(clientId: string, hours: WorkingHoursEntry[]) {
+    return this.request<WorkingHoursEntry[]>(`/api/clients/${clientId}/working-hours`, {
+      method: 'PUT',
+      body: JSON.stringify({ hours }),
+    });
   }
   async deleteClient(id: string) {
     return this.request(`/api/clients/${id}`, { method: 'DELETE' });

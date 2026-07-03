@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, Service } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import WorkingHoursEditor from '@/components/WorkingHoursEditor';
 
 export default function ServicesPage() {
   const { user } = useAuth();
@@ -85,7 +86,7 @@ export default function ServicesPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-md">
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Servicios</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">Configura tu menú de servicios y precios</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">Configura servicios, precios y horarios de atención</p>
           <Link href="/dashboard/booking" className="inline-flex items-center gap-1 mt-2 font-label-sm text-label-sm text-primary font-bold hover:underline">
             <span className="material-symbols-outlined text-base">share</span>
             Compartir formulario de agenda
@@ -141,6 +142,8 @@ export default function ServicesPage() {
           )}
         </div>
       )}
+
+      {user?.clientId && <WorkingHoursEditor clientId={user.clientId} />}
 
       {showForm && (
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">

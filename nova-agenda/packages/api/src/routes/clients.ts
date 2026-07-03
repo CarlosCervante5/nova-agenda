@@ -5,6 +5,20 @@ import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 const router = Router();
 const prisma = new PrismaClient();
 
+function canAccessClient(req: AuthRequest, clientId: string) {
+  return req.user!.role === 'SUPER_ADMIN' || req.user!.clientId === clientId;
+}
+
+const DEFAULT_WORKING_HOURS = [
+  { dayOfWeek: 1, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 2, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 3, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 4, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 5, openTime: '09:00', closeTime: '18:00', isOpen: true },
+  { dayOfWeek: 6, openTime: '10:00', closeTime: '14:00', isOpen: true },
+  { dayOfWeek: 0, openTime: '09:00', closeTime: '18:00', isOpen: false },
+];
+
 // Get all clients (super admin only)
 router.get('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
@@ -25,8 +39,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    // CLIENT users can only see their own client
-    if (req.user!.role === 'CLIENT' && req.user!.clientId !== id) {
+    if (!canAccessClient(req, id)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -98,12 +111,101 @@ router.post('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest
   }
 });
 
+// Get working hours
+router.get('/:id/working-hours', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!canAccessClient(req, id)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const client = await prisma.client.findUnique({ where: { id }, select: { id: true } });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+
+    let hours = await prisma.workingHours.findMany({
+      where: { clientId: id },
+      orderBy: { dayOfWeek: 'asc' },
+    });
+
+    if (hours.length === 0) {
+      await prisma.$transaction(
+        DEFAULT_WORKING_HOURS.map((wh) =>
+          prisma.workingHours.create({ data: { clientId: id, ...wh } })
+        )
+      );
+      hours = await prisma.workingHours.findMany({
+        where: { clientId: id },
+        orderBy: { dayOfWeek: 'asc' },
+      });
+    }
+
+    res.json(hours);
+  } catch (error) {
+    console.error('Get working hours error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update working hours
+router.put('/:id/working-hours', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!canAccessClient(req, id)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { hours } = req.body as {
+      hours: { dayOfWeek: number; openTime: string; closeTime: string; isOpen: boolean }[];
+    };
+
+    if (!Array.isArray(hours) || hours.length === 0) {
+      return res.status(400).json({ error: 'hours array is required' });
+    }
+
+    const client = await prisma.client.findUnique({ where: { id }, select: { id: true } });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+
+    for (const entry of hours) {
+      if (entry.dayOfWeek < 0 || entry.dayOfWeek > 6) {
+        return res.status(400).json({ error: 'Invalid dayOfWeek' });
+      }
+      if (!/^\d{2}:\d{2}$/.test(entry.openTime) || !/^\d{2}:\d{2}$/.test(entry.closeTime)) {
+        return res.status(400).json({ error: 'Invalid time format (use HH:mm)' });
+      }
+    }
+
+    await prisma.$transaction(
+      hours.map((entry) =>
+        prisma.workingHours.upsert({
+          where: { clientId_dayOfWeek: { clientId: id, dayOfWeek: entry.dayOfWeek } },
+          create: { clientId: id, ...entry },
+          update: {
+            openTime: entry.openTime,
+            closeTime: entry.closeTime,
+            isOpen: entry.isOpen,
+          },
+        })
+      )
+    );
+
+    const updated = await prisma.workingHours.findMany({
+      where: { clientId: id },
+      orderBy: { dayOfWeek: 'asc' },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Update working hours error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Update client
 router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (req.user!.role === 'CLIENT' && req.user!.clientId !== id) {
+    if (!canAccessClient(req, id)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
