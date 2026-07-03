@@ -172,9 +172,11 @@ class ApiClient {
   }
 
   // Bookings
-  async getBookings(params?: { date?: string; status?: string; clientId?: string }) {
+  async getBookings(params?: { date?: string; dateFrom?: string; dateTo?: string; status?: string; clientId?: string }) {
     const searchParams = new URLSearchParams();
     if (params?.date) searchParams.set('date', params.date);
+    if (params?.dateFrom) searchParams.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) searchParams.set('dateTo', params.dateTo);
     if (params?.status) searchParams.set('status', params.status);
     if (params?.clientId) searchParams.set('clientId', params.clientId);
     const query = searchParams.toString();

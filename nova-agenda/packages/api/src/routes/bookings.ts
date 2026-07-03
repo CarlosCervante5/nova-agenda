@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const clientId = req.user!.clientId;
-    const { date, status, serviceId } = req.query;
+    const { date, dateFrom, dateTo, status, serviceId } = req.query;
 
     if (!clientId && req.user!.role !== 'SUPER_ADMIN') {
       return res.status(400).json({ error: 'No client associated with this user' });
@@ -21,9 +21,22 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       ? (req.query.clientId as string || clientId)
       : clientId;
 
-    const where: any = { clientId: targetClientId };
+    const where: any = {};
+    if (targetClientId) where.clientId = targetClientId;
 
-    if (date) {
+    if (dateFrom || dateTo) {
+      where.date = {};
+      if (dateFrom) {
+        const start = new Date(dateFrom as string);
+        start.setHours(0, 0, 0, 0);
+        where.date.gte = start;
+      }
+      if (dateTo) {
+        const end = new Date(dateTo as string);
+        end.setHours(23, 59, 59, 999);
+        where.date.lte = end;
+      }
+    } else if (date) {
       const startOfDay = new Date(date as string);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date as string);

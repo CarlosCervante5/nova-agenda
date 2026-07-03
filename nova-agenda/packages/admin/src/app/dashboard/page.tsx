@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, Booking } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { format } from 'date-fns';
+import SmartCalendar from '@/components/SmartCalendar';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -146,95 +147,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-        <div className="lg:col-span-2 glass-card rounded-xl p-lg flex flex-col h-[300px] sm:h-[400px]">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-xl gap-3">
-            <div>
-              <h3 className="font-headline-md text-headline-md text-on-surface">Crecimiento de Ingresos</h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Análisis mensual de suscripciones</p>
-            </div>
-            <div className="flex bg-surface-container rounded-lg p-1 self-start">
-              <button className="px-3 py-1 bg-surface-container-lowest shadow-sm rounded-md text-label-sm font-label-sm text-primary">Mensual</button>
-              <button className="px-3 py-1 text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors">Trimestral</button>
-            </div>
-          </div>
-          <div className="flex-1 relative flex items-end gap-4 px-4 pb-8 border-b border-l border-outline-variant">
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-              <div className="border-t border-outline" />
-              <div className="border-t border-outline" />
-              <div className="border-t border-outline" />
-              <div className="border-t border-outline" />
-            </div>
-            {[
-              { h: '40%', color: 'bg-primary-container/40 hover:bg-primary-container', label: '$120k' },
-              { h: '55%', color: 'bg-secondary-container/40 hover:bg-secondary-container', label: '$145k' },
-              { h: '75%', color: 'bg-primary/40 hover:bg-primary/80', label: '$190k' },
-              { h: '60%', color: 'bg-tertiary-container/40 hover:bg-tertiary-container', label: '$160k' },
-              { h: '90%', color: 'bg-primary-fixed/80 hover:bg-primary-fixed', label: '$230k' },
-              { h: '82%', color: 'bg-secondary-fixed/80 hover:bg-secondary-fixed', label: '$215k' },
-            ].map((bar, i) => (
-              <div key={i} className={`flex-1 ${bar.color} rounded-t-lg transition-all cursor-pointer relative group`} style={{ height: bar.h }}>
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-on-background text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{bar.label}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between px-4 pt-2 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-            <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span>
-          </div>
-        </div>
-
-        <div className="glass-card rounded-xl p-lg flex flex-col">
-          <h3 className="font-headline-md text-headline-md text-on-surface mb-xl">Salud del Sistema</h3>
-          <div className="space-y-6 flex-1">
-            {[
-              { label: 'API', value: '99.98%', width: 'w-[99.98%]', color: 'bg-primary-container' },
-              { label: 'Base de Datos', value: '0.02s promedio', width: 'w-[85%]', color: 'bg-secondary-container' },
-              { label: 'Almacenamiento', value: '4.2 TB / 10 TB', width: 'w-[42%]', color: 'bg-tertiary-container' },
-            ].map((item) => (
-              <div key={item.label} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-label-md text-label-md text-on-surface">{item.label}</span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">{item.value}</span>
-                </div>
-                <div className="h-2 bg-surface-container rounded-full overflow-hidden">
-                  <div className={`h-full ${item.color} ${item.width}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-xl p-4 bg-surface-container-low rounded-lg flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-primary">security</span>
-            </div>
-            <div>
-              <p className="font-label-md text-label-md text-on-surface">Auditoría de Seguridad</p>
-              <p className="text-[10px] text-on-surface-variant">Última verificación: hace 14 minutos</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Vistas previa */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-        <div className="glass-card rounded-xl overflow-hidden shadow-sm">
-          <div className="h-48 bg-primary-container/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-6xl text-primary">calendar_month</span>
-          </div>
-          <div className="p-lg">
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-sm">Calendario Inteligente</h3>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Gestiona todas las citas de tus clientes en una vista visual intuitiva.</p>
-          </div>
-        </div>
-        <div className="glass-card rounded-xl overflow-hidden shadow-sm">
-          <div className="h-48 bg-secondary-container/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-6xl text-secondary">event_available</span>
-          </div>
-          <div className="p-lg">
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-sm">Reservas en Línea</h3>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Tus clientes pueden reservar citas 24/7 desde cualquier dispositivo.</p>
-          </div>
-        </div>
-      </div>
+      <SmartCalendar onBookingUpdated={loadData} />
 
       <div className="glass-card rounded-xl overflow-hidden shadow-sm">
         <div className="px-lg py-md border-b border-outline-variant flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-surface-container-low">
