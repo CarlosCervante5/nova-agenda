@@ -1,7 +1,9 @@
+import { resolveApiBaseUrl } from './api-base-url';
+
 /** En el navegador usamos rutas relativas; Next.js las proxya a la API vía middleware. */
 function getApiBaseUrl() {
   if (typeof window !== 'undefined') return '';
-  return (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  return resolveApiBaseUrl();
 }
 
 export interface User {
