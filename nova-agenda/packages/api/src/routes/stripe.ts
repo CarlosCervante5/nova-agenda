@@ -17,7 +17,7 @@ const prisma = new PrismaClient();
 
 const PLANS: Record<string, { name: string; price: number; features: string[] }> = {
   FREE: { name: 'Gratuito', price: 0, features: ['Agenda de citas', 'Formulario de reservas compartible', 'Hasta 3 servicios', 'Hasta 50 citas/mes'] },
-  BASIC: { name: 'Profesional', price: 49, features: ['Todo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Hasta 20 servicios', 'Citas ilimitadas', 'Dominio propio'] },
+  BASIC: { name: 'Profesional', price: 49, features: ['Todo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Hasta 20 servicios', 'Citas ilimitadas'] },
   PRO: { name: 'Business', price: 99, features: ['Todo del plan Profesional', 'WhatsApp con IA integrada', 'Chatbot 24/7', 'Servicios ilimitados'] },
 };
 

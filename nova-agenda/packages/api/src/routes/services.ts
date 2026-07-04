@@ -2,9 +2,25 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { assertCanCreateService, sendPlanLimitError } from '../middleware/plan-limits';
+import { getPlanLevel } from '../middleware/plan-check';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+async function resolveCategoryId(
+  clientId: string,
+  plan: string,
+  categoryId: string | null | undefined
+): Promise<string | null | undefined> {
+  if (categoryId === undefined) return undefined;
+  if (!categoryId) return null;
+  if (getPlanLevel(plan) < getPlanLevel('BASIC')) return null;
+
+  const category = await prisma.serviceCategory.findFirst({
+    where: { id: categoryId, clientId },
+  });
+  return category ? category.id : null;
+}
 
 // Get services for a client
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
@@ -22,7 +38,18 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     const services = await prisma.service.findMany({
       where: { clientId: targetClientId },
-      include: { _count: { select: { bookings: true } } },
+      include: {
+        _count: { select: { bookings: true } },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -45,7 +72,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       ? (req.body.clientId || clientId)
       : clientId;
 
-    const { name, description, duration, price, color } = req.body;
+    const { name, description, duration, price, color, categoryId } = req.body;
 
     if (!name || !duration) {
       return res.status(400).json({ error: 'Name and duration are required' });
@@ -65,6 +92,11 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       return sendPlanLimitError(res, serviceLimit);
     }
 
+    const resolvedCategoryId = await resolveCategoryId(targetClientId!, owner.plan, categoryId);
+    if (categoryId && resolvedCategoryId === null) {
+      return res.status(400).json({ error: 'Categoría no válida o no disponible en tu plan' });
+    }
+
     const service = await prisma.service.create({
       data: {
         name,
@@ -73,6 +105,18 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         price: price ? parseFloat(price) : null,
         color: color || '#2563eb',
         clientId: targetClientId,
+        categoryId: resolvedCategoryId ?? null,
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
       },
     });
 
@@ -86,7 +130,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, duration, price, color, isActive } = req.body;
+    const { name, description, duration, price, color, isActive, categoryId } = req.body;
 
     const service = await prisma.service.findUnique({ where: { id } });
 
@@ -99,6 +143,19 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    const owner = await prisma.client.findUnique({
+      where: { id: service.clientId },
+      select: { plan: true },
+    });
+
+    let resolvedCategoryId: string | null | undefined = undefined;
+    if (categoryId !== undefined) {
+      resolvedCategoryId = await resolveCategoryId(service.clientId, owner?.plan || 'FREE', categoryId);
+      if (categoryId && resolvedCategoryId === null) {
+        return res.status(400).json({ error: 'Categoría no válida o no disponible en tu plan' });
+      }
+    }
+
     const updated = await prisma.service.update({
       where: { id },
       data: {
@@ -108,6 +165,18 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         ...(price !== undefined && { price: price ? parseFloat(price) : null }),
         ...(color && { color }),
         ...(typeof isActive === 'boolean' && { isActive }),
+        ...(resolvedCategoryId !== undefined && { categoryId: resolvedCategoryId }),
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
       },
     });
 

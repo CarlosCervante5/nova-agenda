@@ -294,8 +294,8 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                   </div>
                 )}
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {client.services.map((service) => (
+                {(() => {
+                  const renderServiceCard = (service: ClientInfo['services'][0]) => (
                     <button
                       key={service.id}
                       onClick={() => selectService(service)}
@@ -315,8 +315,60 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                         </span>
                       </div>
                     </button>
-                  ))}
-                </div>
+                  );
+
+                  const categories = client.categories || [];
+                  if (categories.length === 0) {
+                    return (
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {client.services.map(renderServiceCard)}
+                      </div>
+                    );
+                  }
+
+                  const usedIds = new Set<string>();
+                  const sections: { title: string; color: string; services: ClientInfo['services'] }[] = [];
+
+                  for (const cat of categories) {
+                    for (const child of cat.children || []) {
+                      const childServices = client.services.filter((s) => s.categoryId === child.id);
+                      childServices.forEach((s) => usedIds.add(s.id));
+                      if (childServices.length > 0) {
+                        sections.push({
+                          title: `${cat.name} › ${child.name}`,
+                          color: child.color || cat.color,
+                          services: childServices,
+                        });
+                      }
+                    }
+                    const onParent = client.services.filter((s) => s.categoryId === cat.id);
+                    onParent.forEach((s) => usedIds.add(s.id));
+                    if (onParent.length > 0) {
+                      sections.push({ title: cat.name, color: cat.color, services: onParent });
+                    }
+                  }
+
+                  const uncategorized = client.services.filter((s) => !usedIds.has(s.id));
+                  if (uncategorized.length > 0) {
+                    sections.push({ title: 'Otros servicios', color: client.primaryColor, services: uncategorized });
+                  }
+
+                  return (
+                    <div className="space-y-xl">
+                      {sections.map((section) => (
+                        <div key={section.title}>
+                          <h2 className="font-headline-md text-on-surface mb-md flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: section.color }} />
+                            {section.title}
+                          </h2>
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            {section.services.map(renderServiceCard)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </section>
             )}
 

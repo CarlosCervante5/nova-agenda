@@ -226,7 +226,40 @@ router.get('/client/:slug', async (req, res: Response) => {
         plan: true,
         services: {
           where: { isActive: true },
-          select: { id: true, name: true, description: true, duration: true, price: true, color: true },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            duration: true,
+            price: true,
+            color: true,
+            categoryId: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+                parentId: true,
+                parent: { select: { id: true, name: true, color: true } },
+              },
+            },
+          },
+        },
+        serviceCategories: {
+          where: { isActive: true },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            color: true,
+            parentId: true,
+            children: {
+              where: { isActive: true },
+              orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+              select: { id: true, name: true, description: true, color: true, parentId: true },
+            },
+          },
         },
         workingHours: {
           orderBy: { dayOfWeek: 'asc' },
@@ -274,8 +307,13 @@ router.get('/client/:slug', async (req, res: Response) => {
             serviceIds: s.services.map((ss) => ss.serviceId),
           }));
 
-    const { staffMembers: _staffMembers, ...rest } = client;
-    res.json({ ...rest, staff });
+    const categories =
+      client.plan === 'FREE'
+        ? []
+        : client.serviceCategories.filter((c) => !c.parentId);
+
+    const { staffMembers: _staffMembers, serviceCategories: _cats, ...rest } = client;
+    res.json({ ...rest, staff, categories });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

@@ -2,21 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api, Service } from '@/lib/api';
+import { api, Service, ServiceCategory } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import WorkingHoursEditor from '@/components/WorkingHoursEditor';
+import ServiceCategoriesPanel from '@/components/ServiceCategoriesPanel';
+
+const PLAN_LEVELS: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2 };
 
 export default function ServicesPage() {
   const { user } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
+  const [categoriesFlat, setCategoriesFlat] = useState<ServiceCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' });
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    duration: '30',
+    price: '',
+    color: '#5950b6',
+    clientId: '',
+    categoryId: '',
+  });
   const [currentPlan, setCurrentPlan] = useState('FREE');
   const [serviceUsage, setServiceUsage] = useState<{ used: number; limit: number | null } | null>(null);
 
-  useEffect(() => { loadServices(); }, []);
+  useEffect(() => { loadServices(); }, [user]);
 
   async function loadServices() {
     try {
@@ -28,6 +40,15 @@ export default function ServicesPage() {
       if (plansData) {
         setCurrentPlan(plansData.currentPlan);
         setServiceUsage(plansData.usage?.services ?? null);
+        if ((PLAN_LEVELS[plansData.currentPlan] ?? 0) >= PLAN_LEVELS.BASIC) {
+          try {
+            setCategoriesFlat(await api.getServiceCategoriesFlat());
+          } catch {
+            setCategoriesFlat([]);
+          }
+        } else {
+          setCategoriesFlat([]);
+        }
       }
     } finally { setLoading(false); }
   }
@@ -36,22 +57,30 @@ export default function ServicesPage() {
   const serviceUsed = serviceUsage?.used ?? services.length;
   const atServiceLimit = serviceLimit !== null && serviceUsed >= serviceLimit;
   const upgradePlan = currentPlan === 'FREE' ? 'Profesional' : 'Business';
+  const canCategories = (PLAN_LEVELS[currentPlan] ?? 0) >= PLAN_LEVELS.BASIC;
 
   function openCreateForm() {
     if (atServiceLimit) return;
     setShowForm(true);
     setEditing(null);
-    setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' });
+    setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '', categoryId: '' });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const data = { ...form, duration: Number(form.duration), price: form.price ? Number(form.price) : undefined };
+      const data = {
+        name: form.name,
+        description: form.description,
+        duration: Number(form.duration),
+        price: form.price ? Number(form.price) : undefined,
+        color: form.color,
+        categoryId: canCategories ? form.categoryId || null : undefined,
+      };
       if (editing) { await api.updateService(editing.id, data); }
       else { await api.createService(data); }
       setShowForm(false); setEditing(null);
-      setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '' });
+      setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '', categoryId: '' });
       loadServices();
     } catch (err: any) { alert(err.message); }
   }
@@ -69,8 +98,24 @@ export default function ServicesPage() {
 
   function startEdit(service: Service) {
     setEditing(service);
-    setForm({ name: service.name, description: service.description || '', duration: String(service.duration), price: service.price ? String(service.price) : '', color: service.color, clientId: service.clientId });
+    setForm({
+      name: service.name,
+      description: service.description || '',
+      duration: String(service.duration),
+      price: service.price ? String(service.price) : '',
+      color: service.color,
+      clientId: service.clientId,
+      categoryId: service.categoryId || '',
+    });
     setShowForm(true);
+  }
+
+  function categoryLabel(service: Service) {
+    if (!service.category) return null;
+    if (service.category.parent) {
+      return `${service.category.parent.name} › ${service.category.name}`;
+    }
+    return service.category.name;
   }
 
   if (loading) {
@@ -145,6 +190,8 @@ export default function ServicesPage() {
 
       {user?.clientId && <WorkingHoursEditor clientId={user.clientId} />}
 
+      <ServiceCategoriesPanel enabled={canCategories} onChange={loadServices} />
+
       {showForm && (
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-lg">{editing ? 'Editar Servicio' : 'Nuevo Servicio'}</h3>
@@ -157,6 +204,23 @@ export default function ServicesPage() {
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Duración (minutos) *</label>
               <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" min="5" step="5" required />
             </div>
+            {canCategories && (
+              <div className="md:col-span-2">
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Categoría</label>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+                >
+                  <option value="">Sin categoría</option>
+                  {categoriesFlat.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.parent ? `${c.parent.name} › ${c.name}` : c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="md:col-span-2">
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Descripción</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" rows={3} placeholder="Describe el servicio..." />
@@ -186,6 +250,9 @@ export default function ServicesPage() {
           <thead className="bg-surface-container-low">
             <tr>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Nombre</th>
+              {canCategories && (
+                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Categoría</th>
+              )}
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Duración</th>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Precio</th>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Estado</th>
@@ -206,6 +273,11 @@ export default function ServicesPage() {
                     </div>
                   </div>
                 </td>
+                {canCategories && (
+                  <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">
+                    {categoryLabel(service) || '—'}
+                  </td>
+                )}
                 <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">{service.duration} Min</td>
                 <td className="p-lg font-label-md text-label-md text-on-surface">{service.price ? `$${service.price.toFixed(2)}` : 'Gratis'}</td>
                 <td className="p-lg">

@@ -11,6 +11,7 @@ import platformConfigRoutes from './routes/platform-config';
 import stripeRoutes from './routes/stripe';
 import loyaltyRoutes from './routes/loyalty';
 import staffRoutes from './routes/staff';
+import serviceCategoryRoutes from './routes/service-categories';
 import { whatsappHandler } from './services/whatsapp-handler';
 
 const app = express();
@@ -51,6 +52,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/service-categories', serviceCategoryRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/whatsapp', whatsappRoutes);

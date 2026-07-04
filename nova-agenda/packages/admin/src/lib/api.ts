@@ -46,6 +46,19 @@ export interface WorkingHoursEntry {
   isOpen: boolean;
 }
 
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  description?: string | null;
+  color: string;
+  sortOrder: number;
+  isActive: boolean;
+  parentId?: string | null;
+  parent?: { id: string; name: string } | null;
+  children?: ServiceCategory[];
+  _count?: { services: number; children?: number };
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -55,6 +68,14 @@ export interface Service {
   color: string;
   isActive: boolean;
   clientId: string;
+  categoryId?: string | null;
+  category?: {
+    id: string;
+    name: string;
+    color: string;
+    parentId?: string | null;
+    parent?: { id: string; name: string } | null;
+  } | null;
   _count?: { bookings: number };
 }
 
@@ -214,6 +235,29 @@ class ApiClient {
   }
   async deleteService(id: string) {
     return this.request(`/api/services/${id}`, { method: 'DELETE' });
+  }
+
+  // Service categories (BASIC+)
+  async getServiceCategories() {
+    return this.request<ServiceCategory[]>('/api/service-categories');
+  }
+  async getServiceCategoriesFlat() {
+    return this.request<ServiceCategory[]>('/api/service-categories/flat');
+  }
+  async createServiceCategory(data: Record<string, unknown>) {
+    return this.request<ServiceCategory>('/api/service-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  async updateServiceCategory(id: string, data: Record<string, unknown>) {
+    return this.request<ServiceCategory>(`/api/service-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+  async deleteServiceCategory(id: string) {
+    return this.request(`/api/service-categories/${id}`, { method: 'DELETE' });
   }
 
   // Staff

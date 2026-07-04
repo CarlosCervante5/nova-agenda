@@ -27,7 +27,30 @@ export interface ClientInfo {
   facebook?: string;
   whatsappPhone?: string;
   websiteEnabled?: boolean;
-  services: { id: string; name: string; description?: string; duration: number; price?: number; color: string }[];
+  services: {
+    id: string;
+    name: string;
+    description?: string;
+    duration: number;
+    price?: number;
+    color: string;
+    categoryId?: string | null;
+    category?: {
+      id: string;
+      name: string;
+      color: string;
+      parentId?: string | null;
+      parent?: { id: string; name: string; color: string } | null;
+    } | null;
+  }[];
+  categories?: {
+    id: string;
+    name: string;
+    description?: string;
+    color: string;
+    parentId?: string | null;
+    children?: { id: string; name: string; description?: string; color: string; parentId?: string | null }[];
+  }[];
   staff?: {
     id: string;
     name: string;

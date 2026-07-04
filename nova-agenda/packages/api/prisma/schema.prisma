@@ -33,6 +33,7 @@ model Client {
 
   users         User[]
   services      Service[]
+  serviceCategories ServiceCategory[]
   bookings      Booking[]
   staffMembers  StaffMember[]
   workingHours  WorkingHours[]
@@ -59,6 +60,26 @@ model User {
   @@map("users")
 }
 
+model ServiceCategory {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  color         String    @default("#5950b6")
+  sortOrder     Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId      String
+  parent        ServiceCategory?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId      String?
+  children      ServiceCategory[] @relation("CategoryTree")
+  services      Service[]
+
+  @@map("service_categories")
+}
+
 model Service {
   id            String    @id @default(cuid())
   name          String
@@ -72,6 +93,8 @@ model Service {
 
   client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId      String
+  category      ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId    String?
   bookings      Booking[]
   staffServices StaffService[]
 
