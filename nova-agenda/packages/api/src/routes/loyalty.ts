@@ -165,7 +165,7 @@ router.post('/programs', authenticate, async (req: AuthRequest, res: Response) =
         stampsToReward: cardSize,
         isActive: isActive === true,
         stampIcon: stampIcon || 'local_fire_department',
-        stampColor: stampColor || '#5950b6',
+        stampColor: stampColor || '#2dd4bf',
         backgroundColor: backgroundColor || '#ffffff',
         textColor: textColor || '#191c1e',
         enableWhatsApp: enableWhatsApp || false,

@@ -231,7 +231,7 @@ export default function SmartCalendar({ onBookingUpdated, clientPlan = 'FREE' }:
                   {dayBookings.length > 0 && (
                     <div className="mt-1 space-y-0.5">
                       {dayBookings.slice(0, 2).map((b) => (
-                        <div key={b.id} className="text-[10px] truncate px-1 py-0.5 rounded" style={{ backgroundColor: `${b.service?.color || '#5950b6'}22`, color: b.service?.color }}>
+                        <div key={b.id} className="text-[10px] truncate px-1 py-0.5 rounded" style={{ backgroundColor: `${b.service?.color || '#2dd4bf'}22`, color: b.service?.color }}>
                           {b.startTime} {b.customerName}
                         </div>
                       ))}
@@ -291,7 +291,7 @@ export default function SmartCalendar({ onBookingUpdated, clientPlan = 'FREE' }:
                             top,
                             height,
                             borderLeftWidth: 3,
-                            borderLeftColor: booking.service?.color || '#5950b6',
+                            borderLeftColor: booking.service?.color || '#2dd4bf',
                           }}
                         >
                           <p className="text-[11px] font-bold truncate">{booking.customerName}</p>

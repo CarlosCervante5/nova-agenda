@@ -16,7 +16,7 @@ model Client {
   phone         String?
   address       String?
   logo          String?
-  primaryColor  String    @default("#5950b6")
+  primaryColor  String    @default("#2dd4bf")
   tagline       String?
   about         String?
   coverImage    String?
@@ -74,7 +74,7 @@ model ServiceCategory {
   id            String    @id @default(cuid())
   name          String
   description   String?
-  color         String    @default("#5950b6")
+  color         String    @default("#2dd4bf")
   sortOrder     Int       @default(0)
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
@@ -97,7 +97,7 @@ model Service {
   duration      Int
   price         Float?
   isActive      Boolean   @default(true)
-  color         String    @default("#5950b6")
+  color         String    @default("#2dd4bf")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -118,7 +118,7 @@ model StaffMember {
   phone         String?
   title         String?   // cargo: Estilista, Terapeuta, etc.
   bio           String?
-  color         String    @default("#5950b6")
+  color         String    @default("#2dd4bf")
   avatarUrl     String?
   isActive      Boolean   @default(true)
   sortOrder     Int       @default(0)
@@ -224,7 +224,7 @@ model LoyaltyProgram {
   stampsToReward Int      @default(10)
   isActive      Boolean   @default(false)
   stampIcon     String    @default("local_fire_department")
-  stampColor    String    @default("#5950b6")
+  stampColor    String    @default("#2dd4bf")
   backgroundColor String  @default("#ffffff")
   textColor     String    @default("#191c1e")
   enableWhatsApp Boolean  @default(false)

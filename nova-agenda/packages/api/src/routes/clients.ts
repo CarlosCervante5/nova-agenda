@@ -86,7 +86,7 @@ router.post('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest
         email,
         phone,
         address,
-        primaryColor: primaryColor || '#2563eb',
+        primaryColor: primaryColor || '#2dd4bf',
         plan: plan || 'FREE',
       },
     });

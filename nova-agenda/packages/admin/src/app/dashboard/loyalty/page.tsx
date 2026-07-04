@@ -110,7 +110,7 @@ export default function LoyaltyPage() {
         stampsToReward: 10,
         isActive: false,
         stampIcon: 'local_fire_department',
-        stampColor: '#5950b6',
+        stampColor: '#2dd4bf',
         backgroundColor: '#ffffff',
         textColor: '#191c1e',
         enableWhatsApp: false,
@@ -362,7 +362,7 @@ export default function LoyaltyPage() {
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">Color del Sello</label>
                 <input
                   type="color"
-                  value={formData.stampColor || '#5950b6'}
+                  value={formData.stampColor || '#2dd4bf'}
                   onChange={(e) => setFormData({ ...formData, stampColor: e.target.value })}
                   className="w-full h-12 border border-outline-variant rounded-lg cursor-pointer"
                 />

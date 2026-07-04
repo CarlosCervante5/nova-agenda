@@ -14,13 +14,13 @@
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.5);
+  border: 1px solid rgba(203, 213, 225, 0.6);
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #f8f9fc;
-  color: #191c1e;
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -30,6 +30,6 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #c8c4d4;
+  background: #64748b;
   border-radius: 10px;
 }

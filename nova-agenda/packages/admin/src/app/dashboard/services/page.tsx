@@ -21,7 +21,7 @@ export default function ServicesPage() {
     description: '',
     duration: '30',
     price: '',
-    color: '#5950b6',
+    color: '#2dd4bf',
     clientId: '',
     categoryId: '',
   });
@@ -63,7 +63,7 @@ export default function ServicesPage() {
     if (atServiceLimit) return;
     setShowForm(true);
     setEditing(null);
-    setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '', categoryId: '' });
+    setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '' });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,7 +80,7 @@ export default function ServicesPage() {
       if (editing) { await api.updateService(editing.id, data); }
       else { await api.createService(data); }
       setShowForm(false); setEditing(null);
-      setForm({ name: '', description: '', duration: '30', price: '', color: '#5950b6', clientId: '', categoryId: '' });
+      setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '' });
       loadServices();
     } catch (err: any) { alert(err.message); }
   }

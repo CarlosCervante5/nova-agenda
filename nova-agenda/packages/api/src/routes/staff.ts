@@ -113,7 +113,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         phone: phone || null,
         title: title || null,
         bio: bio || null,
-        color: color || '#5950b6',
+        color: color || '#2dd4bf',
         avatarUrl: avatarUrl || null,
         isActive: isActive !== false,
         sortOrder: Number(sortOrder) || 0,

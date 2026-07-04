@@ -12,7 +12,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', slug: '', email: '', phone: '', primaryColor: '#5950b6', plan: 'FREE' });
+  const [form, setForm] = useState({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE' });
 
   useEffect(() => {
     if (authLoading) return;
@@ -33,7 +33,7 @@ export default function ClientsPage() {
       if (editing) { await api.updateClient(editing.id, form); }
       else { await api.createClient(form); }
       setShowForm(false); setEditing(null);
-      setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#5950b6', plan: 'FREE' });
+      setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE' });
       loadClients();
     } catch (err: any) { alert(err.message); }
   }
@@ -67,7 +67,7 @@ export default function ClientsPage() {
           <p className="font-body-md text-body-md text-on-surface-variant">Gestiona los {clients.length} negocios registrados.</p>
         </div>
         <button
-          onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#5950b6', plan: 'FREE' }); }}
+          onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE' }); }}
           className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>

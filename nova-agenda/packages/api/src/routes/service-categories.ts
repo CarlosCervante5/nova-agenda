@@ -143,7 +143,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         clientId,
         name: name.trim(),
         description: description || null,
-        color: color || '#5950b6',
+        color: color || '#2dd4bf',
         sortOrder: Number(sortOrder) || 0,
         parentId: parentId || null,
         isActive: isActive !== false,

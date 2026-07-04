@@ -103,7 +103,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         description,
         duration: parseInt(duration),
         price: price ? parseFloat(price) : null,
-        color: color || '#2563eb',
+        color: color || '#2dd4bf',
         clientId: targetClientId,
         categoryId: resolvedCategoryId ?? null,
       },

@@ -29,7 +29,7 @@ async function main() {
       slug: 'demo',
       email: 'demo@example.com',
       phone: '+1234567890',
-      primaryColor: '#2563eb',
+      primaryColor: '#2dd4bf',
       plan: 'PRO',
     },
   });
@@ -52,7 +52,7 @@ async function main() {
 
   // Create services
   const services = [
-    { name: 'Haircut', duration: 30, price: 25, color: '#2563eb', clientId: client.id },
+    { name: 'Haircut', duration: 30, price: 25, color: '#2dd4bf', clientId: client.id },
     { name: 'Beard Trim', duration: 15, price: 15, color: '#16a34a', clientId: client.id },
     { name: 'Full Styling', duration: 60, price: 50, color: '#9333ea', clientId: client.id },
   ];

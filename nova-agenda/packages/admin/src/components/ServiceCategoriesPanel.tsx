@@ -17,7 +17,7 @@ export default function ServiceCategoriesPanel({ enabled, onChange }: Props) {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    color: '#5950b6',
+    color: '#2dd4bf',
     parentId: '',
   });
   const [message, setMessage] = useState('');
@@ -42,7 +42,7 @@ export default function ServiceCategoriesPanel({ enabled, onChange }: Props) {
 
   function openCreate(parentId = '') {
     setEditing(null);
-    setForm({ name: '', description: '', color: '#5950b6', parentId });
+    setForm({ name: '', description: '', color: '#2dd4bf', parentId });
     setShowForm(true);
     setMessage('');
   }
@@ -52,7 +52,7 @@ export default function ServiceCategoriesPanel({ enabled, onChange }: Props) {
     setForm({
       name: cat.name,
       description: cat.description || '',
-      color: cat.color || '#5950b6',
+      color: cat.color || '#2dd4bf',
       parentId: cat.parentId || '',
     });
     setShowForm(true);
