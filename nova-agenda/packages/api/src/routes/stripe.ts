@@ -22,7 +22,91 @@ const PLANS: Record<string, { name: string; price: number; features: string[] }>
 };
 
 function getAdminOrigin(req: AuthRequest): string {
-  return (req.headers.origin as string) || process.env.ADMIN_URL || 'http://localhost:3002';
+  return (
+    (req.headers.origin as string) ||
+    process.env.ADMIN_URL ||
+    process.env.NEXT_PUBLIC_ADMIN_URL ||
+    'https://spirited-determination-production-a075.up.railway.app'
+  );
+}
+
+async function applyPlanFromSubscription(
+  clientId: string,
+  subscription: Stripe.Subscription
+): Promise<'FREE' | 'BASIC' | 'PRO'> {
+  let plan: 'FREE' | 'BASIC' | 'PRO' = 'FREE';
+
+  if (subscription.status === 'active' || subscription.status === 'trialing') {
+    const priceId = subscription.items.data[0]?.price?.id;
+    const metaPlan = subscription.metadata?.plan;
+    if (metaPlan === 'BASIC' || metaPlan === 'PRO') {
+      plan = metaPlan;
+    } else if (priceId) {
+      plan = await getPlanForPriceId(priceId);
+    }
+  }
+
+  await prisma.client.update({
+    where: { id: clientId },
+    data: {
+      plan,
+      stripeSubscriptionId: plan === 'FREE' ? null : subscription.id,
+      stripeCustomerId: typeof subscription.customer === 'string'
+        ? subscription.customer
+        : subscription.customer.id,
+    },
+  });
+
+  return plan;
+}
+
+async function syncClientFromStripe(clientId: string): Promise<{
+  plan: string;
+  subscription: Record<string, unknown> | null;
+}> {
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { plan: true, stripeCustomerId: true, stripeSubscriptionId: true },
+  });
+
+  if (!client?.stripeCustomerId) {
+    return { plan: client?.plan || 'FREE', subscription: null };
+  }
+
+  const s = await getStripeClient();
+  const subscriptions = await s.subscriptions.list({
+    customer: client.stripeCustomerId,
+    status: 'all',
+    limit: 10,
+  });
+
+  const active = subscriptions.data.find(
+    (sub) => sub.status === 'active' || sub.status === 'trialing'
+  );
+
+  if (!active) {
+    if (client.plan !== 'FREE' || client.stripeSubscriptionId) {
+      await prisma.client.update({
+        where: { id: clientId },
+        data: { plan: 'FREE', stripeSubscriptionId: null },
+      });
+    }
+    return { plan: 'FREE', subscription: null };
+  }
+
+  const plan = await applyPlanFromSubscription(clientId, active);
+
+  return {
+    plan,
+    subscription: {
+      id: active.id,
+      status: active.status,
+      currentPeriodEnd: new Date(
+        (active as unknown as { current_period_end: number }).current_period_end * 1000
+      ).toISOString(),
+      cancelAt: active.cancel_at ? new Date(active.cancel_at * 1000).toISOString() : null,
+    },
+  };
 }
 
 // Get available plans + current subscription info
@@ -130,7 +214,7 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       subscription_data: {
         metadata: { clientId: client.id, plan },
       },
-      success_url: `${origin}/dashboard/billing?success=true`,
+      success_url: `${origin}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/dashboard/billing?canceled=true`,
     });
 
@@ -181,70 +265,136 @@ router.post('/portal', authenticate, async (req: AuthRequest, res: Response) => 
   }
 });
 
-// Stripe Webhook (must use raw body)
+// Sync plan from Stripe (fallback cuando el webhook no llegó)
+router.post('/sync', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const clientId = req.user?.clientId;
+    if (!clientId) {
+      return res.status(400).json({ error: 'No hay negocio asociado a esta cuenta' });
+    }
+
+    const sessionId = req.body?.sessionId as string | undefined;
+    const s = await getStripeClient();
+
+    if (sessionId) {
+      const session = await s.checkout.sessions.retrieve(sessionId, {
+        expand: ['subscription'],
+      });
+
+      const metaClientId = session.metadata?.clientId;
+      if (metaClientId && metaClientId !== clientId) {
+        return res.status(403).json({ error: 'Sesión de pago no pertenece a este negocio' });
+      }
+
+      if (session.payment_status === 'paid' || session.status === 'complete') {
+        const subscription =
+          typeof session.subscription === 'string'
+            ? await s.subscriptions.retrieve(session.subscription)
+            : (session.subscription as Stripe.Subscription | null);
+
+        if (subscription) {
+          const planFromMeta = session.metadata?.plan;
+          if (planFromMeta === 'BASIC' || planFromMeta === 'PRO') {
+            subscription.metadata = { ...subscription.metadata, plan: planFromMeta };
+          }
+          const plan = await applyPlanFromSubscription(clientId, subscription);
+          console.log(`[Stripe Sync] Client ${clientId} upgraded to ${plan} via session ${sessionId}`);
+          return res.json({
+            plan,
+            subscription: {
+              id: subscription.id,
+              status: subscription.status,
+              currentPeriodEnd: new Date(
+                (subscription as unknown as { current_period_end: number }).current_period_end * 1000
+              ).toISOString(),
+              cancelAt: subscription.cancel_at
+                ? new Date(subscription.cancel_at * 1000).toISOString()
+                : null,
+            },
+          });
+        }
+      }
+    }
+
+    const result = await syncClientFromStripe(clientId);
+    console.log(`[Stripe Sync] Client ${clientId} plan=${result.plan}`);
+    res.json(result);
+  } catch (error: unknown) {
+    const message = formatStripeError(error);
+    console.error('[Stripe Sync]', message, error);
+    res.status(500).json({ error: message });
+  }
+});
+
+// Stripe Webhook (body es Buffer por express.raw en index.ts)
 router.post('/webhook', async (req, res) => {
   try {
     const s = await getStripeClient();
     const webhookSecret = await getStripeWebhookSecret();
+    const payload = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
 
     let event: Stripe.Event;
 
     if (webhookSecret) {
       const sig = req.headers['stripe-signature'] as string;
-      event = s.webhooks.constructEvent((req as unknown as { rawBody: Buffer }).rawBody, sig, webhookSecret);
+      if (!sig) {
+        return res.status(400).json({ error: 'Missing stripe-signature header' });
+      }
+      event = s.webhooks.constructEvent(payload, sig, webhookSecret);
     } else {
-      event = req.body as Stripe.Event;
+      event = JSON.parse(payload.toString('utf8')) as Stripe.Event;
+      console.warn('[Stripe Webhook] Sin STRIPE_WEBHOOK_SECRET — firma no verificada');
     }
 
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const clientId = session.metadata?.clientId;
-        const plan = session.metadata?.plan;
+        const planMeta = session.metadata?.plan;
 
-        if (clientId && plan && plan !== 'FREE') {
-          await prisma.client.update({
-            where: { id: clientId },
-            data: {
-              plan,
-              stripeSubscriptionId: session.subscription as string,
-            },
-          });
+        if (clientId && session.subscription) {
+          const subscription =
+            typeof session.subscription === 'string'
+              ? await s.subscriptions.retrieve(session.subscription)
+              : session.subscription;
+
+          if (planMeta === 'BASIC' || planMeta === 'PRO') {
+            subscription.metadata = { ...subscription.metadata, plan: planMeta };
+          }
+
+          const plan = await applyPlanFromSubscription(clientId, subscription);
           console.log(`[Stripe] Client ${clientId} upgraded to ${plan}`);
         }
         break;
       }
 
-      case 'customer.subscription.updated': {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.created': {
         const subscription = event.data.object as Stripe.Subscription;
-        const customer = await s.customers.retrieve(subscription.customer as string);
-        const clientId = (customer as Stripe.Customer).metadata?.clientId;
+        let clientId = subscription.metadata?.clientId;
+
+        if (!clientId) {
+          const customer = await s.customers.retrieve(subscription.customer as string);
+          clientId = (customer as Stripe.Customer).metadata?.clientId;
+        }
 
         if (clientId) {
-          let plan: 'FREE' | 'BASIC' | 'PRO' = 'FREE';
-          if (subscription.status === 'active' || subscription.status === 'trialing') {
-            const priceId = subscription.items.data[0]?.price?.id;
-            if (priceId) {
-              plan = await getPlanForPriceId(priceId);
-            }
-          }
-
-          await prisma.client.update({
-            where: { id: clientId },
-            data: {
-              plan,
-              stripeSubscriptionId: subscription.id,
-            },
-          });
-          console.log(`[Stripe] Subscription updated for ${clientId}: ${plan}`);
+          const plan = await applyPlanFromSubscription(clientId, subscription);
+          console.log(`[Stripe] Subscription ${event.type} for ${clientId}: ${plan}`);
         }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        const customer = await s.customers.retrieve(subscription.customer as string);
-        const clientId = (customer as Stripe.Customer).metadata?.clientId;
+        let clientId = subscription.metadata?.clientId;
+
+        if (!clientId) {
+          const customer = await s.customers.retrieve(subscription.customer as string);
+          clientId = (customer as Stripe.Customer).metadata?.clientId;
+        }
 
         if (clientId) {
           await prisma.client.update({

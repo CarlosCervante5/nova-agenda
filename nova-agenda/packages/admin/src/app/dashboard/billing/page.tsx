@@ -51,18 +51,41 @@ export default function BillingPage() {
 
   useEffect(() => {
     loadPlans();
-    // Handle redirect results from Stripe
-    if (searchParams.get('success') === 'true') {
-      setMessage('Pago procesado exitosamente. Tu plan ha sido actualizado.');
-      setTimeout(() => setMessage(''), 5000);
-    }
-    if (searchParams.get('canceled') === 'true') {
-      setMessage('El pago fue cancelado.');
-    }
   }, [searchParams]);
 
   async function loadPlans() {
+    const success = searchParams.get('success') === 'true';
+    const sessionId = searchParams.get('session_id') || undefined;
+
     try {
+      // Siempre sincroniza con Stripe (cubre pagos sin webhook y el redirect de éxito)
+      try {
+        const synced = await api.syncStripeSubscription(sessionId);
+        setCurrentPlan(synced.plan);
+        setSubscription(synced.subscription);
+        if (success) {
+          setMessage(
+            synced.plan !== 'FREE'
+              ? `Pago procesado. Tu plan ahora es ${synced.plan === 'PRO' ? 'Business' : 'Profesional'}.`
+              : 'Pago recibido. Si el plan no cambia en unos segundos, recarga la página.'
+          );
+        }
+      } catch (syncError) {
+        console.error('Stripe sync:', syncError);
+        if (success) {
+          setMessage(
+            'Error: ' +
+              (syncError instanceof Error
+                ? syncError.message
+                : 'Pago recibido pero no se pudo sincronizar el plan.')
+          );
+        }
+      }
+
+      if (searchParams.get('canceled') === 'true') {
+        setMessage('El pago fue cancelado.');
+      }
+
       const data = await api.getPlans();
       setCurrentPlan(data.currentPlan);
       setPlans(data.plans);

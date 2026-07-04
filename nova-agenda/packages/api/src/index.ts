@@ -39,9 +39,12 @@ const corsOptions: cors.CorsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Stripe webhook needs raw body BEFORE express.json()
+// Stripe webhook needs raw body; no aplicar express.json() a esa ruta
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith('/api/stripe/webhook')) return next();
+  return express.json()(req, res, next);
+});
 
 // Routes
 app.use('/api/auth', authRoutes);

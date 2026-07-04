@@ -270,6 +270,20 @@ class ApiClient {
   async createPortalSession() {
     return this.request<{ url: string }>('/api/stripe/portal', { method: 'POST' });
   }
+  async syncStripeSubscription(sessionId?: string) {
+    return this.request<{
+      plan: string;
+      subscription: {
+        id: string;
+        status: string;
+        currentPeriodEnd: string;
+        cancelAt: string | null;
+      } | null;
+    }>('/api/stripe/sync', {
+      method: 'POST',
+      body: JSON.stringify(sessionId ? { sessionId } : {}),
+    });
+  }
 
   // Loyalty
   async getPrograms() {
