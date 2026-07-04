@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
+import { getPlanLevel } from '../middleware/plan-check';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -289,6 +290,102 @@ router.delete('/programs/:clientId', authenticate, async (req: AuthRequest, res:
   }
 });
 
+function normalizePhone(phone: string) {
+  return phone.replace(/[^\d+]/g, '').trim();
+}
+
+// Register loyalty card from admin (BASIC+ — acceso por teléfono)
+router.post('/cards/admin', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const clientId =
+      req.user!.role === 'SUPER_ADMIN'
+        ? (req.body.clientId as string) || req.user!.clientId
+        : req.user!.clientId;
+
+    if (!clientId) {
+      return res.status(400).json({ error: 'No hay negocio asociado' });
+    }
+    if (!canAccessClient(req, clientId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { plan: true },
+    });
+    if (!client) {
+      return res.status(404).json({ error: 'Negocio no encontrado' });
+    }
+    if (getPlanLevel(client.plan) < getPlanLevel('BASIC')) {
+      return res.status(403).json({
+        error: 'Registrar tarjetas por teléfono requiere el plan Profesional o superior.',
+        code: 'PLAN_UPGRADE_REQUIRED',
+        requiredPlan: 'BASIC',
+      });
+    }
+
+    const { customerName, customerEmail, customerPhone } = req.body;
+    if (!customerName?.trim()) {
+      return res.status(400).json({ error: 'El nombre del cliente es obligatorio' });
+    }
+    if (!customerPhone?.trim()) {
+      return res.status(400).json({ error: 'El teléfono es obligatorio para acceder a la tarjeta' });
+    }
+
+    const phone = normalizePhone(customerPhone);
+    if (phone.length < 8) {
+      return res.status(400).json({ error: 'Ingresa un teléfono válido' });
+    }
+
+    const program = await prisma.loyaltyProgram.findUnique({ where: { clientId } });
+    if (!program) {
+      return res.status(400).json({
+        error: 'Primero crea un programa de fidelidad en la pestaña Configuración.',
+      });
+    }
+
+    const existing = await prisma.loyaltyCard.findUnique({
+      where: {
+        programId_customerPhone: { programId: program.id, customerPhone: phone },
+      },
+      include: {
+        stamps: { orderBy: { createdAt: 'desc' }, take: 10 },
+        _count: { select: { stamps: true } },
+      },
+    });
+
+    if (existing) {
+      return res.json({
+        ...existing,
+        visitsCount: existing.stampsEarned,
+        alreadyExists: true,
+      });
+    }
+
+    const card = await prisma.loyaltyCard.create({
+      data: {
+        programId: program.id,
+        customerName: customerName.trim(),
+        customerPhone: phone,
+        customerEmail: customerEmail?.trim() || null,
+      },
+      include: {
+        stamps: true,
+        _count: { select: { stamps: true } },
+      },
+    });
+
+    res.status(201).json({
+      ...card,
+      visitsCount: card.stampsEarned,
+      alreadyExists: false,
+    });
+  } catch (error) {
+    console.error('Admin loyalty card error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // List loyalty cards for a client (authenticated)
 router.get('/cards', authenticate, async (req: AuthRequest, res: Response) => {
   try {
@@ -366,12 +463,14 @@ router.post('/cards', async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Loyalty program not available' });
     }
 
-    if (customerPhone) {
+    const phone = customerPhone ? normalizePhone(customerPhone) : null;
+
+    if (phone) {
       const existingByPhone = await prisma.loyaltyCard.findUnique({
         where: {
           programId_customerPhone: {
             programId: program.id,
-            customerPhone,
+            customerPhone: phone,
           },
         },
       });
@@ -399,7 +498,7 @@ router.post('/cards', async (req: AuthRequest, res: Response) => {
         programId: program.id,
         customerName,
         customerEmail,
-        customerPhone,
+        customerPhone: phone,
       },
     });
 
@@ -471,7 +570,7 @@ router.post('/cards/:cardId/stamps', authenticate, async (req: AuthRequest, res:
 router.get('/cards/check', async (req: AuthRequest, res: Response) => {
   try {
     const clientId = req.query.clientId as string;
-    const phone = req.query.phone as string;
+    const phone = normalizePhone((req.query.phone as string) || '');
 
     if (!clientId || !phone) {
       return res.status(400).json({ error: 'Client ID and phone are required' });

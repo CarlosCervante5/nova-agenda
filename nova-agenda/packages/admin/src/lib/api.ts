@@ -245,6 +245,22 @@ class ApiClient {
     const query = searchParams.toString();
     return this.request<Booking[]>(`/api/bookings${query ? `?${query}` : ''}`);
   }
+  async createAdminBooking(data: {
+    serviceId: string;
+    staffId?: string;
+    customerName: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    date: string;
+    startTime: string;
+    notes?: string;
+    clientId?: string;
+  }) {
+    return this.request<Booking>('/api/bookings/admin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
   async updateBookingStatus(id: string, status: string) {
     return this.request<Booking>(`/api/bookings/${id}/status`, {
       method: 'PATCH',
@@ -350,6 +366,17 @@ class ApiClient {
   async getLoyaltyCards(clientId?: string) {
     const params = clientId ? `?clientId=${clientId}` : '';
     return this.request<any[]>(`/api/loyalty/cards${params}`);
+  }
+  async createLoyaltyCardAdmin(data: {
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    clientId?: string;
+  }) {
+    return this.request<any>('/api/loyalty/cards/admin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
   async addLoyaltyStamp(cardId: string, data?: { bookingId?: string; serviceId?: string }) {
     return this.request<any>(`/api/loyalty/cards/${cardId}/stamps`, {

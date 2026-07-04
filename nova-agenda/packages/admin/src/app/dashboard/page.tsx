@@ -5,12 +5,15 @@ import { api, Booking } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { format } from 'date-fns';
 import SmartCalendar from '@/components/SmartCalendar';
+import CreateBookingModal from '@/components/CreateBookingModal';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ clients: 0, services: 0, bookings: 0, revenue: 0 });
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientPlan, setClientPlan] = useState('FREE');
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     if (user) loadData();
@@ -31,10 +34,12 @@ export default function DashboardPage() {
         setStats({ clients: clients.length, services: services.length, bookings: bookings.length, revenue });
         setRecentBookings(bookings.slice(0, 5));
       } else {
-        const [services, bookings] = await Promise.all([
+        const [services, bookings, client] = await Promise.all([
           api.getServices(),
           api.getBookings({ date: today }),
+          user.clientId ? api.getClient(user.clientId) : Promise.resolve(null),
         ]);
+        if (client) setClientPlan(client.plan);
         const revenue = bookings.reduce((sum, b) => sum + ((b as { service?: { price?: number } }).service?.price || 0), 0);
         setStats({ clients: 0, services: services.length, bookings: bookings.length, revenue });
         setRecentBookings(bookings.slice(0, 5));
@@ -147,7 +152,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <SmartCalendar onBookingUpdated={loadData} />
+      <SmartCalendar onBookingUpdated={loadData} clientPlan={clientPlan} />
 
       <div className="glass-card rounded-xl overflow-hidden shadow-sm">
         <div className="px-lg py-md border-b border-outline-variant flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-surface-container-low">
@@ -155,7 +160,16 @@ export default function DashboardPage() {
             <h3 className="font-headline-md text-headline-md text-on-surface">Agenda de Hoy</h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">{recentBookings.length} citas programadas</p>
           </div>
-          <span className="font-label-md text-label-md text-primary">{format(new Date(), 'EEEE, MMM d')}</span>
+          <div className="flex items-center gap-3">
+            <span className="font-label-md text-label-md text-primary">{format(new Date(), 'EEEE, MMM d')}</span>
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="px-md py-2 bg-primary text-on-primary rounded-lg font-label-sm font-bold hover:opacity-90"
+            >
+              Nueva cita
+            </button>
+          </div>
         </div>
         <div className="divide-y divide-outline-variant">
           {recentBookings.length === 0 ? (
@@ -200,6 +214,13 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      <CreateBookingModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={loadData}
+        clientPlan={clientPlan}
+      />
     </div>
   );
 }

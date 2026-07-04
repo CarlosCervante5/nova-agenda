@@ -19,6 +19,7 @@ import {
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { api, Booking } from '@/lib/api';
+import CreateBookingModal from '@/components/CreateBookingModal';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -57,14 +58,16 @@ function statusClass(status: string) {
 
 interface Props {
   onBookingUpdated?: () => void;
+  clientPlan?: string;
 }
 
-export default function SmartCalendar({ onBookingUpdated }: Props) {
+export default function SmartCalendar({ onBookingUpdated, clientPlan = 'FREE' }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const range = useMemo(() => {
     if (viewMode === 'day') {
@@ -162,6 +165,14 @@ export default function SmartCalendar({ onBookingUpdated }: Props) {
           <p className="font-body-sm text-body-sm text-on-surface-variant capitalize">{title()}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="px-md py-2 bg-primary text-on-primary rounded-lg font-label-sm font-bold hover:opacity-90 flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Nueva cita
+          </button>
           <div className="flex bg-surface-container rounded-lg p-1">
             {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
               <button
@@ -347,6 +358,17 @@ export default function SmartCalendar({ onBookingUpdated }: Props) {
           </div>
         </div>
       )}
+
+      <CreateBookingModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => {
+          loadBookings();
+          onBookingUpdated?.();
+        }}
+        initialDate={currentDate}
+        clientPlan={clientPlan}
+      />
     </div>
   );
 }
