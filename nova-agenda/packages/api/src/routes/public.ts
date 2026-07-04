@@ -232,6 +232,19 @@ router.get('/client/:slug', async (req, res: Response) => {
           orderBy: { dayOfWeek: 'asc' },
           select: { dayOfWeek: true, openTime: true, closeTime: true, isOpen: true },
         },
+        staffMembers: {
+          where: { isActive: true },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          select: {
+            id: true,
+            name: true,
+            title: true,
+            bio: true,
+            color: true,
+            avatarUrl: true,
+            services: { select: { serviceId: true } },
+          },
+        },
       },
     });
 
@@ -248,7 +261,21 @@ router.get('/client/:slug', async (req, res: Response) => {
       });
     }
 
-    res.json(client);
+    const staff =
+      client.plan === 'FREE'
+        ? []
+        : client.staffMembers.map((s) => ({
+            id: s.id,
+            name: s.name,
+            title: s.title,
+            bio: s.bio,
+            color: s.color,
+            avatarUrl: s.avatarUrl,
+            serviceIds: s.services.map((ss) => ss.serviceId),
+          }));
+
+    const { staffMembers: _staffMembers, ...rest } = client;
+    res.json({ ...rest, staff });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

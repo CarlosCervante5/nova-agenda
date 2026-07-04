@@ -28,6 +28,15 @@ export interface ClientInfo {
   whatsappPhone?: string;
   websiteEnabled?: boolean;
   services: { id: string; name: string; description?: string; duration: number; price?: number; color: string }[];
+  staff?: {
+    id: string;
+    name: string;
+    title?: string;
+    bio?: string;
+    color: string;
+    avatarUrl?: string;
+    serviceIds: string[];
+  }[];
   workingHours: { dayOfWeek: number; openTime: string; closeTime: string; isOpen: boolean }[];
   plan?: string;
   bookingDisabled?: boolean;
@@ -89,7 +98,7 @@ export async function getAvailableSlots(clientSlug: string, serviceId: string, d
 }
 
 export async function createBooking(data: {
-  clientSlug: string; serviceId: string; customerName: string;
+  clientSlug: string; serviceId: string; staffId?: string; customerName: string;
   customerEmail?: string; customerPhone?: string; date: string;
   startTime: string; notes?: string;
 }) {

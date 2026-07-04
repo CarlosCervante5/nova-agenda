@@ -284,7 +284,10 @@ export default function SmartCalendar({ onBookingUpdated }: Props) {
                           }}
                         >
                           <p className="text-[11px] font-bold truncate">{booking.customerName}</p>
-                          <p className="text-[10px] truncate opacity-80">{booking.service?.name}</p>
+                          <p className="text-[10px] truncate opacity-80">
+                            {booking.service?.name}
+                            {booking.staff ? ` · ${booking.staff.name}` : ''}
+                          </p>
                           <p className="text-[10px] opacity-70">{booking.startTime}–{booking.endTime}</p>
                         </button>
                       );
@@ -312,6 +315,13 @@ export default function SmartCalendar({ onBookingUpdated }: Props) {
             <div className="space-y-2 mb-lg font-body-sm text-body-sm text-on-surface-variant">
               <p className="flex items-center gap-2"><span className="material-symbols-outlined text-base">calendar_today</span>{format(new Date(selectedBooking.date), "EEEE d MMM yyyy", { locale: es })}</p>
               <p className="flex items-center gap-2"><span className="material-symbols-outlined text-base">schedule</span>{selectedBooking.startTime} – {selectedBooking.endTime}</p>
+              {selectedBooking.staff && (
+                <p className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">badge</span>
+                  {selectedBooking.staff.name}
+                  {selectedBooking.staff.title ? ` · ${selectedBooking.staff.title}` : ''}
+                </p>
+              )}
               {selectedBooking.customerPhone && <p className="flex items-center gap-2"><span className="material-symbols-outlined text-base">call</span>{selectedBooking.customerPhone}</p>}
               <span className={`inline-block px-3 py-1 rounded-full font-label-sm ${statusClass(selectedBooking.status)}`}>
                 {STATUS_LABELS[selectedBooking.status] || selectedBooking.status}

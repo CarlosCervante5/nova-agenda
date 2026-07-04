@@ -34,6 +34,7 @@ model Client {
   users         User[]
   services      Service[]
   bookings      Booking[]
+  staffMembers  StaffMember[]
   workingHours  WorkingHours[]
   whatsappConfig WhatsAppConfig?
   whatsappLogs   WhatsAppLog[]
@@ -72,8 +73,42 @@ model Service {
   client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId      String
   bookings      Booking[]
+  staffServices StaffService[]
 
   @@map("services")
+}
+
+model StaffMember {
+  id            String    @id @default(cuid())
+  name          String
+  email         String?
+  phone         String?
+  title         String?   // cargo: Estilista, Terapeuta, etc.
+  bio           String?
+  color         String    @default("#5950b6")
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId      String
+  services      StaffService[]
+  bookings      Booking[]
+
+  @@map("staff_members")
+}
+
+model StaffService {
+  id            String      @id @default(cuid())
+  staff         StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffId       String
+  service       Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId     String
+
+  @@unique([staffId, serviceId])
+  @@map("staff_services")
 }
 
 model Booking {
@@ -93,6 +128,8 @@ model Booking {
   clientId      String
   service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   serviceId     String
+  staff         StaffMember? @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  staffId       String?
   loyaltyStamp  LoyaltyStamp?
 
   @@map("bookings")

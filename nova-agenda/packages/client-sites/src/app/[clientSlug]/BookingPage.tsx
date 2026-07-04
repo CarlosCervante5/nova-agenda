@@ -15,8 +15,9 @@ const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function BookingPage({ client, clientSlug, loyaltyProgram }: Props) {
   const [activeTab, setActiveTab] = useState<'booking' | 'loyalty'>('booking');
-  const [step, setStep] = useState<'service' | 'datetime' | 'confirm' | 'success'>('service');
+  const [step, setStep] = useState<'service' | 'staff' | 'datetime' | 'confirm' | 'success'>('service');
   const [selectedService, setSelectedService] = useState<ClientInfo['services'][0] | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<NonNullable<ClientInfo['staff']>[0] | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [slots, setSlots] = useState<string[]>([]);
@@ -64,6 +65,7 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
       await createBooking({
         clientSlug,
         serviceId: selectedService.id,
+        staffId: selectedStaff?.id,
         customerName: form.customerName,
         customerEmail: form.customerEmail || undefined,
         customerPhone: form.customerPhone || undefined,
@@ -76,8 +78,27 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
     setSubmitting(false);
   }
 
-  const stepNames = ['service', 'datetime', 'confirm'] as const;
-  const stepLabels = ['Servicio', 'Hora', 'Detalles'];
+  const staffForService = (client.staff || []).filter(
+    (s) => !s.serviceIds.length || (selectedService && s.serviceIds.includes(selectedService.id))
+  );
+  const hasStaffStep = staffForService.length > 0;
+
+  const stepNames: Array<'service' | 'staff' | 'datetime' | 'confirm'> = hasStaffStep
+    ? ['service', 'staff', 'datetime', 'confirm']
+    : ['service', 'datetime', 'confirm'];
+  const stepLabels = hasStaffStep
+    ? ['Servicio', 'Personal', 'Hora', 'Detalles']
+    : ['Servicio', 'Hora', 'Detalles'];
+
+  function selectService(service: ClientInfo['services'][0]) {
+    setSelectedService(service);
+    setSelectedStaff(null);
+    setSelectedSlot(null);
+    const available = (client.staff || []).filter(
+      (s) => !s.serviceIds.length || s.serviceIds.includes(service.id)
+    );
+    goToStep(available.length > 0 ? 'staff' : 'datetime');
+  }
 
   if (step === 'success') {
     return (
@@ -88,8 +109,9 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
           </div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">¡Reserva Confirmada!</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
-            Tu cita de <strong>{selectedService?.name}</strong> el{' '}
-            <strong>{format(selectedDate, "d 'de' MMMM, yyyy")}</strong> a las <strong>{selectedSlot}</strong> ha sido reservada.
+            Tu cita de <strong>{selectedService?.name}</strong>
+            {selectedStaff ? <> con <strong>{selectedStaff.name}</strong></> : null}
+            {' '}el <strong>{format(selectedDate, "d 'de' MMMM, yyyy")}</strong> a las <strong>{selectedSlot}</strong> ha sido reservada.
           </p>
 
           {loyaltyProgram && (
@@ -230,7 +252,7 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                         </span>
                         <span className={`text-xs font-medium ${isActive ? 'text-primary' : isPast ? 'text-secondary' : 'text-on-surface-variant'}`}>{label}</span>
                       </div>
-                      {i < 2 && <div className="w-12 h-px bg-outline-variant" />}
+                      {i < stepLabels.length - 1 && <div className="w-12 h-px bg-outline-variant" />}
                     </div>
                   );
                 })}
@@ -276,7 +298,7 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                   {client.services.map((service) => (
                     <button
                       key={service.id}
-                      onClick={() => { setSelectedService(service); goToStep('datetime'); }}
+                      onClick={() => selectService(service)}
                       className="group relative p-6 rounded-xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-lg transition-all cursor-pointer text-left"
                     >
                       <div className="flex justify-between items-start mb-4">
@@ -294,6 +316,62 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                       </div>
                     </button>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {step === 'staff' && selectedService && (
+              <section>
+                <h1 className="font-headline-lg text-on-surface mb-2">¿Quién te atiende?</h1>
+                <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
+                  Elige a la persona para tu cita de {selectedService.name}.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {staffForService.map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() => {
+                        setSelectedStaff(member);
+                        goToStep('datetime');
+                      }}
+                      className="p-6 rounded-xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-lg transition-all text-left"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-white overflow-hidden shrink-0"
+                          style={{ backgroundColor: member.color }}
+                        >
+                          {member.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={member.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="font-bold text-lg">{member.name.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-headline-md text-on-surface">{member.name}</h3>
+                          {member.title && (
+                            <p className="text-sm text-on-surface-variant">{member.title}</p>
+                          )}
+                          {member.bio && (
+                            <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{member.bio}</p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-lg flex justify-start">
+                  <button
+                    onClick={() => {
+                      setSelectedService(null);
+                      setSelectedStaff(null);
+                      setStep('service');
+                    }}
+                    className="text-on-surface-variant hover:text-primary font-label-md flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_back</span> Volver a servicios
+                  </button>
                 </div>
               </section>
             )}
@@ -359,8 +437,15 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                 )}
 
                 <div className="pt-lg flex justify-start">
-                  <button onClick={() => setStep('service')} className="text-on-surface-variant hover:text-primary font-label-md text-label-md flex items-center gap-1 transition-colors">
-                    <span className="material-symbols-outlined text-[18px]">arrow_back</span> Volver a servicios
+                  <button
+                    onClick={() => {
+                      setSelectedSlot(null);
+                      setStep(hasStaffStep ? 'staff' : 'service');
+                    }}
+                    className="text-on-surface-variant hover:text-primary font-label-md text-label-md flex items-center gap-1 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    {hasStaffStep ? 'Volver a personal' : 'Volver a servicios'}
                   </button>
                 </div>
               </section>
@@ -382,9 +467,14 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                     </div>
                     <p className="font-headline-md text-on-surface">{selectedService?.price ? `$${selectedService.price}` : 'Gratis'}</p>
                   </div>
-                  <div className="pt-lg border-t border-outline-variant flex items-center gap-4 text-sm text-on-surface-variant">
+                  <div className="pt-lg border-t border-outline-variant flex flex-wrap items-center gap-4 text-sm text-on-surface-variant">
                     <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">calendar_today</span> {format(selectedDate, "d 'de' MMMM, yyyy")}</span>
                     <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">schedule</span> {selectedSlot}</span>
+                    {selectedStaff && (
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">badge</span> {selectedStaff.name}
+                      </span>
+                    )}
                   </div>
                 </div>
 

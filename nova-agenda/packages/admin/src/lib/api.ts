@@ -58,6 +58,22 @@ export interface Service {
   _count?: { bookings: number };
 }
 
+export interface StaffMember {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  title?: string | null;
+  bio?: string | null;
+  color: string;
+  avatarUrl?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  clientId: string;
+  services?: { serviceId: string; service?: { id: string; name: string; duration: number; color: string } }[];
+  _count?: { bookings: number };
+}
+
 export interface Booking {
   id: string;
   customerName: string;
@@ -67,6 +83,8 @@ export interface Booking {
   startTime: string;
   endTime: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  staff?: { id: string; name: string; color?: string; title?: string | null } | null;
+  staffId?: string | null;
   notes?: string;
   service: { name: string; color: string; duration?: number };
 }
@@ -196,6 +214,24 @@ class ApiClient {
   }
   async deleteService(id: string) {
     return this.request(`/api/services/${id}`, { method: 'DELETE' });
+  }
+
+  // Staff
+  async getStaff(clientId?: string) {
+    const params = clientId ? `?clientId=${clientId}` : '';
+    return this.request<StaffMember[]>(`/api/staff${params}`);
+  }
+  async createStaff(data: Record<string, unknown>) {
+    return this.request<StaffMember>('/api/staff', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateStaff(id: string, data: Record<string, unknown>) {
+    return this.request<StaffMember>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async toggleStaff(id: string) {
+    return this.request<StaffMember>(`/api/staff/${id}/toggle`, { method: 'PATCH' });
+  }
+  async deleteStaff(id: string) {
+    return this.request(`/api/staff/${id}`, { method: 'DELETE' });
   }
 
   // Bookings

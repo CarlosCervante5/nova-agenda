@@ -43,7 +43,10 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 
     const bookings = await prisma.booking.findMany({
       where,
-      include: { service: { select: { name: true, color: true, duration: true } } },
+      include: {
+        service: { select: { name: true, color: true, duration: true } },
+        staff: { select: { id: true, name: true, color: true, title: true } },
+      },
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
     });
 
@@ -65,7 +68,7 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
       ? (req.body.clientId || clientId)
       : clientId;
 
-    const { serviceId, customerName, customerEmail, customerPhone, date, startTime, notes } = req.body;
+    const { serviceId, staffId, customerName, customerEmail, customerPhone, date, startTime, notes } = req.body;
 
     if (!targetClientId || !serviceId || !customerName || !date || !startTime) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -86,20 +89,31 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Service not found' });
     }
 
+    let resolvedStaffId: string | null = staffId || null;
+    if (resolvedStaffId) {
+      const staff = await prisma.staffMember.findFirst({
+        where: { id: resolvedStaffId, clientId: client.id, isActive: true },
+      });
+      if (!staff) {
+        return res.status(404).json({ error: 'Personal no encontrado' });
+      }
+    }
+
     const [hours, minutes] = startTime.split(':').map(Number);
     const endMinutes = hours * 60 + minutes + service.duration;
     const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
 
     const bookingDate = bookingStorageDate(date);
     const { start, end } = parseDateOnly(date);
-    const conflict = await prisma.booking.findFirst({
-      where: {
-        clientId: client.id,
-        date: { gte: start, lte: end },
-        status: { not: 'CANCELLED' },
-        OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
-      },
-    });
+    const conflictWhere: Record<string, unknown> = {
+      clientId: client.id,
+      date: { gte: start, lte: end },
+      status: { not: 'CANCELLED' },
+      OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
+    };
+    if (resolvedStaffId) conflictWhere.staffId = resolvedStaffId;
+
+    const conflict = await prisma.booking.findFirst({ where: conflictWhere });
 
     if (conflict) {
       return res.status(409).json({ error: 'Time slot is already booked' });
@@ -109,6 +123,7 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
       data: {
         clientId: client.id,
         serviceId,
+        staffId: resolvedStaffId,
         customerName,
         customerEmail,
         customerPhone,
@@ -118,7 +133,10 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
         notes,
         status: 'PENDING',
       },
-      include: { service: { select: { name: true, color: true } } },
+      include: {
+        service: { select: { name: true, color: true } },
+        staff: { select: { id: true, name: true, color: true, title: true } },
+      },
     });
 
     res.status(201).json(booking);
@@ -131,7 +149,7 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
 // Create booking (public - for client portals)
 router.post('/', async (req, res: Response) => {
   try {
-    const { clientSlug, serviceId, customerName, customerEmail, customerPhone, date, startTime, notes } = req.body;
+    const { clientSlug, serviceId, staffId, customerName, customerEmail, customerPhone, date, startTime, notes } = req.body;
 
     if (!clientSlug || !serviceId || !customerName || !date || !startTime) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -152,24 +170,42 @@ router.post('/', async (req, res: Response) => {
       return sendPlanLimitError(res, bookingLimit);
     }
 
+    let resolvedStaffId: string | null = null;
+    if (staffId) {
+      const staff = await prisma.staffMember.findFirst({
+        where: {
+          id: staffId,
+          clientId: client.id,
+          isActive: true,
+          OR: [
+            { services: { none: {} } },
+            { services: { some: { serviceId } } },
+          ],
+        },
+      });
+      if (!staff) {
+        return res.status(404).json({ error: 'Personal no disponible para este servicio' });
+      }
+      resolvedStaffId = staff.id;
+    }
+
     // Calculate end time
     const [hours, minutes] = startTime.split(':').map(Number);
     const endMinutes = hours * 60 + minutes + service.duration;
     const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
 
-    // Check for conflicts
+    // Check for conflicts (por personal si se eligió)
     const bookingDate = bookingStorageDate(date);
     const { start, end } = parseDateOnly(date);
-    const conflict = await prisma.booking.findFirst({
-      where: {
-        clientId: client.id,
-        date: { gte: start, lte: end },
-        status: { not: 'CANCELLED' },
-        OR: [
-          { startTime: { lt: endTime }, endTime: { gt: startTime } },
-        ],
-      },
-    });
+    const conflictWhere: Record<string, unknown> = {
+      clientId: client.id,
+      date: { gte: start, lte: end },
+      status: { not: 'CANCELLED' },
+      OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
+    };
+    if (resolvedStaffId) conflictWhere.staffId = resolvedStaffId;
+
+    const conflict = await prisma.booking.findFirst({ where: conflictWhere });
 
     if (conflict) {
       return res.status(409).json({ error: 'Time slot is already booked' });
@@ -179,6 +215,7 @@ router.post('/', async (req, res: Response) => {
       data: {
         clientId: client.id,
         serviceId,
+        staffId: resolvedStaffId,
         customerName,
         customerEmail,
         customerPhone,
@@ -188,7 +225,10 @@ router.post('/', async (req, res: Response) => {
         notes,
         status: 'PENDING',
       },
-      include: { service: { select: { name: true } } },
+      include: {
+        service: { select: { name: true } },
+        staff: { select: { id: true, name: true } },
+      },
     });
 
     res.status(201).json(booking);

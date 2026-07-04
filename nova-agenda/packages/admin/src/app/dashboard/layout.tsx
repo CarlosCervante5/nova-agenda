@@ -22,6 +22,7 @@ function Sidebar() {
     { href: '/dashboard', label: 'Panel', icon: 'dashboard' },
     { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN'] },
     { href: '/dashboard/website', label: 'Mi página web', icon: 'language', minPlan: 'BASIC' },
+    { href: '/dashboard/staff', label: 'Personal', icon: 'badge', minPlan: 'BASIC' },
     { href: '/dashboard/booking', label: 'Agenda pública', icon: 'event_available' },
     { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
     { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
