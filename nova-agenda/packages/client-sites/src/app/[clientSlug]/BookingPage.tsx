@@ -109,9 +109,13 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
           </div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">¡Reserva Confirmada!</h2>
           <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
-            Tu cita de <strong>{selectedService?.name}</strong>
-            {selectedStaff ? <> con <strong>{selectedStaff.name}</strong></> : null}
-            {' '}el <strong>{format(selectedDate, "d 'de' MMMM, yyyy")}</strong> a las <strong>{selectedSlot}</strong> ha sido reservada.
+            {client.bookingSuccessText || (
+              <>
+                Tu cita de <strong>{selectedService?.name}</strong>
+                {selectedStaff ? <> con <strong>{selectedStaff.name}</strong></> : null}
+                {' '}el <strong>{format(selectedDate, "d 'de' MMMM, yyyy")}</strong> a las <strong>{selectedSlot}</strong> ha sido reservada.
+              </>
+            )}
           </p>
 
           {loyaltyProgram && (
@@ -265,11 +269,12 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                   {client.tagline || 'Reserva Tu Experiencia'}
                 </h1>
                 <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
-                  {client.about
-                    ? client.about.length > 180
-                      ? `${client.about.slice(0, 180)}…`
-                      : client.about
-                    : 'Selecciona un servicio para comenzar tu reserva.'}
+                  {client.bookingIntroText ||
+                    (client.about
+                      ? client.about.length > 180
+                        ? `${client.about.slice(0, 180)}…`
+                        : client.about
+                      : 'Selecciona un servicio para comenzar tu reserva.')}
                 </p>
                 {(client.address || client.phone || client.email) && (
                   <div className="flex flex-wrap gap-4 mb-lg font-body-sm text-on-surface-variant">
@@ -568,27 +573,42 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
                       className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" required />
                   </div>
                   <div>
-                    <label className="font-label-md text-label-md text-on-surface mb-xs block">Correo Electrónico</label>
+                    <label className="font-label-md text-label-md text-on-surface mb-xs block">
+                      Correo Electrónico{client.bookingRequireEmail ? ' *' : ''}
+                    </label>
                     <input type="email" placeholder="tu@correo.com" value={form.customerEmail} onChange={(e) => setForm({ ...form, customerEmail: e.target.value })}
-                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                      required={!!client.bookingRequireEmail} />
                   </div>
                   <div>
-                    <label className="font-label-md text-label-md text-on-surface mb-xs block">Teléfono</label>
+                    <label className="font-label-md text-label-md text-on-surface mb-xs block">
+                      Teléfono{client.bookingRequirePhone ? ' *' : ''}
+                    </label>
                     <input type="tel" placeholder="+1 (555) 000-0000" value={form.customerPhone} onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
-                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                      required={!!client.bookingRequirePhone} />
                   </div>
-                  <div>
-                    <label className="font-label-md text-label-md text-on-surface mb-xs block">Notas</label>
-                    <textarea placeholder="Algún requerimiento especial o nota..." value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" rows={3} />
-                  </div>
+                  {client.bookingShowNotes !== false && (
+                    <div>
+                      <label className="font-label-md text-label-md text-on-surface mb-xs block">Notas</label>
+                      <textarea placeholder="Algún requerimiento especial o nota..." value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                        className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" rows={3} />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 mt-xl">
                   <button onClick={() => setStep('datetime')} className="px-lg py-3 border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container-low transition-all">
                     Volver
                   </button>
-                  <button onClick={handleBooking} disabled={!form.customerName || submitting}
+                  <button
+                    onClick={handleBooking}
+                    disabled={
+                      !form.customerName ||
+                      submitting ||
+                      (!!client.bookingRequirePhone && !form.customerPhone.trim()) ||
+                      (!!client.bookingRequireEmail && !form.customerEmail.trim())
+                    }
                     className="flex-1 py-3 text-on-primary rounded-xl font-semibold shadow-lg disabled:opacity-50 transition-all active:scale-[0.98]"
                     style={{ backgroundColor: client.primaryColor }}>
                     {submitting ? (

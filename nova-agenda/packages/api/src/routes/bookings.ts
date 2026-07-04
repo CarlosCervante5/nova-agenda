@@ -204,6 +204,17 @@ router.post('/', async (req, res: Response) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
+    if (client.bookingFormEnabled === false) {
+      return res.status(403).json({ error: 'Las reservas en línea están temporalmente desactivadas.' });
+    }
+
+    if (client.bookingRequirePhone && !customerPhone?.trim()) {
+      return res.status(400).json({ error: 'El teléfono es obligatorio' });
+    }
+    if (client.bookingRequireEmail && !customerEmail?.trim()) {
+      return res.status(400).json({ error: 'El correo es obligatorio' });
+    }
+
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service || !service.isActive || service.clientId !== client.id) {
       return res.status(404).json({ error: 'Service not found' });
@@ -268,8 +279,8 @@ router.post('/', async (req, res: Response) => {
         date: bookingDate,
         startTime,
         endTime,
-        notes,
-        status: 'PENDING',
+        notes: client.bookingShowNotes === false ? undefined : notes,
+        status: client.bookingConfirmAuto ? 'CONFIRMED' : 'PENDING',
       },
       include: {
         service: { select: { name: true } },

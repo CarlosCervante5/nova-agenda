@@ -26,6 +26,14 @@ model Client {
   websiteEnabled Boolean  @default(true)
   // Minutos de espacio entre citas: 5, 10, 15 o 20
   slotGapMinutes Int      @default(10)
+  // Formulario público de reservas
+  bookingFormEnabled   Boolean @default(true)
+  bookingRequirePhone  Boolean @default(false)
+  bookingRequireEmail  Boolean @default(false)
+  bookingShowNotes     Boolean @default(true)
+  bookingIntroText     String?
+  bookingSuccessText   String?
+  bookingConfirmAuto   Boolean @default(false)
   isActive      Boolean   @default(true)
   plan          String    @default("FREE")
   stripeCustomerId     String?

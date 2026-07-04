@@ -242,6 +242,14 @@ router.get('/client/:slug', async (req, res: Response) => {
         facebook: true,
         whatsappPhone: true,
         websiteEnabled: true,
+        slotGapMinutes: true,
+        bookingFormEnabled: true,
+        bookingRequirePhone: true,
+        bookingRequireEmail: true,
+        bookingShowNotes: true,
+        bookingIntroText: true,
+        bookingSuccessText: true,
+        bookingConfirmAuto: true,
         plan: true,
         services: {
           where: { isActive: true },
@@ -310,6 +318,18 @@ router.get('/client/:slug', async (req, res: Response) => {
         bookingDisabled: true,
         message: 'Esta página web está temporalmente desactivada.',
         plan: client.plan,
+      });
+    }
+
+    if (client.bookingFormEnabled === false) {
+      const { staffMembers: _s, serviceCategories: _c, ...rest } = client;
+      return res.json({
+        ...rest,
+        services: [],
+        staff: [],
+        categories: [],
+        bookingDisabled: true,
+        message: 'Las reservas en línea están temporalmente desactivadas.',
       });
     }
 

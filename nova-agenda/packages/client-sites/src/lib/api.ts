@@ -64,6 +64,14 @@ export interface ClientInfo {
   plan?: string;
   bookingDisabled?: boolean;
   message?: string;
+  bookingFormEnabled?: boolean;
+  bookingRequirePhone?: boolean;
+  bookingRequireEmail?: boolean;
+  bookingShowNotes?: boolean;
+  bookingIntroText?: string;
+  bookingSuccessText?: string;
+  bookingConfirmAuto?: boolean;
+  slotGapMinutes?: number;
 }
 
 export interface LoyaltyReward {

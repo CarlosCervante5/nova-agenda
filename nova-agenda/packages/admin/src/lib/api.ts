@@ -34,6 +34,13 @@ export interface Client {
   websiteEnabled?: boolean;
   /** Espacio entre citas en minutos: 5, 10, 15 o 20 */
   slotGapMinutes?: number;
+  bookingFormEnabled?: boolean;
+  bookingRequirePhone?: boolean;
+  bookingRequireEmail?: boolean;
+  bookingShowNotes?: boolean;
+  bookingIntroText?: string | null;
+  bookingSuccessText?: string | null;
+  bookingConfirmAuto?: boolean;
   plan: string;
   isActive: boolean;
   createdAt: string;
