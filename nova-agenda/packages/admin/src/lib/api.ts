@@ -257,6 +257,8 @@ class ApiClient {
         bookingsThisMonth: { used: number; limit: number | null };
         publicBooking: boolean;
       };
+      stripeConfigured?: boolean;
+      stripeMissing?: string[];
     }>('/api/stripe/plans');
   }
   async createCheckoutSession(plan: string) {

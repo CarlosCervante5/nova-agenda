@@ -44,6 +44,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [stripeConfigured, setStripeConfigured] = useState(true);
+  const [stripeMissing, setStripeMissing] = useState<string[]>([]);
 
   const PLAN_ORDER = ['FREE', 'BASIC', 'PRO'];
 
@@ -66,6 +68,8 @@ export default function BillingPage() {
       setPlans(data.plans);
       setSubscription(data.subscription);
       setUsage(data.usage || null);
+      setStripeConfigured(data.stripeConfigured !== false);
+      setStripeMissing(data.stripeMissing || []);
     } catch (error: unknown) {
       console.error('Error loading plans:', error);
       setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudieron cargar los planes'));
@@ -129,16 +133,23 @@ export default function BillingPage() {
         </div>
       )}
 
-      {message.startsWith('Error') && message.includes('Stripe') && (
-        <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant">
-          <p className="font-label-md text-label-md text-on-surface mb-1">Configuración requerida</p>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+      {(!stripeConfigured || (message.startsWith('Error') && (message.includes('Stripe') || message.includes('Price ID') || message.includes('clave')))) && (
+        <div className="p-4 rounded-lg bg-tertiary-container/30 border border-outline-variant">
+          <p className="font-label-md text-label-md text-on-surface mb-1">Pagos no configurados</p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-2">
             El administrador de la plataforma debe configurar Stripe en{' '}
-            <strong>Configuración → Stripe</strong> o agregar las variables{' '}
-            <code className="text-xs">STRIPE_SECRET_KEY</code>,{' '}
-            <code className="text-xs">STRIPE_PRICE_ID_BASIC</code> y{' '}
-            <code className="text-xs">STRIPE_PRICE_ID_PRO</code> en el servicio API.
+            <strong>Configuración → Stripe</strong> (solo SUPER_ADMIN) o agregar estas variables en el servicio <strong>API</strong> de Railway:
           </p>
+          <ul className="font-body-sm text-body-sm text-on-surface-variant list-disc list-inside space-y-1">
+            <li><code className="text-xs">STRIPE_SECRET_KEY</code> — clave secreta (sk_test_… o sk_live_…)</li>
+            <li><code className="text-xs">STRIPE_PRICE_ID_BASIC</code> — Price ID del plan Profesional (price_…)</li>
+            <li><code className="text-xs">STRIPE_PRICE_ID_PRO</code> — Price ID del plan Business (price_…)</li>
+          </ul>
+          {stripeMissing.length > 0 && (
+            <p className="font-body-sm text-body-sm text-error mt-2">
+              Falta: {stripeMissing.join(', ')}
+            </p>
+          )}
         </div>
       )}
 

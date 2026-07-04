@@ -8,6 +8,8 @@ import {
   getStripeWebhookSecret,
   getPriceIdForPlan,
   getPlanForPriceId,
+  isStripeConfigured,
+  formatStripeError,
 } from '../services/stripe-config';
 
 const router = Router();
@@ -56,11 +58,15 @@ router.get('/plans', authenticate, async (req: AuthRequest, res: Response) => {
       }
     }
 
+    const stripeStatus = await isStripeConfigured();
+
     res.json({
       currentPlan: client.plan,
       plans: PLANS,
       subscription,
       usage: await getClientPlanUsage(clientId, client.plan),
+      stripeConfigured: stripeStatus.configured,
+      stripeMissing: stripeStatus.missing,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error interno';
@@ -95,8 +101,8 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       return res.status(404).json({ error: 'Negocio no encontrado' });
     }
 
-    const s = await getStripeClient();
     const priceId = await getPriceIdForPlan(plan);
+    const s = await getStripeClient();
     const origin = getAdminOrigin(req);
 
     let customerId = client.stripeCustomerId;
@@ -129,14 +135,19 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
     });
 
     if (!session.url) {
-      return res.status(500).json({ error: 'Stripe no devolvió URL de checkout' });
+      return res.status(502).json({ error: 'Stripe no devolvió URL de checkout' });
     }
 
     res.json({ sessionId: session.id, url: session.url });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Error al crear checkout';
-    console.error('[Stripe Checkout]', message);
-    res.status(500).json({ error: message });
+    const message = formatStripeError(error);
+    console.error('[Stripe Checkout]', message, error);
+    const isConfigError =
+      message.includes('no está configurado') ||
+      message.includes('no configurado') ||
+      message.includes('no es válido') ||
+      message.includes('Price ID');
+    res.status(isConfigError ? 503 : 500).json({ error: message });
   }
 });
 

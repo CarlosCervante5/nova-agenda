@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
+import { resetStripeClient } from '../services/stripe-config';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -91,16 +92,39 @@ router.put('/:category', authenticate, authorize('SUPER_ADMIN'), async (req, res
       return res.status(400).json({ error: 'Invalid category' });
     }
 
-    const updates = req.body;
-    const upserts = Object.entries(updates).map(([key, value]) =>
-      prisma.platformConfig.upsert({
-        where: { key },
-        update: { value: String(value), category },
-        create: { key, value: String(value), category, label: schema.find(s => s.key === key)?.label || key },
-      })
+    const updates = req.body as Record<string, unknown>;
+    const passwordKeys = new Set(
+      schema.filter((s) => s.type === 'password').map((s) => s.key)
     );
 
+    const upserts = Object.entries(updates)
+      .filter(([key, value]) => {
+        // No borrar secretos al guardar el formulario con campos vacíos
+        if (passwordKeys.has(key) && !String(value ?? '').trim()) return false;
+        return schema.some((s) => s.key === key);
+      })
+      .map(([key, value]) =>
+        prisma.platformConfig.upsert({
+          where: { key },
+          update: { value: String(value), category },
+          create: {
+            key,
+            value: String(value),
+            category,
+            label: schema.find((s) => s.key === key)?.label || key,
+          },
+        })
+      );
+
+    if (upserts.length === 0) {
+      return res.status(400).json({ error: 'No hay campos válidos para actualizar' });
+    }
+
     await Promise.all(upserts);
+
+    if (category === 'stripe') {
+      resetStripeClient();
+    }
 
     res.json({ success: true });
   } catch (error: any) {
