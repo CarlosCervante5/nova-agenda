@@ -2,12 +2,25 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { resolveTenant, TenantRequest } from '../middleware/auth';
-import { parseDateOnly, bookingStorageDate } from '../utils/date-only';
+import {
+  parseDateOnly,
+  minutesToTime,
+  timeToMinutes,
+  normalizeSlotGap,
+  slotConflictsWithBooking,
+} from '../utils/date-only';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-const clientSelect = { id: true, name: true, slug: true, primaryColor: true, isActive: true } as const;
+const clientSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  primaryColor: true,
+  isActive: true,
+  slotGapMinutes: true,
+} as const;
 
 async function resolvePublicClient(req: TenantRequest) {
   const slug = (req.query.clientSlug || req.query.tenant) as string | undefined;
@@ -157,11 +170,10 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
       select: { startTime: true, endTime: true },
     });
 
-    const [openHour, openMin] = workingHours.openTime.split(':').map(Number);
-    const [closeHour, closeMin] = workingHours.closeTime.split(':').map(Number);
-    const openMinutes = openHour * 60 + openMin;
-    const closeMinutes = closeHour * 60 + closeMin;
+    const openMinutes = timeToMinutes(workingHours.openTime);
+    const closeMinutes = timeToMinutes(workingHours.closeTime);
     const duration = service.duration;
+    const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
 
     const now = new Date();
     const isToday = start.toDateString() === now.toDateString();
@@ -169,30 +181,37 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
 
     const slots: string[] = [];
     let current = openMinutes;
+    const step = 5;
 
     while (current + duration <= closeMinutes) {
-      const hours = String(Math.floor(current / 60)).padStart(2, '0');
-      const mins = String(current % 60).padStart(2, '0');
-      const slotStart = `${hours}:${mins}`;
-
-      const endMinutes = current + duration;
-      const endHours = String(Math.floor(endMinutes / 60)).padStart(2, '0');
-      const endMins = String(endMinutes % 60).padStart(2, '0');
-      const slotEnd = `${endHours}:${endMins}`;
+      const slotStart = minutesToTime(current);
+      const slotEndMin = current + duration;
 
       const isPast = isToday && current <= nowMinutes;
-      const isAvailable = !isPast && !existingBookings.some(
-        (booking) => booking.startTime < slotEnd && booking.endTime > slotStart
-      );
+      const isAvailable =
+        !isPast &&
+        !existingBookings.some((booking) =>
+          slotConflictsWithBooking(
+            current,
+            slotEndMin,
+            booking.startTime,
+            booking.endTime,
+            gapMinutes
+          )
+        );
 
       if (isAvailable) {
         slots.push(slotStart);
       }
 
-      current += 30;
+      current += step;
     }
 
-    res.json({ slots, service: { name: service.name, duration: service.duration } });
+    res.json({
+      slots,
+      service: { name: service.name, duration: service.duration },
+      slotGapMinutes: gapMinutes,
+    });
   } catch (error) {
     console.error('Get slots error:', error);
     res.status(500).json({ error: 'Internal server error' });

@@ -230,6 +230,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       facebook,
       whatsappPhone,
       websiteEnabled,
+      slotGapMinutes,
       plan,
       isActive,
     } = req.body;
@@ -291,6 +292,11 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         ...(facebook !== undefined && { facebook }),
         ...(whatsappPhone !== undefined && { whatsappPhone }),
         ...(typeof websiteEnabled === 'boolean' && { websiteEnabled }),
+        ...(slotGapMinutes !== undefined && {
+          slotGapMinutes: [5, 10, 15, 20].includes(Number(slotGapMinutes))
+            ? Number(slotGapMinutes)
+            : existing.slotGapMinutes,
+        }),
         ...(plan && req.user!.role === 'SUPER_ADMIN' && { plan }),
         ...(typeof isActive === 'boolean' && req.user!.role === 'SUPER_ADMIN' && { isActive }),
       },

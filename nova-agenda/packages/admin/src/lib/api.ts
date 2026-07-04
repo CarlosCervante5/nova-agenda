@@ -32,6 +32,8 @@ export interface Client {
   facebook?: string | null;
   whatsappPhone?: string | null;
   websiteEnabled?: boolean;
+  /** Espacio entre citas en minutos: 5, 10, 15 o 20 */
+  slotGapMinutes?: number;
   plan: string;
   isActive: boolean;
   createdAt: string;

@@ -34,8 +34,11 @@ interface Props {
   clientId: string;
 }
 
+const SLOT_GAP_OPTIONS = [5, 10, 15, 20] as const;
+
 export default function WorkingHoursEditor({ clientId }: Props) {
   const [hours, setHours] = useState<WorkingHoursEntry[]>(DEFAULT_HOURS);
+  const [slotGapMinutes, setSlotGapMinutes] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -48,8 +51,13 @@ export default function WorkingHoursEditor({ clientId }: Props) {
   async function loadHours() {
     setLoading(true);
     try {
-      const data = await api.getWorkingHours(clientId);
+      const [data, client] = await Promise.all([
+        api.getWorkingHours(clientId),
+        api.getClient(clientId),
+      ]);
       setHours(normalizeHours(data));
+      const gap = client.slotGapMinutes ?? 10;
+      setSlotGapMinutes(SLOT_GAP_OPTIONS.includes(gap as (typeof SLOT_GAP_OPTIONS)[number]) ? gap : 10);
     } catch (error) {
       console.error('Error loading working hours:', error);
       setHours(DEFAULT_HOURS);
@@ -70,9 +78,12 @@ export default function WorkingHoursEditor({ clientId }: Props) {
     setSaving(true);
     setMessage('');
     try {
-      const updated = await api.updateWorkingHours(clientId, hours);
+      const [updated] = await Promise.all([
+        api.updateWorkingHours(clientId, hours),
+        api.updateClient(clientId, { slotGapMinutes }),
+      ]);
       setHours(normalizeHours(updated));
-      setMessage('Horarios guardados correctamente');
+      setMessage('Horarios y espacio entre citas guardados');
       setTimeout(() => setMessage(''), 3000);
     } catch (err: unknown) {
       setMessage('Error: ' + (err instanceof Error ? err.message : 'No se pudieron guardar los horarios'));
@@ -93,7 +104,7 @@ export default function WorkingHoursEditor({ clientId }: Props) {
           <div>
             <h3 className="font-headline-md text-headline-md text-on-surface">Horarios de atención</h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Define cuándo tus clientes pueden reservar citas en el formulario público
+              Días, horas y espacio entre cada cita
             </p>
           </div>
         </div>
@@ -110,6 +121,34 @@ export default function WorkingHoursEditor({ clientId }: Props) {
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="p-md rounded-lg border border-outline-variant bg-surface-container-low mb-md">
+                <label className="font-label-md text-on-surface mb-2 block">
+                  Espacio entre citas
+                </label>
+                <p className="font-body-sm text-on-surface-variant mb-3">
+                  Tiempo libre después de cada cita antes de la siguiente (limpieza, preparación, etc.)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SLOT_GAP_OPTIONS.map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => {
+                        setSlotGapMinutes(mins);
+                        setMessage('');
+                      }}
+                      className={`px-4 py-2 rounded-lg border font-label-md font-bold transition-all ${
+                        slotGapMinutes === mins
+                          ? 'border-primary bg-primary text-on-primary'
+                          : 'border-outline-variant text-on-surface hover:border-primary/40'
+                      }`}
+                    >
+                      {mins} min
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {sortHours(hours).map((entry) => (
                 <div
                   key={entry.dayOfWeek}
@@ -164,7 +203,7 @@ export default function WorkingHoursEditor({ clientId }: Props) {
               disabled={saving || loading}
               className="px-lg py-2.5 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold hover:opacity-90 disabled:opacity-50 transition-all"
             >
-              {saving ? 'Guardando...' : 'Guardar horarios'}
+              {saving ? 'Guardando...' : 'Guardar configuración'}
             </button>
             {message && (
               <p className={`font-body-sm text-body-sm ${message.startsWith('Error') ? 'text-error' : 'text-secondary'}`}>

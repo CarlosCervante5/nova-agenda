@@ -3,10 +3,51 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
 import { assertCanCreateBooking, sendPlanLimitError } from '../middleware/plan-limits';
-import { parseDateOnly, bookingStorageDate } from '../utils/date-only';
+import {
+  parseDateOnly,
+  bookingStorageDate,
+  timeToMinutes,
+  minutesToTime,
+  normalizeSlotGap,
+  slotConflictsWithBooking,
+} from '../utils/date-only';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+async function hasScheduleConflict(params: {
+  clientId: string;
+  dayStart: Date;
+  dayEnd: Date;
+  startTime: string;
+  endTime: string;
+  gapMinutes: number;
+  staffId?: string | null;
+}) {
+  const where: {
+    clientId: string;
+    date: { gte: Date; lte: Date };
+    status: { not: string };
+    staffId?: string;
+  } = {
+    clientId: params.clientId,
+    date: { gte: params.dayStart, lte: params.dayEnd },
+    status: { not: 'CANCELLED' },
+  };
+  if (params.staffId) where.staffId = params.staffId;
+
+  const bookings = await prisma.booking.findMany({
+    where,
+    select: { startTime: true, endTime: true },
+  });
+
+  const slotStart = timeToMinutes(params.startTime);
+  const slotEnd = timeToMinutes(params.endTime);
+
+  return bookings.some((b) =>
+    slotConflictsWithBooking(slotStart, slotEnd, b.startTime, b.endTime, params.gapMinutes)
+  );
+}
 
 // Get bookings
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
@@ -99,24 +140,27 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const endMinutes = hours * 60 + minutes + service.duration;
-    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+    const startMin = timeToMinutes(startTime);
+    const endTime = minutesToTime(startMin + service.duration);
 
     const bookingDate = bookingStorageDate(date);
     const { start, end } = parseDateOnly(date);
-    const conflictWhere: Record<string, unknown> = {
-      clientId: client.id,
-      date: { gte: start, lte: end },
-      status: { not: 'CANCELLED' },
-      OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
-    };
-    if (resolvedStaffId) conflictWhere.staffId = resolvedStaffId;
+    const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
 
-    const conflict = await prisma.booking.findFirst({ where: conflictWhere });
+    const conflict = await hasScheduleConflict({
+      clientId: client.id,
+      dayStart: start,
+      dayEnd: end,
+      startTime,
+      endTime,
+      gapMinutes,
+      staffId: resolvedStaffId,
+    });
 
     if (conflict) {
-      return res.status(409).json({ error: 'Time slot is already booked' });
+      return res.status(409).json({
+        error: `Ese horario no está disponible (incluye ${gapMinutes} min de espacio entre citas)`,
+      });
     }
 
     const booking = await prisma.booking.create({
@@ -189,26 +233,28 @@ router.post('/', async (req, res: Response) => {
       resolvedStaffId = staff.id;
     }
 
-    // Calculate end time
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const endMinutes = hours * 60 + minutes + service.duration;
-    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
+    const startMin = timeToMinutes(startTime);
+    const endTime = minutesToTime(startMin + service.duration);
 
-    // Check for conflicts (por personal si se eligió)
+    // Check for conflicts (por personal si se eligió + espacio entre citas)
     const bookingDate = bookingStorageDate(date);
     const { start, end } = parseDateOnly(date);
-    const conflictWhere: Record<string, unknown> = {
-      clientId: client.id,
-      date: { gte: start, lte: end },
-      status: { not: 'CANCELLED' },
-      OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }],
-    };
-    if (resolvedStaffId) conflictWhere.staffId = resolvedStaffId;
+    const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
 
-    const conflict = await prisma.booking.findFirst({ where: conflictWhere });
+    const conflict = await hasScheduleConflict({
+      clientId: client.id,
+      dayStart: start,
+      dayEnd: end,
+      startTime,
+      endTime,
+      gapMinutes,
+      staffId: resolvedStaffId,
+    });
 
     if (conflict) {
-      return res.status(409).json({ error: 'Time slot is already booked' });
+      return res.status(409).json({
+        error: `Ese horario no está disponible (incluye ${gapMinutes} min de espacio entre citas)`,
+      });
     }
 
     const booking = await prisma.booking.create({

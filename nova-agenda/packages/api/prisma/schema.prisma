@@ -24,6 +24,8 @@ model Client {
   facebook      String?
   whatsappPhone String?
   websiteEnabled Boolean  @default(true)
+  // Minutos de espacio entre citas: 5, 10, 15 o 20
+  slotGapMinutes Int      @default(10)
   isActive      Boolean   @default(true)
   plan          String    @default("FREE")
   stripeCustomerId     String?
