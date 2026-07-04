@@ -13,6 +13,12 @@ const ENV_PRICE_KEYS: Record<string, string[]> = {
   PRO: ['STRIPE_PRICE_ID_PRO'],
 };
 
+/** Price IDs de producción (Stripe) — se usan si no hay env ni platform_config */
+const PRODUCTION_PRICE_IDS: Record<string, string> = {
+  BASIC: 'price_1TpIVoCu5CVszYevnZarLk48',
+  PRO: 'price_1TpIa5Cu5CVszYevMhC70wqE',
+};
+
 async function getDbConfigValue(keys: string[]): Promise<string | null> {
   const configs = await prisma.platformConfig.findMany({
     where: { key: { in: keys } },
@@ -67,7 +73,8 @@ export async function getPriceIdForPlan(plan: string): Promise<string> {
     throw new Error('Plan inválido');
   }
 
-  const priceId = await getConfigValue(envKeys || [], dbKeys);
+  const priceId =
+    (await getConfigValue(envKeys || [], dbKeys)) || PRODUCTION_PRICE_IDS[plan] || null;
 
   if (!priceId) {
     const label = plan === 'PRO' ? 'Business ($99)' : 'Profesional ($49)';
@@ -86,13 +93,16 @@ export async function getPriceIdForPlan(plan: string): Promise<string> {
 }
 
 export async function getPlanForPriceId(priceId: string): Promise<'BASIC' | 'PRO' | 'FREE'> {
-  const proPrice = await getConfigValue(['STRIPE_PRICE_ID_PRO'], ['stripe_price_id_pro']);
+  const proPrice =
+    (await getConfigValue(['STRIPE_PRICE_ID_PRO'], ['stripe_price_id_pro'])) ||
+    PRODUCTION_PRICE_IDS.PRO;
   if (proPrice && priceId === proPrice) return 'PRO';
 
-  const basicPrice = await getConfigValue(
-    ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
-    ['stripe_price_id_basic', 'stripe_price_id']
-  );
+  const basicPrice =
+    (await getConfigValue(
+      ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
+      ['stripe_price_id_basic', 'stripe_price_id']
+    )) || PRODUCTION_PRICE_IDS.BASIC;
   if (basicPrice && priceId === basicPrice) return 'BASIC';
 
   return 'FREE';
@@ -106,19 +116,20 @@ export async function isStripeConfigured(): Promise<{
   missing: string[];
 }> {
   const secretKey = await getConfigValue(['STRIPE_SECRET_KEY'], ['stripe_secret_key']);
-  const basicPrice = await getConfigValue(
-    ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
-    ['stripe_price_id_basic', 'stripe_price_id']
-  );
-  const proPrice = await getConfigValue(['STRIPE_PRICE_ID_PRO'], ['stripe_price_id_pro']);
+  const basicPrice =
+    (await getConfigValue(
+      ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
+      ['stripe_price_id_basic', 'stripe_price_id']
+    )) || PRODUCTION_PRICE_IDS.BASIC;
+  const proPrice =
+    (await getConfigValue(['STRIPE_PRICE_ID_PRO'], ['stripe_price_id_pro'])) ||
+    PRODUCTION_PRICE_IDS.PRO;
 
   const missing: string[] = [];
   if (!secretKey) missing.push('STRIPE_SECRET_KEY / stripe_secret_key');
-  if (!basicPrice) missing.push('STRIPE_PRICE_ID_BASIC / stripe_price_id_basic');
-  if (!proPrice) missing.push('STRIPE_PRICE_ID_PRO / stripe_price_id_pro');
 
   return {
-    configured: Boolean(secretKey && basicPrice && proPrice),
+    configured: Boolean(secretKey),
     hasSecretKey: Boolean(secretKey),
     hasBasicPrice: Boolean(basicPrice),
     hasProPrice: Boolean(proPrice),
