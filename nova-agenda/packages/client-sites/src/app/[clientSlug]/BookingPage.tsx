@@ -135,13 +135,30 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
 
   return (
     <div className="min-h-screen bg-background">
+      {client.coverImage && step === 'service' && activeTab === 'booking' && (
+        <div
+          className="w-full h-40 sm:h-52 bg-center bg-cover"
+          style={{ backgroundImage: `url(${client.coverImage})` }}
+        />
+      )}
+
       <header className="sticky top-0 z-40 w-full border-b border-outline-variant bg-surface/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-on-primary" style={{ backgroundColor: client.primaryColor }}>
-              <span className="material-symbols-outlined text-lg">spa</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-on-primary overflow-hidden shrink-0" style={{ backgroundColor: client.primaryColor }}>
+              {client.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={client.logo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-lg">spa</span>
+              )}
             </div>
-            <span className="font-headline-md text-on-surface">{client.name}</span>
+            <div className="min-w-0">
+              <span className="font-headline-md text-on-surface block truncate">{client.name}</span>
+              {client.tagline && (
+                <span className="font-body-sm text-on-surface-variant block truncate text-xs">{client.tagline}</span>
+              )}
+            </div>
           </div>
           {loyaltyProgram && (
             <nav className="flex items-center gap-1 bg-surface-container-low rounded-lg p-1">
@@ -222,8 +239,38 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
 
             {step === 'service' && (
               <section>
-                <h1 className="font-headline-lg text-on-surface mb-2">Reserva Tu Experiencia</h1>
-                <p className="font-body-md text-body-md text-on-surface-variant mb-lg">Selecciona un servicio para comenzar tu reserva.</p>
+                <h1 className="font-headline-lg text-on-surface mb-2">
+                  {client.tagline || 'Reserva Tu Experiencia'}
+                </h1>
+                <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
+                  {client.about
+                    ? client.about.length > 180
+                      ? `${client.about.slice(0, 180)}…`
+                      : client.about
+                    : 'Selecciona un servicio para comenzar tu reserva.'}
+                </p>
+                {(client.address || client.phone || client.email) && (
+                  <div className="flex flex-wrap gap-4 mb-lg font-body-sm text-on-surface-variant">
+                    {client.address && (
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-base">location_on</span>
+                        {client.address}
+                      </span>
+                    )}
+                    {client.phone && (
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-base">call</span>
+                        {client.phone}
+                      </span>
+                    )}
+                    {client.email && (
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-base">mail</span>
+                        {client.email}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   {client.services.map((service) => (
@@ -482,15 +529,52 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram }: Prop
       <footer className="mt-12 bg-surface-container-lowest border-t border-outline-variant py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: client.primaryColor + '30', color: client.primaryColor }}>
-              <span className="material-symbols-outlined text-sm">spa</span>
+            <div className="w-6 h-6 rounded flex items-center justify-center overflow-hidden" style={{ backgroundColor: client.primaryColor + '30', color: client.primaryColor }}>
+              {client.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={client.logo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-sm">spa</span>
+              )}
             </div>
-            <span className="font-headline-md text-on-surface text-lg">{client.name}</span>
+            <div>
+              <span className="font-headline-md text-on-surface text-lg block">{client.name}</span>
+              {client.address && (
+                <span className="font-body-sm text-on-surface-variant text-xs">{client.address}</span>
+              )}
+            </div>
           </div>
-          <div className="flex gap-8 text-sm font-medium text-on-surface-variant">
-            <a className="hover:text-primary transition-colors" href="#">Política de Privacidad</a>
-            <a className="hover:text-primary transition-colors" href="#">Términos de Servicio</a>
-            <a className="hover:text-primary transition-colors" href="#">Contacto</a>
+          <div className="flex gap-4 text-sm font-medium text-on-surface-variant">
+            {client.instagram && (
+              <a
+                className="hover:text-primary transition-colors"
+                href={client.instagram.startsWith('http') ? client.instagram : `https://instagram.com/${client.instagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Instagram
+              </a>
+            )}
+            {client.facebook && (
+              <a className="hover:text-primary transition-colors" href={client.facebook} target="_blank" rel="noopener noreferrer">
+                Facebook
+              </a>
+            )}
+            {client.whatsappPhone && (
+              <a
+                className="hover:text-primary transition-colors"
+                href={`https://wa.me/${client.whatsappPhone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp
+              </a>
+            )}
+            {client.phone && !client.whatsappPhone && (
+              <a className="hover:text-primary transition-colors" href={`tel:${client.phone}`}>
+                Contacto
+              </a>
+            )}
           </div>
         </div>
       </footer>

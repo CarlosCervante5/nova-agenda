@@ -17,6 +17,13 @@ model Client {
   address       String?
   logo          String?
   primaryColor  String    @default("#5950b6")
+  tagline       String?
+  about         String?
+  coverImage    String?
+  instagram     String?
+  facebook      String?
+  whatsappPhone String?
+  websiteEnabled Boolean  @default(true)
   isActive      Boolean   @default(true)
   plan          String    @default("FREE")
   stripeCustomerId     String?

@@ -210,8 +210,19 @@ router.get('/client/:slug', async (req, res: Response) => {
         id: true,
         name: true,
         slug: true,
+        domain: true,
+        email: true,
+        phone: true,
+        address: true,
         logo: true,
         primaryColor: true,
+        tagline: true,
+        about: true,
+        coverImage: true,
+        instagram: true,
+        facebook: true,
+        whatsappPhone: true,
+        websiteEnabled: true,
         plan: true,
         services: {
           where: { isActive: true },
@@ -226,6 +237,15 @@ router.get('/client/:slug', async (req, res: Response) => {
 
     if (!client) {
       return res.status(404).json({ error: 'Client not found' });
+    }
+
+    if (client.plan !== 'FREE' && client.websiteEnabled === false) {
+      return res.status(404).json({
+        error: 'Website disabled',
+        bookingDisabled: true,
+        message: 'Esta página web está temporalmente desactivada.',
+        plan: client.plan,
+      });
     }
 
     res.json(client);

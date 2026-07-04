@@ -200,7 +200,7 @@ router.put('/:id/working-hours', authenticate, async (req: AuthRequest, res: Res
   }
 });
 
-// Update client
+// Update client (incluye branding / página web)
 router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -209,23 +209,100 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const { name, email, phone, address, primaryColor, plan, isActive } = req.body;
+    const existing = await prisma.client.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      address,
+      primaryColor,
+      logo,
+      domain,
+      slug,
+      tagline,
+      about,
+      coverImage,
+      instagram,
+      facebook,
+      whatsappPhone,
+      websiteEnabled,
+      plan,
+      isActive,
+    } = req.body;
+
+    const websiteFields = [
+      logo,
+      domain,
+      tagline,
+      about,
+      coverImage,
+      instagram,
+      facebook,
+      whatsappPhone,
+      websiteEnabled,
+    ];
+    const touchesWebsite = websiteFields.some((v) => v !== undefined);
+
+    if (touchesWebsite && existing.plan === 'FREE' && req.user!.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({
+        error: 'La página web personalizada requiere el plan Profesional o superior.',
+        code: 'PLAN_UPGRADE_REQUIRED',
+        requiredPlan: 'BASIC',
+      });
+    }
+
+    if (slug && slug !== existing.slug) {
+      const slugTaken = await prisma.client.findFirst({
+        where: { slug, NOT: { id } },
+      });
+      if (slugTaken) {
+        return res.status(409).json({ error: 'Ese slug ya está en uso' });
+      }
+    }
+
+    if (domain && domain !== existing.domain) {
+      const domainTaken = await prisma.client.findFirst({
+        where: { domain, NOT: { id } },
+      });
+      if (domainTaken) {
+        return res.status(409).json({ error: 'Ese dominio ya está en uso' });
+      }
+    }
 
     const client = await prisma.client.update({
       where: { id },
       data: {
-        ...(name && { name }),
-        ...(email && { email }),
-        ...(phone && { phone }),
-        ...(address && { address }),
-        ...(primaryColor && { primaryColor }),
-        ...(plan && { plan }),
-        ...(typeof isActive === 'boolean' && req.user!.role !== 'CLIENT' && { isActive }),
+        ...(name !== undefined && { name }),
+        ...(email !== undefined && { email }),
+        ...(phone !== undefined && { phone }),
+        ...(address !== undefined && { address }),
+        ...(primaryColor !== undefined && { primaryColor }),
+        ...(logo !== undefined && { logo }),
+        ...(domain !== undefined && { domain: domain || null }),
+        ...(slug !== undefined && { slug }),
+        ...(tagline !== undefined && { tagline }),
+        ...(about !== undefined && { about }),
+        ...(coverImage !== undefined && { coverImage }),
+        ...(instagram !== undefined && { instagram }),
+        ...(facebook !== undefined && { facebook }),
+        ...(whatsappPhone !== undefined && { whatsappPhone }),
+        ...(typeof websiteEnabled === 'boolean' && { websiteEnabled }),
+        ...(plan && req.user!.role === 'SUPER_ADMIN' && { plan }),
+        ...(typeof isActive === 'boolean' && req.user!.role === 'SUPER_ADMIN' && { isActive }),
+      },
+      include: {
+        workingHours: { orderBy: { dayOfWeek: 'asc' } },
+        _count: { select: { users: true, bookings: true, services: true } },
       },
     });
 
     res.json(client);
   } catch (error) {
+    console.error('Update client error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
