@@ -22,6 +22,74 @@ const programInclude = {
   _count: { select: { cards: true } },
 };
 
+const REWARD_TYPES = [
+  'PERCENTAGE_DISCOUNT',
+  'FIXED_AMOUNT',
+  'FREE_SERVICE',
+  'SERVICE_DISCOUNT',
+  'CUSTOM',
+] as const;
+
+type RewardInput = {
+  name?: string;
+  description?: string;
+  stampsRequired?: number;
+  rewardType?: string;
+  value?: number;
+  serviceId?: string | null;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+function normalizeRewards(rewards: RewardInput[] | undefined, fallbackCardSize: number) {
+  if (!Array.isArray(rewards) || rewards.length === 0) {
+    return [
+      {
+        name: 'Descuento del 10%',
+        description: 'Obtén un 10% de descuento en tu próxima visita',
+        stampsRequired: Math.max(1, Math.floor(fallbackCardSize / 2)),
+        rewardType: 'PERCENTAGE_DISCOUNT',
+        value: 10,
+        serviceId: null as string | null,
+        isActive: true,
+        sortOrder: 1,
+      },
+      {
+        name: 'Servicio gratis',
+        description: 'Obtén un servicio gratis al completar la tarjeta',
+        stampsRequired: fallbackCardSize,
+        rewardType: 'FREE_SERVICE',
+        value: 0,
+        serviceId: null as string | null,
+        isActive: true,
+        sortOrder: 2,
+      },
+    ];
+  }
+
+  return rewards
+    .filter((r) => r && String(r.name || '').trim())
+    .map((r, index) => {
+      const rewardType = REWARD_TYPES.includes(r.rewardType as (typeof REWARD_TYPES)[number])
+        ? (r.rewardType as string)
+        : 'PERCENTAGE_DISCOUNT';
+      const stampsRequired = Math.max(1, Number(r.stampsRequired) || fallbackCardSize);
+      let value = Number(r.value);
+      if (Number.isNaN(value)) value = rewardType === 'PERCENTAGE_DISCOUNT' ? 10 : 0;
+
+      return {
+        name: String(r.name).trim(),
+        description: r.description ? String(r.description) : null,
+        stampsRequired,
+        rewardType,
+        value,
+        serviceId: r.serviceId || null,
+        isActive: r.isActive !== false,
+        sortOrder: r.sortOrder ?? index + 1,
+      };
+    });
+}
+
 // List loyalty programs
 router.get('/programs', authenticate, async (req: AuthRequest, res: Response) => {
   try {
@@ -73,6 +141,7 @@ router.post('/programs', authenticate, async (req: AuthRequest, res: Response) =
       welcomeMessage,
       rewardMessage,
       isActive,
+      rewards,
     } = req.body;
 
     if (!name) {
@@ -84,12 +153,15 @@ router.post('/programs', authenticate, async (req: AuthRequest, res: Response) =
       return res.status(409).json({ error: 'Client already has a loyalty program' });
     }
 
+    const cardSize = Math.max(1, Number(stampsToReward) || 10);
+    const rewardRows = normalizeRewards(rewards, cardSize);
+
     const program = await prisma.loyaltyProgram.create({
       data: {
         clientId,
         name,
         description,
-        stampsToReward: stampsToReward || 10,
+        stampsToReward: cardSize,
         isActive: isActive === true,
         stampIcon: stampIcon || 'local_fire_department',
         stampColor: stampColor || '#5950b6',
@@ -98,26 +170,7 @@ router.post('/programs', authenticate, async (req: AuthRequest, res: Response) =
         enableWhatsApp: enableWhatsApp || false,
         welcomeMessage: welcomeMessage || '¡Bienvenido al programa de fidelidad! Recibirás un sello por cada visita.',
         rewardMessage: rewardMessage || '¡Felicitaciones! Has completado tu tarjeta y ganado una recompensa.',
-        rewards: {
-          create: [
-            {
-              name: 'Descuento del 10%',
-              description: 'Obtén un 10% de descuento en tu próxima visita',
-              stampsRequired: 5,
-              rewardType: 'PERCENTAGE_DISCOUNT',
-              value: 10,
-              sortOrder: 1,
-            },
-            {
-              name: 'Servicio Gratis',
-              description: 'Obtén un servicio gratis',
-              stampsRequired: 10,
-              rewardType: 'FREE_SERVICE',
-              value: 0,
-              sortOrder: 2,
-            },
-          ],
-        },
+        rewards: { create: rewardRows },
       },
       include: programInclude,
     });
@@ -149,14 +202,33 @@ router.put('/programs/:clientId', authenticate, async (req: AuthRequest, res: Re
       welcomeMessage,
       rewardMessage,
       isActive,
+      rewards,
     } = req.body;
+
+    const existing = await prisma.loyaltyProgram.findUnique({ where: { clientId } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Loyalty program not found' });
+    }
+
+    const cardSize =
+      stampsToReward !== undefined
+        ? Math.max(1, Number(stampsToReward) || existing.stampsToReward)
+        : existing.stampsToReward;
+
+    if (Array.isArray(rewards)) {
+      const rewardRows = normalizeRewards(rewards, cardSize);
+      await prisma.loyaltyReward.deleteMany({ where: { programId: existing.id } });
+      await prisma.loyaltyReward.createMany({
+        data: rewardRows.map((r) => ({ ...r, programId: existing.id })),
+      });
+    }
 
     const program = await prisma.loyaltyProgram.update({
       where: { clientId },
       data: {
         name: name || undefined,
         description: description !== undefined ? description : undefined,
-        stampsToReward: stampsToReward !== undefined ? stampsToReward : undefined,
+        stampsToReward: stampsToReward !== undefined ? cardSize : undefined,
         stampIcon: stampIcon || undefined,
         stampColor: stampColor || undefined,
         backgroundColor: backgroundColor || undefined,

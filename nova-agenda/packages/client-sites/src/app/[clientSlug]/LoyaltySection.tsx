@@ -341,9 +341,16 @@ export default function LoyaltySection({ clientId, clientName, primaryColor, pro
                         {reward.description && (
                           <p className="text-sm text-on-surface-variant truncate">{reward.description}</p>
                         )}
+                        <p className="text-xs text-on-surface-variant mt-0.5">
+                          {reward.rewardType === 'PERCENTAGE_DISCOUNT' && `${reward.value}% de descuento`}
+                          {reward.rewardType === 'FIXED_AMOUNT' && `$${reward.value} de descuento`}
+                          {reward.rewardType === 'FREE_SERVICE' && 'Servicio gratis'}
+                          {reward.rewardType === 'SERVICE_DISCOUNT' && `$${reward.value} en un servicio`}
+                          {reward.rewardType === 'CUSTOM' && 'Recompensa especial'}
+                        </p>
                       </div>
                       <span className="text-xs font-bold text-on-surface-variant whitespace-nowrap">
-                        {reward.stampsRequired} sellos
+                        {reward.stampsRequired} {reward.stampsRequired === 1 ? 'visita' : 'visitas'}
                       </span>
                     </div>
                   );
