@@ -123,7 +123,7 @@ export default function HomePage() {
                   <span className="material-symbols-outlined text-2xl text-secondary">campaign</span>
                 </div>
                 <h3 className="font-headline-md text-headline-md mb-sm text-on-secondary-container">Marketing Inteligente</h3>
-                <p className="font-body-md text-body-md text-on-secondary-container/80 mb-xl">Campañas automatizadas por email y SMS que mantienen tus sillas llenas y tus clientes regresando.</p>
+                <p className="font-body-md text-body-md text-on-secondary-container/80 mb-xl">Programa de fidelidad y herramientas de retención que mantienen tus sillas llenas y tus clientes regresando.</p>
               </div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function HomePage() {
                   <span className="text-on-primary-container">/mes</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Dominio propio', 'Recordatorios SMS', 'Hasta 20 servicios'].map(f => (
+                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Hasta 20 servicios'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-on-primary-fixed-variant text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm text-on-primary-fixed">{f}</span>

@@ -230,6 +230,13 @@ model LoyaltyProgram {
   enableWhatsApp Boolean  @default(false)
   welcomeMessage String?  @default("¡Bienvenido al programa de fidelidad! Recibirás un sello por cada visita.")
   rewardMessage  String?  @default("¡Felicitaciones! Has completado tu tarjeta y ganado una recompensa.")
+  // Card generation options
+  cardModes     String    @default("QR") // QR, WALLET, IMAGE, WHATSAPP, or comma-separated
+  walletPassTypeIdentifier String? // Apple Wallet pass type ID
+  walletTeamIdentifier   String? // Apple Wallet team ID
+  walletOrganizationName String? // Apple Wallet organization name
+  cardTemplateUrl String? // URL for custom card image template
+  qrSecret      String? // Secret for QR code signing
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -265,6 +272,9 @@ model LoyaltyCard {
   customerName  String
   customerEmail String?
   customerPhone String?
+  qrCode        String?   @unique // Unique QR code for this card
+  walletPassId  String?   // Apple/Google Wallet pass ID
+  cardImageUrl  String?   // Generated card image URL
   stampsEarned  Int       @default(0)
   stampsRedeemed Int      @default(0)
   lastVisitAt   DateTime?

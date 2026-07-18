@@ -68,10 +68,9 @@ Leyenda:
 | Servicios ilimitados | — | — | ✅ | Enforced en API |
 | Máx. 50 citas/mes | ✅ | — | — | Enforced en API |
 | **Comunicación y automatización** |
-| Recordatorios SMS | 🚧 | 📋 | 📋 | Promocionado; **no implementado** |
 | WhatsApp — configuración | 🔒 | 🔒 | ✅ | Plan PRO en API + UI |
 | WhatsApp — webhook entrante | 🔒 | 🔒 | ✅ | Chatbot con OpenAI |
-| WhatsApp — recordatorios automáticos | 🔒 | 🔒 | ✅ | Cron cada 30 min (vía WhatsApp, no SMS) |
+| WhatsApp — recordatorios automáticos | 🔒 | 🔒 | ✅ | Cron cada 30 min (vía WhatsApp) |
 | WhatsApp — seguimiento post-cita | 🔒 | 🔒 | ✅ | Scheduler en `whatsapp-handler` |
 | Notificaciones email (SMTP) | 🚧 | 🚧 | 🚧 | Legacy PHP; no en Nova API |
 | **Programa de fidelidad** |
@@ -186,7 +185,6 @@ Para armar un plan de negocio honesto y priorizar desarrollo:
 | Servicios ilimitados (Business) | ✅ Sin límite en API |
 | Página web personalizada (Profesional) | ✅ Portal `client-sites` con branding |
 | Dominio propio | 🚧 Parcial (slug/subdominio sí) |
-| Recordatorios SMS (Profesional) | 🚧 No existe; recordatorios son WhatsApp (PRO) |
 | WhatsApp + IA 24/7 (Business) | ✅ Implementado (PRO) |
 | Agendado por WhatsApp | ✅ Vía chatbot (PRO) |
 
@@ -223,8 +221,6 @@ Alineada con el código actual + gaps a cerrar:
 | Subdominio / slug público | |
 
 *\*Requiere implementar límite en API.*
-
-**Alternativa SMS:** integrar Twilio/MessageBird y mover “recordatorios SMS” aquí.
 
 ---
 
@@ -265,7 +261,6 @@ Cancelación → Webhook subscription.deleted → plan = FREE
 | Stripe | % + fijo por transacción | Suscripciones |
 | OpenAI API | Plataforma o repercutir | Mensajes WhatsApp PRO |
 | WhatsApp / Evo Cloud | Plataforma o repercutir | Mensajes PRO |
-| SMS (futuro) | Plataforma | Recordatorios BASIC |
 
 ---
 
@@ -290,7 +285,7 @@ Prioridad sugerida para que la oferta comercial sea veraz:
 1. ~~**Enforzar límites FREE:** 3 servicios, 50 citas/mes~~ ✅ Implementado
 2. ~~**Enforzar límite BASIC:** 20 servicios~~ ✅ Implementado
 3. **Dos price IDs en Stripe** (BASIC $49, PRO $99).
-4. **SMS en BASIC** o corregir marketing (quitar SMS, poner “recordatorios por email”).
+4. ~~**Corregir marketing:** quitar SMS de la landing~~ ✅ Hecho
 5. **Decidir fidelidad por plan:** ¿todos los pagos o solo BASIC+?
 6. **Dominio custom:** flujo DNS + campo `domain` en Client.
 7. **Pagos en cita:** Stripe Checkout por reserva (upsell).
@@ -318,6 +313,6 @@ Límites citas/mes    50            ∞                ∞
 Actualizar este documento cuando:
 - Se añadan límites por plan en API
 - Cambien precios en `stripe.ts` o landing
-- Se lancen SMS, dominio custom o pagos por cita
+- Se lancen dominio custom o pagos por cita
 
 **Última revisión:** julio 2026 — basada en código post-módulo de fidelidad.

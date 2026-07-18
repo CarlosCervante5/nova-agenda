@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
@@ -648,6 +649,342 @@ router.post('/bookings/:bookingId/stamp', authenticate, async (req: AuthRequest,
 
     res.status(201).json(stamp);
   } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generate QR code for a loyalty card (authenticated)
+router.post('/cards/:cardId/qr', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { cardId } = req.params;
+
+    const card = await prisma.loyaltyCard.findUnique({
+      where: { id: cardId },
+      include: { program: true },
+    });
+
+    if (!card) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    if (!canAccessClient(req, card.program.clientId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Generate QR code payload
+    const payload = {
+      cardId: card.id,
+      programId: card.programId,
+      clientId: card.program.clientId,
+      phone: card.customerPhone,
+      ts: Date.now(),
+    };
+
+    // Sign the payload
+    const secret = card.program.qrSecret || crypto.randomBytes(32).toString('hex');
+    if (!card.program.qrSecret) {
+      await prisma.loyaltyProgram.update({
+        where: { id: card.programId },
+        data: { qrSecret: secret },
+      });
+    }
+
+    const signature = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(payload))
+      .digest('hex')
+      .slice(0, 16);
+
+    const qrData = `${card.id}:${payload.ts}:${signature}`;
+
+    // Generate QR code image URL (using a QR code API)
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      JSON.stringify({ c: card.id, t: payload.ts, s: signature })
+    )}`;
+
+    // Update card with QR code if not already set
+    if (!card.qrCode) {
+      await prisma.loyaltyCard.update({
+        where: { id: cardId },
+        data: { qrCode: qrData },
+      });
+    }
+
+    res.json({
+      qrCode: qrData,
+      qrCodeUrl,
+      cardId: card.id,
+      customerName: card.customerName,
+      stampsEarned: card.stampsEarned,
+      stampsToReward: card.program.stampsToReward,
+    });
+  } catch (error) {
+    console.error('QR generation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Scan QR code to add stamp (public - used by staff app or WhatsApp bot)
+router.post('/qr/scan', async (req: AuthRequest, res: Response) => {
+  try {
+    const { qrData, staffId, note } = req.body;
+
+    if (!qrData) {
+      return res.status(400).json({ error: 'QR data is required' });
+    }
+
+    // Parse QR data: cardId:timestamp:signature
+    const parts = qrData.split(':');
+    if (parts.length !== 3) {
+      return res.status(400).json({ error: 'Invalid QR code format' });
+    }
+
+    const [cardId, timestamp, signature] = parts;
+
+    // Find the card
+    const card = await prisma.loyaltyCard.findUnique({
+      where: { id: cardId },
+      include: { program: true },
+    });
+
+    if (!card) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    if (!card.program.isActive) {
+      return res.status(400).json({ error: 'Loyalty program is not active' });
+    }
+
+    // Verify signature
+    const secret = card.program.qrSecret;
+    if (!secret) {
+      return res.status(400).json({ error: 'QR code not properly configured' });
+    }
+
+    const payload = {
+      cardId: card.id,
+      programId: card.programId,
+      clientId: card.program.clientId,
+      phone: card.customerPhone,
+      ts: parseInt(timestamp),
+    };
+
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(payload))
+      .digest('hex')
+      .slice(0, 16);
+
+    if (signature !== expectedSignature) {
+      return res.status(401).json({ error: 'Invalid QR code signature' });
+    }
+
+    // Check if QR code is too old (24 hours)
+    const qrAge = Date.now() - parseInt(timestamp);
+    if (qrAge > 24 * 60 * 60 * 1000) {
+      return res.status(400).json({ error: 'QR code has expired. Please generate a new one.' });
+    }
+
+    // Check if customer already got a stamp today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStamp = await prisma.loyaltyStamp.findFirst({
+      where: {
+        cardId,
+        createdAt: { gte: today },
+      },
+    });
+
+    if (todayStamp) {
+      return res.status(409).json({
+        error: 'Customer already received a stamp today',
+        nextStampAt: new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+
+    // Award stamp
+    const newStampsEarned = card.stampsEarned + 1;
+    const isCompleted = newStampsEarned >= card.program.stampsToReward && !card.isCompleted;
+
+    const [stamp] = await prisma.$transaction([
+      prisma.loyaltyStamp.create({
+        data: {
+          cardId,
+          stampsGiven: 1,
+          note: note || 'QR Scan',
+        },
+      }),
+      prisma.loyaltyCard.update({
+        where: { id: cardId },
+        data: {
+          stampsEarned: { increment: 1 },
+          lastVisitAt: new Date(),
+          ...(isCompleted ? { isCompleted: true, completedAt: new Date() } : {}),
+        },
+      }),
+    ]);
+
+    // Get updated card with program info
+    const updatedCard = await prisma.loyaltyCard.findUnique({
+      where: { id: cardId },
+      include: {
+        program: { include: { rewards: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } } },
+        stamps: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+
+    res.status(201).json({
+      stamp,
+      card: updatedCard,
+      isCompleted,
+      stampsEarned: newStampsEarned,
+      stampsToReward: card.program.stampsToReward,
+      message: isCompleted
+        ? card.program.rewardMessage || '¡Felicitaciones! Has completado tu tarjeta.'
+        : `¡Sello añadido! ${newStampsEarned}/${card.program.stampsToReward}`,
+    });
+  } catch (error) {
+    console.error('QR scan error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generate card image (authenticated)
+router.post('/cards/:cardId/image', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { cardId } = req.params;
+
+    const card = await prisma.loyaltyCard.findUnique({
+      where: { id: cardId },
+      include: { program: true },
+    });
+
+    if (!card) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    if (!canAccessClient(req, card.program.clientId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Generate card image URL (using a template service)
+    const cardImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x400&data=${encodeURIComponent(
+      JSON.stringify({
+        type: 'loyalty-card',
+        cardId: card.id,
+        program: card.program.name,
+        customer: card.customerName,
+        stamps: `${card.stampsEarned}/${card.program.stampsToReward}`,
+      })
+    )}`;
+
+    // Update card with image URL
+    await prisma.loyaltyCard.update({
+      where: { id: cardId },
+      data: { cardImageUrl },
+    });
+
+    res.json({ cardImageUrl });
+  } catch (error) {
+    console.error('Card image generation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Send card via WhatsApp (authenticated)
+router.post('/cards/:cardId/whatsapp', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { cardId } = req.params;
+    const { message } = req.body;
+
+    const card = await prisma.loyaltyCard.findUnique({
+      where: { id: cardId },
+      include: { program: true },
+    });
+
+    if (!card) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    if (!canAccessClient(req, card.program.clientId)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (!card.customerPhone) {
+      return res.status(400).json({ error: 'Customer phone is required' });
+    }
+
+    if (!card.program.enableWhatsApp) {
+      return res.status(400).json({ error: 'WhatsApp is not enabled for this program' });
+    }
+
+    // Generate QR code URL for the card
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      JSON.stringify({ c: card.id })
+    )}`;
+
+    // Default message
+    const defaultMessage = `¡Hola ${card.customerName}! 🎉\n\n` +
+      `Tu tarjeta de fidelidad de ${card.program.name}:\n` +
+      `Sellos: ${card.stampsEarned}/${card.program.stampsToReward}\n\n` +
+      `Muestra este QR en tu próxima visita:\n${qrCodeUrl}`;
+
+    // TODO: Integrate with WhatsApp API to send the message
+    // For now, return the message and QR code URL
+    res.json({
+      message: message || defaultMessage,
+      qrCodeUrl,
+      customerPhone: card.customerPhone,
+      sent: false, // Set to true when WhatsApp integration is complete
+    });
+  } catch (error) {
+    console.error('WhatsApp card send error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get card QR code (public - for customer to view their QR)
+router.get('/cards/:cardId/qr', async (req: AuthRequest, res: Response) => {
+  try {
+    const { cardId } = req.params;
+
+    const card = await prisma.loyaltyCard.findUnique({
+      where: { id: cardId },
+      include: { program: true },
+    });
+
+    if (!card) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
+
+    // Generate QR code payload
+    const payload = {
+      cardId: card.id,
+      ts: Date.now(),
+    };
+
+    const secret = card.program.qrSecret || crypto.randomBytes(32).toString('hex');
+    const signature = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(payload))
+      .digest('hex')
+      .slice(0, 16);
+
+    const qrData = `${card.id}:${payload.ts}:${signature}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      JSON.stringify({ c: card.id, t: payload.ts, s: signature })
+    )}`;
+
+    res.json({
+      qrCode: qrData,
+      qrCodeUrl,
+      cardId: card.id,
+      customerName: card.customerName,
+      stampsEarned: card.stampsEarned,
+      stampsToReward: card.program.stampsToReward,
+    });
+  } catch (error) {
+    console.error('QR code fetch error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

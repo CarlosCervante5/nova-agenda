@@ -48,6 +48,13 @@ export interface LoyaltyProgram {
   enableWhatsApp: boolean;
   welcomeMessage?: string;
   rewardMessage?: string;
+  // Card generation options
+  cardModes?: string; // QR, WALLET, IMAGE, WHATSAPP (comma-separated)
+  walletPassTypeIdentifier?: string;
+  walletTeamIdentifier?: string;
+  walletOrganizationName?: string;
+  cardTemplateUrl?: string;
+  qrSecret?: string;
   rewards?: LoyaltyReward[];
   _count?: { cards: number };
 }

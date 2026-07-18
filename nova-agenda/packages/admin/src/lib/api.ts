@@ -437,6 +437,29 @@ class ApiClient {
       body: JSON.stringify(data || {}),
     });
   }
+
+  // Card generation
+  async generateCardQR(cardId: string) {
+    return this.request<any>(`/api/loyalty/cards/${cardId}/qr`, { method: 'POST' });
+  }
+  async generateCardImage(cardId: string) {
+    return this.request<any>(`/api/loyalty/cards/${cardId}/image`, { method: 'POST' });
+  }
+  async sendCardWhatsApp(cardId: string, message?: string) {
+    return this.request<any>(`/api/loyalty/cards/${cardId}/whatsapp`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  }
+  async scanQRCode(qrData: string, staffId?: string, note?: string) {
+    return this.request<any>('/api/loyalty/qr/scan', {
+      method: 'POST',
+      body: JSON.stringify({ qrData, staffId, note }),
+    });
+  }
+  async getCardQR(cardId: string) {
+    return this.request<any>(`/api/loyalty/cards/${cardId}/qr`);
+  }
 }
 
 export const api = new ApiClient();

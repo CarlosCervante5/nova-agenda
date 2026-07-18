@@ -578,6 +578,116 @@ export default function LoyaltyPage() {
               </span>
             </label>
 
+            {/* Card Generation Options */}
+            <div className="pt-lg border-t border-outline-variant">
+              <h4 className="font-headline-md text-on-surface flex items-center gap-2 mb-md">
+                <span className="material-symbols-outlined text-primary">qr_code_2</span>
+                Generación de Tarjetas de Fidelidad
+              </h4>
+              <p className="font-body-sm text-on-surface-variant mb-lg">
+                Elige cómo tus clientes acceden a su tarjeta de fidelidad.
+              </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-lg">
+                {[
+                  { key: 'QR', icon: 'qr_code_2', label: 'Código QR', desc: 'Escanea para acumular sellos' },
+                  { key: 'WALLET', icon: 'wallet', label: 'Wallet', desc: 'Apple/Google Wallet' },
+                  { key: 'IMAGE', icon: 'image', label: 'Imagen', desc: 'Tarjeta descargable' },
+                  { key: 'WHATSAPP', icon: 'chat', label: 'WhatsApp', desc: 'Envía por WhatsApp' },
+                ].map((mode) => {
+                  const modes = (formData.cardModes || 'QR').split(',');
+                  const isSelected = modes.includes(mode.key);
+                  return (
+                    <button
+                      key={mode.key}
+                      type="button"
+                      onClick={() => {
+                        const currentModes = (formData.cardModes || 'QR').split(',');
+                        const newModes = isSelected
+                          ? currentModes.filter((m) => m !== mode.key)
+                          : [...currentModes, mode.key];
+                        setFormData({ ...formData, cardModes: newModes.join(',') });
+                      }}
+                      className={`p-4 rounded-xl border-2 transition-all text-center ${
+                        isSelected
+                          ? 'border-primary bg-primary-container/20'
+                          : 'border-outline-variant hover:border-primary/50'
+                      }`}
+                    >
+                      <span className={`material-symbols-outlined text-2xl mb-1 block ${isSelected ? 'text-primary' : 'text-on-surface-variant'}`}>
+                        {mode.icon}
+                      </span>
+                      <span className={`font-label-sm block ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                        {mode.label}
+                      </span>
+                      <span className="text-xs text-on-surface-variant">{mode.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Apple Wallet Config */}
+              {(formData.cardModes || 'QR').split(',').includes('WALLET') && (
+                <div className="p-md rounded-xl border border-outline-variant bg-surface-container-low space-y-3 mb-lg">
+                  <h5 className="font-label-md text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">wallet</span>
+                    Configuración de Apple Wallet
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-label-sm text-on-surface-variant mb-1 block">Pass Type Identifier</label>
+                      <input
+                        value={formData.walletPassTypeIdentifier || ''}
+                        onChange={(e) => setFormData({ ...formData, walletPassTypeIdentifier: e.target.value })}
+                        className="w-full px-3 py-2 bg-surface-bright border border-outline-variant rounded-lg font-body-sm outline-none focus:border-primary"
+                        placeholder="pass.com.tuempresa.fidelidad"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-label-sm text-on-surface-variant mb-1 block">Team Identifier</label>
+                      <input
+                        value={formData.walletTeamIdentifier || ''}
+                        onChange={(e) => setFormData({ ...formData, walletTeamIdentifier: e.target.value })}
+                        className="w-full px-3 py-2 bg-surface-bright border border-outline-variant rounded-lg font-body-sm outline-none focus:border-primary"
+                        placeholder="ABC123DEF4"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="font-label-sm text-on-surface-variant mb-1 block">Organization Name</label>
+                      <input
+                        value={formData.walletOrganizationName || ''}
+                        onChange={(e) => setFormData({ ...formData, walletOrganizationName: e.target.value })}
+                        className="w-full px-3 py-2 bg-surface-bright border border-outline-variant rounded-lg font-body-sm outline-none focus:border-primary"
+                        placeholder="Tu Negocio"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Card Template URL */}
+              {(formData.cardModes || 'QR').split(',').includes('IMAGE') && (
+                <div className="p-md rounded-xl border border-outline-variant bg-surface-container-low space-y-3 mb-lg">
+                  <h5 className="font-label-md text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">image</span>
+                    Plantilla de Tarjeta
+                  </h5>
+                  <div>
+                    <label className="font-label-sm text-on-surface-variant mb-1 block">URL de plantilla (opcional)</label>
+                    <input
+                      value={formData.cardTemplateUrl || ''}
+                      onChange={(e) => setFormData({ ...formData, cardTemplateUrl: e.target.value })}
+                      className="w-full px-3 py-2 bg-surface-bright border border-outline-variant rounded-lg font-body-sm outline-none focus:border-primary"
+                      placeholder="https://tu-cdn.com/tarjeta-template.png"
+                    />
+                    <p className="text-xs text-on-surface-variant mt-1">
+                      Si no se proporciona, se genera automáticamente con el QR del cliente.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="pt-md flex gap-3">
               <button
                 type="submit"
@@ -684,6 +794,32 @@ export default function LoyaltyPage() {
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
                       {program._count?.cards || 0} tarjetas
                     </span>
+                    {/* Card Generation Actions */}
+                    <div className="flex gap-1">
+                      {(program.cardModes || 'QR').split(',').map((mode) => {
+                        const modeIcons: Record<string, string> = {
+                          QR: 'qr_code_2',
+                          WALLET: 'wallet',
+                          IMAGE: 'image',
+                          WHATSAPP: 'chat',
+                        };
+                        return (
+                          <button
+                            key={mode}
+                            onClick={() => {
+                              // Handle card generation based on mode
+                              if (mode === 'QR') {
+                                window.open(`/api/loyalty/cards/${program.id}/qr`, '_blank');
+                              }
+                            }}
+                            className="p-1.5 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary transition-colors"
+                            title={`Generar ${mode}`}
+                          >
+                            <span className="material-symbols-outlined text-sm">{modeIcons[mode] || 'qr_code_2'}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                     <button
                       onClick={() => openProgramForm(program)}
                       className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors"
