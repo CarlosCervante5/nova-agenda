@@ -196,6 +196,1943 @@ router.get('/config/:clientId/status', authenticate, async (req: AuthRequest, re
   }
 });
 
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get QR code for client to scan (Business plan only)
+router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found. Please contact support.' });
+    }
+
+    const globalConfig = await whatsappService.getGlobalConfig();
+    const instanceName = `client_${clientId}`;
+
+    // Get QR code from Evo Cloud
+    const qrResponse = await whatsappService.getQRCode(instanceName);
+    
+    res.json({
+      qrCode: qrResponse.base64 || qrResponse.qrCode,
+      instanceName,
+      connected: config.isActive,
+    });
+  } catch (error: any) {
+    console.error('[WhatsApp QR] Error:', error);
+    res.status(500).json({ error: error.message || 'Error getting QR code' });
+  }
+});
+
+// Check connection status
+router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    const connectionState = await whatsappService.getConnectionState(instanceName);
+
+    res.json({
+      connected: connectionState === 'open' || connectionState === 'CONNECTED',
+      state: connectionState,
+      isActive: config.isActive,
+      phoneNumber: config.phoneNumberId,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Disconnect WhatsApp
+router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    const planCheck = await requireProPlan(clientId);
+    if (!planCheck.allowed) {
+      return res.status(403).json({ error: planCheck.error });
+    }
+
+    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!config) {
+      return res.status(404).json({ error: 'WhatsApp config not found' });
+    }
+
+    const instanceName = `client_${clientId}`;
+    await whatsappService.disconnectInstance(instanceName);
+
+    await prisma.whatsAppConfig.update({
+      where: { clientId },
+      data: { isActive: false, phoneNumberId: '' },
+    });
+
+    res.json({ message: 'WhatsApp disconnected' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get WhatsApp logs for a client
 router.get('/logs/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {

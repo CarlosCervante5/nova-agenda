@@ -171,6 +171,1804 @@ class WhatsAppService {
       return false;
     }
   }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
+}
+  }
+
+  // Get QR code for a specific instance (for client connection)
+  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 15000,
+      });
+
+      return {
+        base64: response.data?.base64 || '',
+        qrCode: response.data?.qrcode || '',
+      };
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting QR code:`, error.message);
+      throw new Error('No se pudo obtener el código QR');
+    }
+  }
+
+  // Get connection state for a specific instance
+  async getConnectionState(instanceName: string): Promise<string> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, {
+        headers,
+        timeout: 10000,
+      });
+
+      return response.data?.state || 'close';
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error getting connection state:`, error.message);
+      return 'close';
+    }
+  }
+
+  // Create a new instance for a client
+  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/create`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      const payload = {
+        instanceName,
+        qrcode: true,
+        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
+      };
+
+      const response = await axios.post(url, payload, {
+        headers,
+        timeout: 10000,
+      });
+
+      console.log(`[WhatsApp] Instance created:`, response.data);
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
+      return false;
+    }
+  }
+
+  // Disconnect an instance
+  async disconnectInstance(instanceName: string): Promise<boolean> {
+    try {
+      const global = await this.getGlobalConfig();
+      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
+      const headers = {
+        'apikey': global.apiKey,
+        'Content-Type': 'application/json',
+      };
+
+      await axios.post(url, {}, {
+        headers,
+        timeout: 10000,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return false;
+    }
+  }
 }
 
 export const whatsappService = new WhatsAppService();
