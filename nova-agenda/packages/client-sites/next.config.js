@@ -1,14 +1,8 @@
 /** @type {import('next').NextConfig} */
-const PRODUCTION_API_URL = 'https://nova-agenda-production.up.railway.app';
-
 function resolveApiBaseUrl() {
   const configured = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
-  const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.RAILWAY_ENVIRONMENT);
-  const isLocalhost = /localhost|127\.0\.0\.1/i.test(configured);
-
-  if (configured && !(isProduction && isLocalhost)) return configured;
-  if (isProduction) return PRODUCTION_API_URL;
-  return configured || 'http://localhost:3001';
+  if (configured) return configured;
+  return 'http://localhost:3001';
 }
 
 const nextConfig = {

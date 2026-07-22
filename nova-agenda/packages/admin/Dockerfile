@@ -5,8 +5,8 @@ COPY package.json ./
 RUN npm install
 COPY . .
 
-ARG API_URL=https://nova-agenda-production.up.railway.app
-ARG NEXT_PUBLIC_CLIENT_PORTAL_URL=https://delightful-encouragement-production.up.railway.app
+ARG API_URL
+ARG NEXT_PUBLIC_CLIENT_PORTAL_URL
 ENV API_URL=${API_URL}
 ENV NEXT_PUBLIC_API_URL=${API_URL}
 ENV NEXT_PUBLIC_CLIENT_PORTAL_URL=${NEXT_PUBLIC_CLIENT_PORTAL_URL}
@@ -21,9 +21,6 @@ COPY --from=base /app/package.json ./
 COPY --from=base /app/next.config.js ./
 COPY --from=base /app/public ./public
 
-ENV API_URL=https://nova-agenda-production.up.railway.app
-ENV NEXT_PUBLIC_API_URL=https://nova-agenda-production.up.railway.app
-ENV NEXT_PUBLIC_CLIENT_PORTAL_URL=https://delightful-encouragement-production.up.railway.app
 ENV NODE_ENV=production
 
 EXPOSE 3002

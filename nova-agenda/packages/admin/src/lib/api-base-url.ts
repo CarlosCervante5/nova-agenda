@@ -1,4 +1,4 @@
-export const PRODUCTION_API_URL = 'https://nova-agenda-production.up.railway.app';
+export const PRODUCTION_API_URL = '';
 
 function isProductionRuntime() {
   return process.env.NODE_ENV === 'production' || Boolean(process.env.RAILWAY_ENVIRONMENT);
@@ -17,7 +17,7 @@ export function resolveApiBaseUrl() {
   }
 
   if (isProductionRuntime()) {
-    return PRODUCTION_API_URL;
+    throw new Error('API_URL or NEXT_PUBLIC_API_URL must be set in production');
   }
 
   return configured || 'http://localhost:3001';

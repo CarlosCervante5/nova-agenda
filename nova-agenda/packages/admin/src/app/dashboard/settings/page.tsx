@@ -209,7 +209,7 @@ export default function SettingsPage() {
             <div className="p-4 bg-primary-fixed/30 rounded-lg space-y-2">
               <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
                 <strong>Webhook URL:</strong>{' '}
-                <code className="text-xs break-all">https://nova-agenda-production.up.railway.app/api/stripe/webhook</code>
+                <code className="text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/stripe/webhook</code>
               </p>
               <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
                 En Stripe Dashboard crea dos productos de suscripción mensual y pega aquí sus Price IDs (<code className="text-xs">price_...</code>).

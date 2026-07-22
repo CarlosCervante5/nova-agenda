@@ -26,7 +26,7 @@ function getAdminOrigin(req: AuthRequest): string {
     (req.headers.origin as string) ||
     process.env.ADMIN_URL ||
     process.env.NEXT_PUBLIC_ADMIN_URL ||
-    'https://spirited-determination-production-a075.up.railway.app'
+    ''
   );
 }
 

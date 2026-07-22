@@ -5,7 +5,7 @@ COPY package.json ./
 RUN npm install
 COPY . .
 
-ARG API_URL=https://nova-agenda-production.up.railway.app
+ARG API_URL
 ENV API_URL=${API_URL}
 ENV NEXT_PUBLIC_API_URL=${API_URL}
 
@@ -19,8 +19,6 @@ COPY --from=base /app/package.json ./
 COPY --from=base /app/next.config.js ./
 COPY --from=base /app/public ./public
 
-ENV API_URL=https://nova-agenda-production.up.railway.app
-ENV NEXT_PUBLIC_API_URL=https://nova-agenda-production.up.railway.app
 ENV NODE_ENV=production
 
 EXPOSE 3004

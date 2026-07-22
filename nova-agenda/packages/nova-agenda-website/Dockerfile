@@ -5,7 +5,7 @@ COPY package.json ./
 RUN npm install
 COPY . .
 
-ARG NEXT_PUBLIC_ADMIN_URL=https://spirited-determination-production-a075.up.railway.app
+ARG NEXT_PUBLIC_ADMIN_URL
 ENV NEXT_PUBLIC_ADMIN_URL=${NEXT_PUBLIC_ADMIN_URL}
 
 RUN npm run build
@@ -17,6 +17,8 @@ COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./
 COPY --from=base /app/next.config.js ./
 COPY --from=base /app/public ./public
+
+ENV NODE_ENV=production
 
 EXPOSE 3003
 CMD ["sh", "-c", "npm start -- -p ${PORT:-3003}"]

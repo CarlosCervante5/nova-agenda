@@ -337,6 +337,24 @@ class ApiClient {
   async getWhatsAppStatus(clientId: string) {
     return this.request<{ connected: boolean; isActive: boolean }>(`/api/whatsapp/config/${clientId}/status`);
   }
+  async getWhatsAppQR(clientId: string) {
+    return this.request<{ qrCode: string; instanceName: string; connected: boolean }>(
+      `/api/whatsapp/qr/${clientId}`
+    );
+  }
+  async getWhatsAppConnection(clientId: string) {
+    return this.request<{
+      connected: boolean;
+      state: string;
+      isActive: boolean;
+      phoneNumber?: string;
+    }>(`/api/whatsapp/connection/${clientId}`);
+  }
+  async disconnectWhatsApp(clientId: string) {
+    return this.request<{ message: string }>(`/api/whatsapp/disconnect/${clientId}`, {
+      method: 'POST',
+    });
+  }
   async getWhatsAppLogs(clientId: string, limit = 50, offset = 0) {
     return this.request<{ logs: any[]; total: number }>(`/api/whatsapp/logs/${clientId}?limit=${limit}&offset=${offset}`);
   }
