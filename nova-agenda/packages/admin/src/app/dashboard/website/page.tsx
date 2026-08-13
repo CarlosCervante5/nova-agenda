@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { getBookingFormUrl, getClientPortalBaseUrl } from '@/lib/booking-url';
+import { getBookingFormUrl, getClientPortalBaseUrl, getPortalUrl } from '@/lib/booking-url';
 
 const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
@@ -72,6 +72,7 @@ export default function WebsitePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState(false);
+  const [portalUrl, setPortalUrl] = useState('');
 
   useEffect(() => {
     if (user?.clientId) loadClient();
@@ -83,6 +84,11 @@ export default function WebsitePage() {
       const data = await api.getClient(user!.clientId!);
       setClient(data);
       setForm(clientToForm(data));
+      // Load dynamic portal URL
+      if (data.slug) {
+        const url = await getPortalUrl(data.slug);
+        setPortalUrl(url);
+      }
     } catch (error) {
       console.error(error);
       setMessage('Error: no se pudo cargar la configuración del sitio');
@@ -132,8 +138,8 @@ export default function WebsitePage() {
 
   const plan = client?.plan || 'FREE';
   const hasAccess = (PLAN_LEVELS[plan] ?? 0) >= PLAN_LEVELS.PRO;
-  const publicUrl = form.slug ? getBookingFormUrl(form.slug) : '';
-  const portalReady = getClientPortalBaseUrl().startsWith('http');
+  const publicUrl = portalUrl || (form.slug ? getBookingFormUrl(form.slug) : '');
+  const portalReady = !!portalUrl && portalUrl.startsWith('http');
 
   async function copyLink() {
     if (!publicUrl) return;

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, Client, Service } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { getBookingFormUrl, getClientPortalBaseUrl } from '@/lib/booking-url';
+import { getBookingFormUrl, getClientPortalBaseUrl, getPortalUrl } from '@/lib/booking-url';
 
 const SLOT_GAP_OPTIONS = [5, 10, 15, 20] as const;
 
@@ -43,6 +43,7 @@ export default function BookingSharePage() {
   const [config, setConfig] = useState<FormConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [portalUrl, setPortalUrl] = useState('');
 
   useEffect(() => {
     if (user?.clientId) loadData();
@@ -58,6 +59,11 @@ export default function BookingSharePage() {
       setClient(clientData);
       setConfig(clientToConfig(clientData));
       setServices(servicesData.filter((s) => s.isActive));
+      // Load dynamic portal URL
+      if (clientData.slug) {
+        const url = await getPortalUrl(clientData.slug);
+        setPortalUrl(url);
+      }
     } catch (error) {
       console.error('Error loading booking page data:', error);
     } finally {
@@ -92,9 +98,8 @@ export default function BookingSharePage() {
     }
   }
 
-  const portalBase = getClientPortalBaseUrl();
-  const bookingUrl = client?.slug ? getBookingFormUrl(client.slug) : '';
-  const portalConfigured = portalBase.startsWith('http');
+  const bookingUrl = portalUrl || (client?.slug ? getBookingFormUrl(client.slug) : '');
+  const portalConfigured = !!portalUrl && portalUrl.startsWith('http');
   const embedCode = bookingUrl
     ? `<iframe src="${bookingUrl}" width="100%" height="720" style="border:0;border-radius:16px;" title="Reservar cita"></iframe>`
     : '';

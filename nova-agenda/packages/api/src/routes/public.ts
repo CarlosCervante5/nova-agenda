@@ -358,4 +358,64 @@ router.get('/client/:slug', async (req, res: Response) => {
   }
 });
 
+// Get public portal URL for a client (dynamic)
+router.get('/portal-url/:slug', async (req, res: Response) => {
+  try {
+    const { slug } = req.params;
+
+    const client = await prisma.client.findUnique({
+      where: { slug, isActive: true },
+      select: { id: true, name: true, slug: true, domain: true },
+    });
+
+    if (!client) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+
+    // Priority 1: custom domain configured in client.domain
+    if (client.domain) {
+      return res.json({
+        clientId: client.id,
+        slug: client.slug,
+        url: `https://${client.domain}`,
+        type: 'custom_domain',
+      });
+    }
+
+    // Priority 2: CLIENT_SITES_URL env var (the actual client-sites service URL)
+    const portalBase = process.env.CLIENT_SITES_URL || process.env.NEXT_PUBLIC_CLIENT_PORTAL_URL;
+    if (portalBase) {
+      return res.json({
+        clientId: client.id,
+        slug: client.slug,
+        url: `${portalBase.replace(/\/$/, '')}/${client.slug}`,
+        type: 'subdomain',
+      });
+    }
+
+    // Priority 3: fallback to request origin with client slug
+    const origin = req.headers.origin || req.headers.referer || '';
+    if (origin) {
+      const url = new URL(origin);
+      return res.json({
+        clientId: client.id,
+        slug: client.slug,
+        url: `${url.origin}/${client.slug}`,
+        type: 'auto',
+      });
+    }
+
+    // Fallback: relative URL
+    res.json({
+      clientId: client.id,
+      slug: client.slug,
+      url: `/${client.slug}`,
+      type: 'relative',
+    });
+  } catch (error) {
+    console.error('Portal URL error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
