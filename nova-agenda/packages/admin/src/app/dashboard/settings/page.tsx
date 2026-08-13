@@ -178,7 +178,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID — Profesional ($49/mes)</label>
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID — PRO ($99/mes)</label>
                 <input
                   value={stripe.stripe_price_id_basic}
                   onChange={(e) => setStripe({ ...stripe, stripe_price_id_basic: e.target.value })}
@@ -196,7 +196,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID legacy (opcional, fallback BASIC)</label>
+                <label className="font-label-md text-label-md text-on-surface mb-xs block">Price ID legacy (opcional, fallback PRO)</label>
                 <input
                   value={stripe.stripe_price_id}
                   onChange={(e) => setStripe({ ...stripe, stripe_price_id: e.target.value })}

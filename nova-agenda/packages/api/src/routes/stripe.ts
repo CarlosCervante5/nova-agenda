@@ -15,10 +15,10 @@ import {
 const router = Router();
 const prisma = new PrismaClient();
 
-const PLANS: Record<string, { name: string; price: number; features: string[] }> = {
+const PLANS: Record<string, { name: string; price: number; features: string[]; isContact?: boolean }> = {
   FREE: { name: 'Gratuito', price: 0, features: ['Agenda de citas', 'Formulario de reservas compartible', 'Hasta 3 servicios', 'Hasta 50 citas/mes'] },
-  BASIC: { name: 'Profesional', price: 49, features: ['Todo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Hasta 20 servicios', 'Citas ilimitadas'] },
-  PRO: { name: 'Business', price: 99, features: ['Todo del plan Profesional', 'WhatsApp con IA integrada', 'Chatbot 24/7', 'Servicios ilimitados'] },
+  PRO: { name: 'PRO', price: 99, features: ['Todo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'WhatsApp con IA integrada', 'Chatbot 24/7', 'Servicios ilimitados', 'Citas ilimitadas'] },
+  CUSTOM: { name: 'Personalizado', price: 0, isContact: true, features: ['Todo del plan PRO', 'Onboarding dedicado', 'Soporte prioritario 24/7', 'Desarrollo a medida', 'SLA garantizado', 'Infraestructura dedicada'] },
 };
 
 function getAdminOrigin(req: AuthRequest): string {
@@ -33,13 +33,13 @@ function getAdminOrigin(req: AuthRequest): string {
 async function applyPlanFromSubscription(
   clientId: string,
   subscription: Stripe.Subscription
-): Promise<'FREE' | 'BASIC' | 'PRO'> {
-  let plan: 'FREE' | 'BASIC' | 'PRO' = 'FREE';
+): Promise<'FREE' | 'PRO' | 'CUSTOM'> {
+  let plan: 'FREE' | 'PRO' | 'CUSTOM' = 'FREE';
 
   if (subscription.status === 'active' || subscription.status === 'trialing') {
     const priceId = subscription.items.data[0]?.price?.id;
     const metaPlan = subscription.metadata?.plan;
-    if (metaPlan === 'BASIC' || metaPlan === 'PRO') {
+    if (metaPlan === 'PRO' || metaPlan === 'CUSTOM') {
       plan = metaPlan;
     } else if (priceId) {
       plan = await getPlanForPriceId(priceId);
@@ -172,8 +172,8 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       return res.status(400).json({ error: 'Plan inválido' });
     }
 
-    if (plan === 'FREE') {
-      return res.status(400).json({ error: 'No se puede crear checkout para el plan gratuito' });
+    if (plan === 'FREE' || PLANS[plan].isContact) {
+      return res.status(400).json({ error: 'No se puede crear checkout para este plan. Contacta ventas para el plan Personalizado.' });
     }
 
     const client = await prisma.client.findUnique({
@@ -294,7 +294,7 @@ router.post('/sync', authenticate, async (req: AuthRequest, res: Response) => {
 
         if (subscription) {
           const planFromMeta = session.metadata?.plan;
-          if (planFromMeta === 'BASIC' || planFromMeta === 'PRO') {
+          if (planFromMeta === 'PRO' || planFromMeta === 'CUSTOM') {
             subscription.metadata = { ...subscription.metadata, plan: planFromMeta };
           }
           const plan = await applyPlanFromSubscription(clientId, subscription);
@@ -360,7 +360,7 @@ router.post('/webhook', async (req, res) => {
               ? await s.subscriptions.retrieve(session.subscription)
               : session.subscription;
 
-          if (planMeta === 'BASIC' || planMeta === 'PRO') {
+          if (planMeta === 'PRO' || planMeta === 'CUSTOM') {
             subscription.metadata = { ...subscription.metadata, plan: planMeta };
           }
 

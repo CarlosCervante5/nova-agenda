@@ -9,8 +9,8 @@ import { useAuth } from '@/lib/auth';
 
 const PLANS = {
   FREE: { name: 'Gratuito', price: 0, color: 'bg-surface-container-high text-on-surface-variant', icon: 'spa' },
-  BASIC: { name: 'Profesional', price: 49, color: 'bg-primary text-on-primary', icon: 'star' },
-  PRO: { name: 'Business', price: 99, color: 'bg-tertiary text-on-tertiary', icon: 'rocket_launch' },
+  PRO: { name: 'PRO', price: 99, color: 'bg-primary text-on-primary', icon: 'star' },
+  CUSTOM: { name: 'Personalizado', price: 0, color: 'bg-tertiary text-on-tertiary', icon: 'rocket_launch', isContact: true },
 };
 
 function RegisterForm() {
@@ -155,7 +155,7 @@ function RegisterForm() {
               type="submit"
               disabled={loading}
               className={`w-full py-3.5 rounded-lg font-label-md text-label-md font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 ${
-                selectedPlan.price > 0
+                selectedPlan.price > 0 || (selectedPlan as any).isContact
                   ? 'bg-primary text-on-primary shadow-primary/20 hover:opacity-90'
                   : 'bg-primary text-on-primary shadow-primary/20 hover:opacity-90'
               }`}
@@ -165,14 +165,16 @@ function RegisterForm() {
                   <div className="animate-spin h-4 w-4 border-2 border-on-primary border-t-transparent rounded-full" />
                   Creando cuenta...
                 </span>
-              ) : selectedPlan.price > 0
-                ? `Comenzar con ${selectedPlan.name} — $${selectedPlan.price}/mes`
-                : 'Comenzar Gratis'
+              ) : (selectedPlan as any).isContact
+                ? 'Contactar Ventas'
+                : selectedPlan.price > 0
+                  ? `Comenzar con ${selectedPlan.name} — $${selectedPlan.price}/mes`
+                  : 'Comenzar Gratis'
               }
             </button>
 
             <p className="text-center font-body-sm text-body-sm text-on-surface-variant">
-              {selectedPlan.price > 0 && 'Puedes cambiar a gratuito después. '}Al crear aceptas nuestros términos.
+              {selectedPlan.price > 0 && !((selectedPlan as any).isContact) && 'Puedes cambiar a gratuito después. '}Al crear aceptas nuestros términos.
             </p>
           </form>
         </div>

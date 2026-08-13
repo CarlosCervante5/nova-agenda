@@ -106,7 +106,8 @@ export default function ClientsPage() {
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Plan</label>
               <select value={form.plan} onChange={(e) => setForm({ ...form, plan: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none">
                 <option value="FREE">Gratis</option>
-                <option value="BASIC">Básico</option>
+                <option value="PRO">PRO</option>
+                <option value="CUSTOM">Personalizado</option>
                 <option value="PRO">Pro</option>
                 <option value="ENTERPRISE">Empresa</option>
               </select>

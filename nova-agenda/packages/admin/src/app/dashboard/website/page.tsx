@@ -6,7 +6,7 @@ import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getBookingFormUrl, getClientPortalBaseUrl } from '@/lib/booking-url';
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2 };
+const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
 type WebsiteForm = {
   name: string;
@@ -131,7 +131,7 @@ export default function WebsitePage() {
   }
 
   const plan = client?.plan || 'FREE';
-  const hasAccess = (PLAN_LEVELS[plan] ?? 0) >= PLAN_LEVELS.BASIC;
+  const hasAccess = (PLAN_LEVELS[plan] ?? 0) >= PLAN_LEVELS.PRO;
   const publicUrl = form.slug ? getBookingFormUrl(form.slug) : '';
   const portalReady = getClientPortalBaseUrl().startsWith('http');
 
@@ -167,7 +167,7 @@ export default function WebsitePage() {
           <div className="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mx-auto mb-lg text-primary">
             <span className="material-symbols-outlined text-4xl">language</span>
           </div>
-          <h3 className="font-headline-md text-on-surface mb-2">Disponible en plan Profesional</h3>
+          <h3 className="font-headline-md text-on-surface mb-2">Disponible en plan PRO</h3>
           <p className="font-body-sm text-on-surface-variant mb-lg">
             Personaliza colores, logo, textos, contacto, redes sociales y dominio de tu página de reservas.
           </p>
@@ -175,7 +175,7 @@ export default function WebsitePage() {
             href="/dashboard/billing"
             className="inline-flex items-center gap-2 px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold hover:opacity-90"
           >
-            Mejorar a Profesional
+            Mejorar a PRO
           </Link>
         </div>
       </div>

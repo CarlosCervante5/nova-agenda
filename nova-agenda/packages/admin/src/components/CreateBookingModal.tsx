@@ -12,7 +12,7 @@ interface Props {
   clientPlan?: string;
 }
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2 };
+const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
 export default function CreateBookingModal({
   open,
@@ -38,8 +38,8 @@ export default function CreateBookingModal({
     enrollLoyalty: false,
   });
 
-  const canLoyaltyPhone = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.BASIC;
-  const canStaff = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.BASIC;
+  const canLoyaltyPhone = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.PRO;
+  const canStaff = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.PRO;
 
   useEffect(() => {
     if (!open) return;

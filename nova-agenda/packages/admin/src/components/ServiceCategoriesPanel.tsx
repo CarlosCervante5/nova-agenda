@@ -108,7 +108,7 @@ export default function ServiceCategoriesPanel({ enabled, onChange }: Props) {
             Categorías de servicios
           </h3>
           <p className="font-body-sm text-on-surface-variant">
-            Agrupa y anida tipos de productos o servicios (ej. Cabello → Cortes, Color). Disponible en plan Profesional.
+            Agrupa y anida tipos de productos o servicios (ej. Cabello → Cortes, Color). Disponible en plan PRO.
           </p>
         </div>
         <Link

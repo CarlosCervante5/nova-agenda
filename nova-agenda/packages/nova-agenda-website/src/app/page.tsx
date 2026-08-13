@@ -194,40 +194,39 @@ export default function HomePage() {
                 </ul>
                 <Link href={adminUrl('/register', { plan: 'FREE' })} className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Comenzar Gratis</Link>
               </div>
-              {/* Professional (Featured) */}
+              {/* PRO (Featured) */}
               <div className="bg-primary-container p-xl rounded-xl border-2 border-primary flex flex-col relative scale-105 z-10 shadow-xl">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-on-primary px-4 py-1 rounded-full font-label-sm text-label-sm uppercase font-bold">Más Popular</div>
-                <span className="font-label-md text-label-md text-on-primary-container mb-md uppercase tracking-widest">Profesional</span>
+                <span className="font-label-md text-label-md text-on-primary-container mb-md uppercase tracking-widest">PRO</span>
                 <div className="mb-lg">
-                  <span className="font-headline-xl text-headline-xl text-on-primary-fixed">$49</span>
+                  <span className="font-headline-xl text-headline-xl text-on-primary-fixed">$99</span>
                   <span className="text-on-primary-container">/mes</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Hasta 20 servicios'].map(f => (
+                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'WhatsApp con IA integrada', 'Chatbot automático 24/7', 'Servicios ilimitados', 'Citas ilimitadas'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-on-primary-fixed-variant text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm text-on-primary-fixed">{f}</span>
                     </li>
                   ))}
                 </ul>
-                <Link href={adminUrl('/register', { plan: 'BASIC' })} className="w-full py-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold hover:opacity-90 transition-all text-center block">Seleccionar Profesional</Link>
+                <Link href={adminUrl('/register', { plan: 'PRO' })} className="w-full py-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold hover:opacity-90 transition-all text-center block">Seleccionar PRO</Link>
               </div>
-              {/* Business */}
+              {/* Personalizado */}
               <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant flex flex-col transition-all hover:border-primary">
-                <span className="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-widest">Business</span>
+                <span className="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-widest">Personalizado</span>
                 <div className="mb-lg">
-                  <span className="font-headline-xl text-headline-xl text-on-background">$99</span>
-                  <span className="text-on-surface-variant">/mes</span>
+                  <span className="font-headline-xl text-headline-xl text-on-background">A cotizar</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Todo lo del plan Profesional', 'WhatsApp con IA integrada', 'Chatbot automático 24/7', 'Agendado por WhatsApp', 'Servicios ilimitados'].map(f => (
+                  {['Todo lo del plan PRO', 'Onboarding dedicado', 'Soporte prioritario 24/7', 'Desarrollo a medida', 'SLA garantizado', 'Infraestructura dedicada'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm">{f}</span>
                     </li>
                   ))}
                 </ul>
-                <Link href={adminUrl('/register', { plan: 'PRO' })} className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Seleccionar Business</Link>
+                <Link href="mailto:ventas@novagenda.com" className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Contactar Ventas</Link>
               </div>
             </div>
           </div>

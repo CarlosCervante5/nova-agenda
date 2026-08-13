@@ -4,11 +4,11 @@ import { AuthRequest } from './auth';
 
 const prisma = new PrismaClient();
 
-// Plan hierarchy: FREE < BASIC < PRO
+// Plan hierarchy: FREE < PRO < CUSTOM
 const PLAN_HIERARCHY: Record<string, number> = {
   FREE: 0,
-  BASIC: 1,
-  PRO: 2,
+  PRO: 1,
+  CUSTOM: 2,
 };
 
 /**

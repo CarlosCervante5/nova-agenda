@@ -246,7 +246,7 @@ class ApiClient {
     return this.request(`/api/services/${id}`, { method: 'DELETE' });
   }
 
-  // Service categories (BASIC+)
+  // Service categories (PRO+)
   async getServiceCategories() {
     return this.request<ServiceCategory[]>('/api/service-categories');
   }

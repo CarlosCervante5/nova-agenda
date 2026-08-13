@@ -13,7 +13,7 @@ interface Props {
   clientPlan?: string;
 }
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2 };
+const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
 function StampGrid({ earned, total, stampIcon, stampColor }: { earned: number; total: number; stampIcon: string; stampColor: string }) {
   const slots = Math.max(total, earned);
@@ -46,7 +46,7 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({ customerName: '', customerPhone: '', customerEmail: '' });
 
-  const canRegisterByPhone = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.BASIC;
+  const canRegisterByPhone = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.PRO;
 
   const loadCards = async () => {
     try {
@@ -127,7 +127,7 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
             href="/dashboard/billing"
             className="px-md py-2 border border-outline-variant rounded-lg font-label-sm font-bold text-primary hover:bg-surface-container-low whitespace-nowrap"
           >
-            Profesional: registrar por teléfono
+            PRO: registrar por teléfono
           </Link>
         )}
       </div>
@@ -199,7 +199,7 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             {canRegisterByPhone
               ? 'Registra un cliente con su teléfono o espera a que se inscriba en el portal.'
-              : 'Las tarjetas se crean en el portal público. En plan Profesional puedes registrarlas aquí por teléfono.'}
+              : 'Las tarjetas se crean en el portal público. En plan PRO puedes registrarlas aquí por teléfono.'}
           </p>
         </div>
       ) : (

@@ -21,8 +21,8 @@ function Sidebar() {
   const navLinks = [
     { href: '/dashboard', label: 'Panel', icon: 'dashboard' },
     { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN'] },
-    { href: '/dashboard/website', label: 'Mi página web', icon: 'language', minPlan: 'BASIC' },
-    { href: '/dashboard/staff', label: 'Personal', icon: 'badge', minPlan: 'BASIC' },
+    { href: '/dashboard/website', label: 'Mi página web', icon: 'language', minPlan: 'PRO' },
+    { href: '/dashboard/staff', label: 'Personal', icon: 'badge', minPlan: 'PRO' },
     { href: '/dashboard/booking', label: 'Agenda pública', icon: 'event_available' },
     { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
     { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
@@ -31,7 +31,7 @@ function Sidebar() {
     { href: '/dashboard/settings', label: 'Configuración', icon: 'settings', roles: ['SUPER_ADMIN'] },
   ];
 
-  const PLAN_LEVELS: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2 };
+  const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
   const userPlanLevel = PLAN_LEVELS[clientPlan] ?? 0;
 
   const filteredLinks = navLinks.filter((l) => {

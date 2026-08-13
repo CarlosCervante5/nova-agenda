@@ -20,14 +20,14 @@ interface Subscription {
 
 const PLAN_ICONS: Record<string, string> = {
   FREE: 'free_cancellation',
-  BASIC: 'star',
-  PRO: 'workspace_premium',
+  PRO: 'star',
+  CUSTOM: 'workspace_premium',
 };
 
 const PLAN_COLORS: Record<string, string> = {
   FREE: 'bg-surface-container-high text-on-surface-variant',
-  BASIC: 'bg-tertiary-container text-on-tertiary-container',
   PRO: 'bg-primary-container text-on-primary-container',
+  CUSTOM: 'bg-tertiary-container text-on-tertiary-container',
 };
 
 export default function BillingPage() {
@@ -47,7 +47,7 @@ export default function BillingPage() {
   const [stripeConfigured, setStripeConfigured] = useState(true);
   const [stripeMissing, setStripeMissing] = useState<string[]>([]);
 
-  const PLAN_ORDER = ['FREE', 'BASIC', 'PRO'];
+  const PLAN_ORDER = ['FREE', 'PRO', 'CUSTOM'];
 
   useEffect(() => {
     loadPlans();
@@ -66,7 +66,7 @@ export default function BillingPage() {
         if (success) {
           setMessage(
             synced.plan !== 'FREE'
-              ? `Pago procesado. Tu plan ahora es ${synced.plan === 'PRO' ? 'Business' : 'Profesional'}.`
+              ? `Pago procesado. Tu plan ahora es ${synced.plan === 'PRO' ? 'PRO' : synced.plan === 'CUSTOM' ? 'Personalizado' : 'Gratuito'}.`
               : 'Pago recibido. Si el plan no cambia en unos segundos, recarga la página.'
           );
         }
@@ -165,7 +165,7 @@ export default function BillingPage() {
           </p>
           <ul className="font-body-sm text-body-sm text-on-surface-variant list-disc list-inside space-y-1">
             <li><code className="text-xs">STRIPE_SECRET_KEY</code> — clave secreta (sk_test_… o sk_live_…)</li>
-            <li><code className="text-xs">STRIPE_PRICE_ID_BASIC</code> — Price ID del plan Profesional (price_…)</li>
+            <li><code className="text-xs">STRIPE_PRICE_ID_PRO</code> — Price ID del plan PRO (price_…)</li>
             <li><code className="text-xs">STRIPE_PRICE_ID_PRO</code> — Price ID del plan Business (price_…)</li>
           </ul>
           {stripeMissing.length > 0 && (

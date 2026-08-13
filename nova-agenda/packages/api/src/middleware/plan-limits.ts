@@ -8,12 +8,12 @@ export const PLAN_LIMITS = {
     maxBookingsPerMonth: 50,
     publicBooking: true,
   },
-  BASIC: {
-    maxServices: 20,
+  PRO: {
+    maxServices: null as number | null,
     maxBookingsPerMonth: null as number | null,
     publicBooking: true,
   },
-  PRO: {
+  CUSTOM: {
     maxServices: null as number | null,
     maxBookingsPerMonth: null as number | null,
     publicBooking: true,
@@ -79,17 +79,13 @@ export async function assertCanCreateService(
   const used = await prisma.service.count({ where: { clientId } });
 
   if (used >= limits.maxServices) {
-    const requiredPlan = plan === 'FREE' ? 'BASIC' : 'PRO';
     return {
       ok: false,
       status: 403,
       code: 'SERVICE_LIMIT',
-      error:
-        plan === 'FREE'
-          ? `Has alcanzado el límite de ${limits.maxServices} servicios del plan Gratuito. Actualiza a Profesional para agregar más.`
-          : `Has alcanzado el límite de ${limits.maxServices} servicios del plan Profesional. Actualiza a Business para servicios ilimitados.`,
+      error: `Has alcanzado el límite de ${limits.maxServices} servicios del plan Gratuito. Actualiza a PRO para agregar más.`,
       currentPlan: plan,
-      requiredPlan,
+      requiredPlan: 'PRO',
       limit: limits.maxServices,
       used,
     };
@@ -112,7 +108,7 @@ export async function assertCanCreateBooking(
       code: 'PLAN_UPGRADE_REQUIRED',
       error: 'El portal de reservas no está disponible en tu plan actual.',
       currentPlan: plan,
-      requiredPlan: 'BASIC',
+      requiredPlan: 'PRO',
     };
   }
 
@@ -134,9 +130,9 @@ export async function assertCanCreateBooking(
       ok: false,
       status: 403,
       code: 'BOOKING_LIMIT',
-      error: `Has alcanzado el límite de ${limits.maxBookingsPerMonth} citas este mes en el plan Gratuito. Actualiza a Profesional para citas ilimitadas.`,
+      error: `Has alcanzado el límite de ${limits.maxBookingsPerMonth} citas este mes en el plan Gratuito. Actualiza a PRO para citas ilimitadas.`,
       currentPlan: plan,
-      requiredPlan: 'BASIC',
+      requiredPlan: 'PRO',
       limit: limits.maxBookingsPerMonth,
       used,
     };

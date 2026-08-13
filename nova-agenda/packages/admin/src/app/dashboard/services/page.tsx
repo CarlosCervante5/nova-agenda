@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth';
 import WorkingHoursEditor from '@/components/WorkingHoursEditor';
 import ServiceCategoriesPanel from '@/components/ServiceCategoriesPanel';
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, BASIC: 1, PRO: 2 };
+const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
 export default function ServicesPage() {
   const { user } = useAuth();
@@ -40,7 +40,7 @@ export default function ServicesPage() {
       if (plansData) {
         setCurrentPlan(plansData.currentPlan);
         setServiceUsage(plansData.usage?.services ?? null);
-        if ((PLAN_LEVELS[plansData.currentPlan] ?? 0) >= PLAN_LEVELS.BASIC) {
+        if ((PLAN_LEVELS[plansData.currentPlan] ?? 0) >= PLAN_LEVELS.PRO) {
           try {
             setCategoriesFlat(await api.getServiceCategoriesFlat());
           } catch {
@@ -56,8 +56,8 @@ export default function ServicesPage() {
   const serviceLimit = serviceUsage?.limit ?? null;
   const serviceUsed = serviceUsage?.used ?? services.length;
   const atServiceLimit = serviceLimit !== null && serviceUsed >= serviceLimit;
-  const upgradePlan = currentPlan === 'FREE' ? 'Profesional' : 'Business';
-  const canCategories = (PLAN_LEVELS[currentPlan] ?? 0) >= PLAN_LEVELS.BASIC;
+  const upgradePlan = currentPlan === 'FREE' ? 'PRO' : 'Personalizado';
+  const canCategories = (PLAN_LEVELS[currentPlan] ?? 0) >= PLAN_LEVELS.PRO;
 
   function openCreateForm() {
     if (atServiceLimit) return;
