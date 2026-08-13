@@ -9,7 +9,7 @@ if [ ! -f dist/index.js ]; then
 fi
 
 echo "[start] Syncing database schema..."
-npx prisma db push --skip-generate
+npx prisma db push --skip-generate --accept-data-loss
 
 echo "[start] Starting API..."
 exec node dist/index.js
