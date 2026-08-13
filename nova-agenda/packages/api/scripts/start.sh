@@ -11,5 +11,8 @@ fi
 echo "[start] Syncing database schema..."
 npx prisma db push --skip-generate --accept-data-loss
 
+echo "[start] Seeding database if needed..."
+npx prisma db seed || echo "[start] Seed skipped or already done"
+
 echo "[start] Starting API..."
 exec node dist/index.js
