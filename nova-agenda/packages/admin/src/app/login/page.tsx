@@ -101,16 +101,6 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="mt-6 p-4 bg-primary-fixed/30 rounded-xl border border-primary-container">
-          <p className="font-label-sm text-label-sm text-on-primary-container mb-2 uppercase tracking-wider">Credenciales de Demo</p>
-          <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
-            <span className="font-label-md text-label-md">Admin:</span> admin@novaagenda.com / admin123
-          </p>
-          <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
-            <span className="font-label-md text-label-md">Cliente:</span> client@demo.com / client123
-          </p>
-        </div>
-
         <p className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
           ¿No tienes cuenta?{' '}
           <Link href="/register" className="text-primary font-bold hover:underline">Crear Gratis</Link>
