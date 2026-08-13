@@ -9,6 +9,7 @@ interface PlanInfo {
   name: string;
   price: number;
   features: string[];
+  isContact?: boolean;
 }
 
 interface Subscription {
@@ -252,7 +253,9 @@ export default function BillingPage() {
               </div>
               <h3 className="font-headline-md text-headline-md text-on-surface mb-1">{plan.name}</h3>
               <div className="mb-lg">
-                {plan.price === 0 ? (
+                {plan.isContact ? (
+                  <span className="font-headline-lg text-headline-lg text-on-surface">A cotizar</span>
+                ) : plan.price === 0 ? (
                   <span className="font-headline-lg text-headline-lg text-on-surface">Gratis</span>
                 ) : (
                   <div className="flex items-baseline gap-1">
@@ -279,9 +282,16 @@ export default function BillingPage() {
                   </button>
                 ) : (
                   <div className="w-full py-3 rounded-lg bg-surface-container-high text-on-surface-variant text-center font-label-md text-label-md">
-                    Plan Gratuito
+                    {plan.isContact ? 'Plan Personalizado' : 'Plan Gratuito'}
                   </div>
                 )
+              ) : plan.isContact ? (
+                <a
+                  href="mailto:ventas@novagenda.com"
+                  className="w-full py-3 rounded-lg bg-tertiary text-on-tertiary font-label-md text-label-md font-bold shadow-md shadow-tertiary/20 hover:opacity-90 transition-all active:scale-[0.98] text-center block"
+                >
+                  Contactar Ventas
+                </a>
               ) : isUpgrade ? (
                 <button
                   onClick={() => handleUpgrade(planKey)}
