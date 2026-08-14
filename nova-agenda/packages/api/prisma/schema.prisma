@@ -38,6 +38,10 @@ model Client {
   plan          String    @default("FREE")
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  // Cuenta Stripe propia del negocio para cobrar a sus clientes
+  stripeSecretKey       String?
+  stripePublishableKey  String?
+  stripeWebhookSecret   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

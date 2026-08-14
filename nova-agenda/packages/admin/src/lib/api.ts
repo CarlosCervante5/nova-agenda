@@ -380,8 +380,7 @@ class ApiClient {
   }
 
   // Billing / Stripe
-  async getPlans() {
-    return this.request<{
+  async getPlans() {    return this.request<{
       currentPlan: string;
       plans: Record<string, { name: string; price: number; features: string[] }>;
       subscription: any;
@@ -415,6 +414,39 @@ class ApiClient {
     }>('/api/stripe/sync', {
       method: 'POST',
       body: JSON.stringify(sessionId ? { sessionId } : {}),
+    });
+  }
+
+  // Configuración de Stripe propia del negocio (para cobrar a sus clientes)
+  async getClientStripeConfig() {
+    return this.request<{
+      configured: boolean;
+      mode: 'test' | 'live' | null;
+      secretKey: string;
+      publishableKey: string;
+      webhookSecret: string;
+      hasSecretKey: boolean;
+      hasPublishableKey: boolean;
+      hasWebhookSecret: boolean;
+    }>('/api/clients/me/stripe');
+  }
+  async updateClientStripeConfig(data: {
+    secretKey?: string;
+    publishableKey?: string;
+    webhookSecret?: string;
+  }) {
+    return this.request<{
+      configured: boolean;
+      mode: 'test' | 'live' | null;
+      secretKey: string;
+      publishableKey: string;
+      webhookSecret: string;
+      hasSecretKey: boolean;
+      hasPublishableKey: boolean;
+      hasWebhookSecret: boolean;
+    }>('/api/clients/me/stripe', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 

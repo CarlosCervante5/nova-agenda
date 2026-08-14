@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from './config';
 import authRoutes from './routes/auth';
 import clientRoutes from './routes/clients';
+import clientStripeRoutes from './routes/client-stripe';
 import serviceRoutes from './routes/services';
 import bookingRoutes from './routes/bookings';
 import publicRoutes from './routes/public';
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/clients', clientStripeRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/service-categories', serviceCategoryRoutes);

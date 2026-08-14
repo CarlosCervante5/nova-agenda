@@ -28,7 +28,7 @@ function Sidebar() {
     { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
     { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat', minPlan: 'PRO' },
     { href: '/dashboard/billing', label: 'Facturación', icon: 'payments' },
-    { href: '/dashboard/settings', label: 'Configuración', icon: 'settings', roles: ['SUPER_ADMIN'] },
+    { href: '/dashboard/settings', label: 'Configuración', icon: 'settings' },
   ];
 
   const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };

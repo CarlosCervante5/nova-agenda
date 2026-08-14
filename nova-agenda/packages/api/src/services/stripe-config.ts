@@ -150,8 +150,40 @@ export function resetStripeClient() {
   cachedSecretKey = null;
 }
 
-export function formatStripeError(error: unknown): string {
-  if (!error || typeof error !== 'object') {
+export interface ClientStripeConfig {
+  secretKey: string | null;
+  publishableKey: string | null;
+  webhookSecret: string | null;
+}
+
+/** Cuenta Stripe propia del negocio (para cobrar a sus clientes finales). */
+export async function getClientStripeConfig(clientId: string): Promise<ClientStripeConfig> {
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: {
+      stripeSecretKey: true,
+      stripePublishableKey: true,
+      stripeWebhookSecret: true,
+    },
+  });
+
+  return {
+    secretKey: client?.stripeSecretKey?.trim() || null,
+    publishableKey: client?.stripePublishableKey?.trim() || null,
+    webhookSecret: client?.stripeWebhookSecret?.trim() || null,
+  };
+}
+
+/** Client de Stripe de la cuenta del negocio. Fallback a la cuenta de la plataforma. */
+export async function getClientStripeClient(clientId: string): Promise<Stripe> {
+  const { secretKey } = await getClientStripeConfig(clientId);
+  if (secretKey) {
+    return new Stripe(secretKey);
+  }
+  return getStripeClient();
+}
+
+export function formatStripeError(error: unknown): string {  if (!error || typeof error !== 'object') {
     return 'Error al procesar el pago con Stripe';
   }
 

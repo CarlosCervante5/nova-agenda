@@ -14,6 +14,19 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  const [clientStripe, setClientStripe] = useState({
+    configured: false,
+    mode: null as 'test' | 'live' | null,
+    secretKey: '',
+    publishableKey: '',
+    webhookSecret: '',
+    hasSecretKey: false,
+    hasPublishableKey: false,
+    hasWebhookSecret: false,
+  });
+
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
   const [stripe, setStripe] = useState({
     stripe_secret_key: '',
     stripe_publishable_key: '',
@@ -36,8 +49,24 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    loadConfig();
+    if (isSuperAdmin) {
+      loadConfig();
+    } else {
+      loadClientStripe();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadClientStripe() {
+    try {
+      const data = await api.getClientStripeConfig();
+      setClientStripe((prev) => ({ ...prev, ...data }));
+    } catch (error) {
+      console.error('Error loading client Stripe config:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loadConfig() {
     try {
@@ -56,6 +85,17 @@ export default function SettingsPage() {
     setSaving(true);
     setMessage('');
     try {
+      if (!isSuperAdmin) {
+        const data = await api.updateClientStripeConfig({
+          secretKey: clientStripe.secretKey,
+          publishableKey: clientStripe.publishableKey,
+          webhookSecret: clientStripe.webhookSecret,
+        });
+        setClientStripe((prev) => ({ ...prev, ...data }));
+        setMessage('Configuración de Stripe guardada exitosamente');
+        return;
+      }
+
       switch (activeTab) {
         case 'stripe':
           await api.updatePlatformConfig('stripe', stripe);
@@ -75,22 +115,114 @@ export default function SettingsPage() {
     }
   }
 
-  if (user?.role !== 'SUPER_ADMIN') {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <span className="material-symbols-outlined text-6xl text-on-surface-variant">lock</span>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-4">Solo los administradores pueden acceder a la configuración</p>
-        </div>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="space-y-gutter animate-pulse">
         <div className="glass-card rounded-xl h-12" />
         <div className="glass-card rounded-xl h-96" />
+      </div>
+    );
+  }
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="space-y-gutter">
+        <div>
+          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Configuración de Cobros</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant">Conecta tu propia cuenta de Stripe para cobrar a tus clientes</p>
+        </div>
+
+        {message && (
+          <div className={`p-4 rounded-lg flex items-center gap-3 ${
+            message.startsWith('Error') ? 'bg-error-container text-on-error-container' : 'bg-secondary-container text-on-secondary-container'
+          }`}>
+            <span className="material-symbols-outlined">{message.startsWith('Error') ? 'error' : 'check_circle'}</span>
+            <p className="font-body-sm text-body-sm">{message}</p>
+          </div>
+        )}
+
+        <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm space-y-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-[#635bff] rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">S</span>
+            </div>
+            <div>
+              <h3 className="font-headline-md text-headline-md text-on-surface">Stripe</h3>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">Tu cuenta de Stripe para recibir pagos de tus clientes</p>
+            </div>
+          </div>
+
+          <div className={`p-4 rounded-lg flex items-start gap-3 ${
+            clientStripe.configured
+              ? 'bg-secondary-container/40 text-on-secondary-container'
+              : 'bg-tertiary-container/40 text-on-tertiary-container'
+          }`}>
+            <span className="material-symbols-outlined">{clientStripe.configured ? 'verified_user' : 'info'}</span>
+            <div className="space-y-1">
+              <p className="font-body-sm text-body-sm font-bold">
+                {clientStripe.configured
+                  ? `Stripe conectado${clientStripe.mode ? ` (modo ${clientStripe.mode === 'live' ? 'producción' : 'prueba'})` : ''}`
+                  : 'Stripe no conectado aún'}
+              </p>
+              <p className="font-body-sm text-body-sm">
+                {clientStripe.configured
+                  ? 'Ya puedes cobrar a tus clientes con esta cuenta. Puedes actualizar las claves cuando quieras.'
+                  : 'Pega las claves de tu cuenta Stripe para empezar a cobrar a tus clientes.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+            <div>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Secret Key</label>
+              <PasswordInput
+                value={clientStripe.secretKey}
+                onChange={(e) => setClientStripe({ ...clientStripe, secretKey: e.target.value })}
+                placeholder={clientStripe.hasSecretKey ? 'sk_•••••••••••• (guardada)' : 'sk_live_... o sk_test_...'}
+              />
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Créala en tu Dashboard de Stripe → Developers → API Keys. Se guarda cifrada y solo se muestra parcialmente.</p>
+            </div>
+            <div>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Publishable Key</label>
+              <input
+                value={clientStripe.publishableKey}
+                onChange={(e) => setClientStripe({ ...clientStripe, publishableKey: e.target.value })}
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                placeholder="pk_live_... o pk_test_..."
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Webhook Secret</label>
+              <PasswordInput
+                value={clientStripe.webhookSecret}
+                onChange={(e) => setClientStripe({ ...clientStripe, webhookSecret: e.target.value })}
+                placeholder={clientStripe.hasWebhookSecret ? 'whsec_•••••••• (guardado)' : 'whsec_...'}
+              />
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">De tu Dashboard de Stripe → Developers → Webhooks. Es opcional por ahora, pero necesario para confirmar pagos automáticamente.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-primary-fixed/30 rounded-lg space-y-2">
+            <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
+              <strong>Webhook URL:</strong>{' '}
+              <code className="text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/stripe/webhook</code>
+            </p>
+            <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
+              La clave secreta y la publicable deben ser del mismo modo (ambas test o ambas live) y pertenecer a la misma cuenta de Stripe.
+              Tus clientes pagarán directamente a esta cuenta.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-[0.98]"
+          >
+            {saving ? 'Guardando...' : 'Guardar Configuración de Stripe'}
+          </button>
+        </div>
       </div>
     );
   }
