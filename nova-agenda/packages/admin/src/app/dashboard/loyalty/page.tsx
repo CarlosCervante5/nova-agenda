@@ -5,6 +5,7 @@ import { api, Service } from '@/lib/api';
 import { LoyaltyProgram, LoyaltyReward } from './interface';
 import { useAuth } from '@/lib/auth';
 import LoyaltyCardsPanel from './LoyaltyCardsPanel';
+import { getClientPortalBaseUrl } from '@/lib/booking-url';
 
 type RewardDraft = {
   name: string;
@@ -76,6 +77,22 @@ export default function LoyaltyPage() {
   const [rewards, setRewards] = useState<RewardDraft[]>(defaultRewards(10));
   const [activeTab, setActiveTab] = useState<'program' | 'cards'>('program');
   const [error, setError] = useState('');
+  const [joinQr, setJoinQr] = useState<{ url: string; qrCodeUrl: string; clientSlug: string; programId: string } | null>(null);
+  const [joinQrLoading, setJoinQrLoading] = useState(false);
+
+  const openJoinQr = async (program: LoyaltyProgram) => {
+    setJoinQrLoading(true);
+    setError('');
+    try {
+      const base = getClientPortalBaseUrl();
+      const data = await api.getProgramJoinQr(program.clientId, base);
+      setJoinQr(data);
+    } catch (err: any) {
+      setError(err?.message || 'No se pudo generar el QR de fidelidad.');
+    } finally {
+      setJoinQrLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadPrograms();
@@ -807,9 +824,10 @@ export default function LoyaltyPage() {
                           <button
                             key={mode}
                             onClick={() => {
-                              // Handle card generation based on mode
                               if (mode === 'QR') {
-                                window.open(`/api/loyalty/cards/${program.id}/qr`, '_blank');
+                                openJoinQr(program);
+                              } else {
+                                alert(`${mode} estará disponible próximamente. Por ahora usa el código QR.`);
                               }
                             }}
                             className="p-1.5 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary transition-colors"
@@ -853,6 +871,59 @@ export default function LoyaltyPage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal QR para unirse al programa */}
+      {joinQr && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setJoinQr(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl max-w-md w-full p-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-md">
+              <div>
+                <h3 className="font-headline-md text-headline-md text-on-surface">QR para unirse</h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Imprime este código y colócalo en tu local. Al escanearlo, el cliente abre tu página y se une al programa de fidelidad.
+                </p>
+              </div>
+              <button onClick={() => setJoinQr(null)} className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-error transition-colors">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="bg-white p-lg rounded-xl flex justify-center mb-lg">
+              {joinQrLoading ? (
+                <div className="w-48 h-48 flex items-center justify-center text-on-surface-variant animate-pulse">Generando...</div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={joinQr.qrCodeUrl} alt="QR para unirse al programa" width={192} height={192} className="w-48 h-48" />
+              )}
+            </div>
+
+            <div className="p-4 bg-surface-container-low rounded-lg mb-lg">
+              <p className="font-label-sm text-label-sm text-on-surface-variant mb-1">Enlace del QR</p>
+              <p className="font-body-sm text-body-sm text-on-surface break-all">{joinQr.url}</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(joinQr.url);
+                  alert('Enlace copiado. Compártelo para que tus clientes se unan al programa.');
+                }}
+                className="flex-1 py-3 rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all"
+              >
+                Copiar enlace
+              </button>
+              <a
+                href={joinQr.qrCodeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all text-center"
+              >
+                Ver QR grande
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>

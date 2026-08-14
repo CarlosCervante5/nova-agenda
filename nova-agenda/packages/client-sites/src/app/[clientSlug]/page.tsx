@@ -2,7 +2,13 @@ import { getClientInfo, getLoyaltyProgram } from '@/lib/api';
 import BookingPage from './BookingPage';
 import { notFound } from 'next/navigation';
 
-export default async function ClientPage({ params }: { params: { clientSlug: string } }) {
+export default async function ClientPage({
+  params,
+  searchParams,
+}: {
+  params: { clientSlug: string };
+  searchParams: { loyalty?: string };
+}) {
   const client = await getClientInfo(params.clientSlug);
 
   if (!client) {
@@ -37,5 +43,12 @@ export default async function ClientPage({ params }: { params: { clientSlug: str
 
   const loyaltyProgram = await getLoyaltyProgram(client.id);
 
-  return <BookingPage client={client} clientSlug={params.clientSlug} loyaltyProgram={loyaltyProgram} />;
+  return (
+    <BookingPage
+      client={client}
+      clientSlug={params.clientSlug}
+      loyaltyProgram={loyaltyProgram}
+      initialTab={searchParams.loyalty === '1' && loyaltyProgram ? 'loyalty' : 'booking'}
+    />
+  );
 }

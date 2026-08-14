@@ -9,12 +9,13 @@ interface Props {
   client: ClientInfo;
   clientSlug: string;
   loyaltyProgram?: LoyaltyProgram | null;
+  initialTab?: 'booking' | 'loyalty';
 }
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-export default function BookingPage({ client, clientSlug, loyaltyProgram }: Props) {
-  const [activeTab, setActiveTab] = useState<'booking' | 'loyalty'>('booking');
+export default function BookingPage({ client, clientSlug, loyaltyProgram, initialTab = 'booking' }: Props) {
+  const [activeTab, setActiveTab] = useState<'booking' | 'loyalty'>(initialTab);
   const [step, setStep] = useState<'service' | 'staff' | 'datetime' | 'confirm' | 'success'>('service');
   const [selectedService, setSelectedService] = useState<ClientInfo['services'][0] | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<NonNullable<ClientInfo['staff']>[0] | null>(null);

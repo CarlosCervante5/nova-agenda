@@ -500,6 +500,15 @@ class ApiClient {
   async generateCardQR(cardId: string) {
     return this.request<any>(`/api/loyalty/cards/${cardId}/qr`, { method: 'POST' });
   }
+  async getProgramJoinQr(clientId: string, base?: string) {
+    const params = base ? `?base=${encodeURIComponent(base)}` : '';
+    return this.request<{
+      url: string;
+      qrCodeUrl: string;
+      programId: string;
+      clientSlug: string;
+    }>(`/api/loyalty/programs/${clientId}/join-qr${params}`);
+  }
   async generateCardImage(cardId: string) {
     return this.request<any>(`/api/loyalty/cards/${cardId}/image`, { method: 'POST' });
   }

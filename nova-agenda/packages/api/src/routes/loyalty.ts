@@ -943,6 +943,55 @@ router.post('/cards/:cardId/whatsapp', authenticate, async (req: AuthRequest, re
   }
 });
 
+// QR para unirse al programa (público) — al escanearlo abre el portal de fidelidad del negocio
+// query opcional: base (URL base del portal client-sites, para resolver cuando no hay env)
+router.get('/programs/:clientId/join-qr', async (req: AuthRequest, res: Response) => {
+  try {
+    const { clientId } = req.params;
+
+    const program = await prisma.loyaltyProgram.findUnique({ where: { clientId } });
+    if (!program || !program.isActive) {
+      return res.status(404).json({ error: 'Programa de fidelidad no encontrado o inactivo' });
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { slug: true, domain: true },
+    });
+    if (!client) {
+      return res.status(404).json({ error: 'Negocio no encontrado' });
+    }
+
+    // Resolver la URL base del portal del negocio
+    let base = typeof req.query.base === 'string' ? req.query.base.replace(/\/+$/, '') : '';
+    if (!base && client.domain) {
+      base = `https://${client.domain.replace(/^https?:\/\//, '')}`;
+    }
+    if (!base) {
+      base = (process.env.CLIENT_SITES_URL || process.env.NEXT_PUBLIC_CLIENT_PORTAL_URL || '').replace(/\/+$/, '');
+    }
+    if (!base) {
+      const origin = req.headers.origin || req.headers.referer || '';
+      if (origin) {
+        try { base = new URL(origin).origin; } catch { /* ignore */ }
+      }
+    }
+
+    const portalUrl = base ? `${base}/${client.slug}?loyalty=1` : `/${client.slug}?loyalty=1`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(portalUrl)}`;
+
+    res.json({
+      url: portalUrl,
+      qrCodeUrl,
+      programId: program.id,
+      clientSlug: client.slug,
+    });
+  } catch (error) {
+    console.error('Program join QR error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get card QR code (public - for customer to view their QR)
 router.get('/cards/:cardId/qr', async (req: AuthRequest, res: Response) => {
   try {
