@@ -42,6 +42,8 @@ model Client {
   stripeSecretKey       String?
   stripePublishableKey  String?
   stripeWebhookSecret   String?
+  // Addons contratados (JSON array, ej: ["WHATSAPP_AI"])
+  addons        String    @default("[]")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

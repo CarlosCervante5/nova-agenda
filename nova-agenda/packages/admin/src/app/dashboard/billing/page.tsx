@@ -36,6 +36,8 @@ export default function BillingPage() {
   const searchParams = useSearchParams();
   const [currentPlan, setCurrentPlan] = useState('FREE');
   const [plans, setPlans] = useState<Record<string, PlanInfo>>({});
+  const [addons, setAddons] = useState<Record<string, { name: string; price: number; description: string; features: string[] }>>({});
+  const [clientAddons, setClientAddons] = useState<string[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [usage, setUsage] = useState<{
     services: { used: number; limit: number | null };
@@ -90,6 +92,8 @@ export default function BillingPage() {
       const data = await api.getPlans();
       setCurrentPlan(data.currentPlan);
       setPlans(data.plans);
+      setAddons(data.addons || {});
+      setClientAddons(data.clientAddons || []);
       setSubscription(data.subscription);
       setUsage(data.usage || null);
       setStripeConfigured(data.stripeConfigured !== false);
@@ -320,6 +324,73 @@ export default function BillingPage() {
           );
         })}
       </div>
+
+      {/* Addons */}
+      {Object.keys(addons).length > 0 && (
+        <div>
+          <h3 className="font-headline-md text-headline-md text-on-surface mb-1 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">extension</span>
+            Addons
+          </h3>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
+            Funciones adicionales que se cobran aparte del plan, mensual.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+            {Object.entries(addons).map(([key, addon]) => {
+              const isActive = clientAddons.includes(key);
+              return (
+                <div
+                  key={key}
+                  className={`bg-surface-container-lowest p-xl rounded-xl border flex flex-col transition-all ${
+                    isActive ? 'border-primary border-2 shadow-lg shadow-primary/10' : 'border-outline-variant'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-md mb-md">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isActive ? 'bg-primary text-on-primary' : 'bg-tertiary-container text-on-tertiary-container'}`}>
+                        <span className="material-symbols-outlined text-xl">smart_toy</span>
+                      </div>
+                      <div>
+                        <h4 className="font-headline-md text-headline-md text-on-surface">{addon.name}</h4>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">{addon.description}</p>
+                      </div>
+                    </div>
+                    {isActive && (
+                      <span className="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-[10px] font-bold uppercase whitespace-nowrap">
+                        Activo
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-lg">
+                    <span className="font-headline-xl text-headline-xl text-on-surface">${addon.price}</span>
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">/mes</span>
+                  </div>
+                  <ul className="space-y-2 mb-xl flex-grow">
+                    {addon.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-primary text-lg mt-0.5">check_circle</span>
+                        <span className="font-body-sm text-body-sm text-on-surface-variant">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {isActive ? (
+                    <div className="w-full py-3 rounded-lg bg-surface-container-high text-on-surface-variant text-center font-label-md text-label-md">
+                      Addon contratado
+                    </div>
+                  ) : (
+                    <a
+                      href={`mailto:ventas@novagenda.com?subject=Quiero%20el%20addon%20${encodeURIComponent(addon.name)}%20($${addon.price}%2Fmes)`}
+                      className="w-full py-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-[0.98] text-center block"
+                    >
+                      Solicitar addon
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* FAQ */}
       <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">

@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { getClientPlanUsage } from '../middleware/plan-limits';
+import { getClientAddons } from '../middleware/plan-limits';
 import {
   getStripeClient,
   getStripeWebhookSecret,
@@ -17,8 +18,23 @@ const prisma = new PrismaClient();
 
 const PLANS: Record<string, { name: string; price: number; features: string[]; isContact?: boolean }> = {
   FREE: { name: 'Gratuito', price: 0, features: ['Agenda de citas', 'Formulario de reservas compartible', 'Hasta 3 servicios', 'Hasta 50 citas/mes'] },
-  PRO: { name: 'PRO', price: 99, features: ['Todo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'WhatsApp con IA integrada', 'Chatbot 24/7', 'Servicios ilimitados', 'Citas ilimitadas'] },
+  PRO: { name: 'PRO', price: 99, features: ['Todo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Pagos en línea (cobra a tus clientes con Stripe)', 'Servicios ilimitados', 'Citas ilimitadas'] },
   CUSTOM: { name: 'Personalizado', price: 0, isContact: true, features: ['Todo del plan PRO', 'Onboarding dedicado', 'Soporte prioritario 24/7', 'Desarrollo a medida', 'SLA garantizado', 'Infraestructura dedicada'] },
+};
+
+const ADDONS: Record<string, { name: string; price: number; description: string; features: string[] }> = {
+  WHATSAPP_AI: {
+    name: 'WhatsApp con IA + Chatbot',
+    price: 499,
+    description: 'Atiende citas, responde dudas y reserva automáticamente por WhatsApp 24/7 con IA.',
+    features: [
+      'Conexión por código QR (tu número real)',
+      'Chatbot con IA 24/7',
+      'Reserva de citas por chat',
+      'Respuestas personalizadas con la personalidad de tu negocio',
+      'Registro y seguimiento de conversaciones',
+    ],
+  },
 };
 
 function getAdminOrigin(req: AuthRequest): string {
@@ -143,10 +159,13 @@ router.get('/plans', authenticate, async (req: AuthRequest, res: Response) => {
     }
 
     const stripeStatus = await isStripeConfigured();
+    const clientAddons = await getClientAddons(clientId);
 
     res.json({
       currentPlan: client.plan,
       plans: PLANS,
+      addons: ADDONS,
+      clientAddons,
       subscription,
       usage: await getClientPlanUsage(clientId, client.plan),
       stripeConfigured: stripeStatus.configured,

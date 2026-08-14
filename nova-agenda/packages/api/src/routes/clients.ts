@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { parseAddons } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -28,7 +29,7 @@ router.get('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest,
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(clients);
+    res.json(clients.map((c) => ({ ...c, addons: parseAddons(c.addons) })));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -56,7 +57,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    res.json(client);
+    res.json({ ...client, addons: parseAddons(client.addons) });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -240,6 +241,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       bookingConfirmAuto,
       plan,
       isActive,
+      addons,
     } = req.body;
 
     const websiteFields = [
@@ -313,6 +315,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         ...(typeof bookingConfirmAuto === 'boolean' && { bookingConfirmAuto }),
         ...(plan && req.user!.role === 'SUPER_ADMIN' && { plan }),
         ...(typeof isActive === 'boolean' && req.user!.role === 'SUPER_ADMIN' && { isActive }),
+        ...(Array.isArray(addons) && req.user!.role === 'SUPER_ADMIN' && { addons: JSON.stringify(addons) }),
       },
       include: {
         workingHours: { orderBy: { dayOfWeek: 'asc' } },
@@ -320,7 +323,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json(client);
+    res.json({ ...client, addons: parseAddons(client.addons) });
   } catch (error) {
     console.error('Update client error:', error);
     res.status(500).json({ error: 'Internal server error' });

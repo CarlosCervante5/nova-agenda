@@ -43,6 +43,8 @@ export interface Client {
   bookingConfirmAuto?: boolean;
   plan: string;
   isActive: boolean;
+  /** Addons contratados, ej: ['WHATSAPP_AI'] */
+  addons?: string[];
   createdAt: string;
   _count?: { users: number; services: number; bookings: number };
 }
@@ -382,7 +384,9 @@ class ApiClient {
   // Billing / Stripe
   async getPlans() {    return this.request<{
       currentPlan: string;
-      plans: Record<string, { name: string; price: number; features: string[] }>;
+      plans: Record<string, { name: string; price: number; features: string[]; isContact?: boolean }>;
+      addons?: Record<string, { name: string; price: number; description: string; features: string[] }>;
+      clientAddons?: string[];
       subscription: any;
       usage?: {
         services: { used: number; limit: number | null };

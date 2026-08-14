@@ -22,6 +22,52 @@ export const PLAN_LIMITS = {
 
 export type PlanKey = keyof typeof PLAN_LIMITS;
 
+// Addons disponibles en la plataforma
+export const ADDON_KEYS = ['WHATSAPP_AI'] as const;
+export type AddonKey = (typeof ADDON_KEYS)[number];
+
+export const ADDONS: Record<AddonKey, {
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+}> = {
+  WHATSAPP_AI: {
+    name: 'WhatsApp con IA + Chatbot',
+    price: 499,
+    description: 'Atiende citas, responde dudas y reserva automáticamente por WhatsApp 24/7 con IA.',
+    features: [
+      'Conexión por código QR (tu número real)',
+      'Chatbot con IA 24/7',
+      'Reserva de citas por chat',
+      'Respuestas personalizadas con la personalidad de tu negocio',
+      'Registro y seguimiento de conversaciones',
+    ],
+  },
+};
+
+export function parseAddons(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getClientAddons(clientId: string): Promise<string[]> {
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { addons: true },
+  });
+  return parseAddons(client?.addons);
+}
+
+export function hasAddon(addons: string[], key: string): boolean {
+  return addons.includes(key);
+}
+
 export function getPlanLimits(plan: string) {
   return PLAN_LIMITS[plan as PlanKey] ?? PLAN_LIMITS.FREE;
 }

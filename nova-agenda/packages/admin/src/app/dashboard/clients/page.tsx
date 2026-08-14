@@ -12,7 +12,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE' });
+  const [form, setForm] = useState<{ name: string; slug: string; email: string; phone: string; primaryColor: string; plan: string; addons: string[] }>({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE', addons: [] });
 
   useEffect(() => {
     if (authLoading) return;
@@ -33,7 +33,7 @@ export default function ClientsPage() {
       if (editing) { await api.updateClient(editing.id, form); }
       else { await api.createClient(form); }
       setShowForm(false); setEditing(null);
-      setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE' });
+      setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE', addons: [] });
       loadClients();
     } catch (err: any) { alert(err.message); }
   }
@@ -46,7 +46,7 @@ export default function ClientsPage() {
 
   function startEdit(client: Client) {
     setEditing(client);
-    setForm({ name: client.name, slug: client.slug, email: client.email || '', phone: client.phone || '', primaryColor: client.primaryColor, plan: client.plan });
+    setForm({ name: client.name, slug: client.slug, email: client.email || '', phone: client.phone || '', primaryColor: client.primaryColor, plan: client.plan, addons: client.addons || [] });
     setShowForm(true);
   }
 
@@ -67,7 +67,7 @@ export default function ClientsPage() {
           <p className="font-body-md text-body-md text-on-surface-variant">Gestiona los {clients.length} negocios registrados.</p>
         </div>
         <button
-          onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE' }); }}
+          onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE', addons: [] }); }}
           className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
@@ -112,6 +112,29 @@ export default function ClientsPage() {
                 <option value="ENTERPRISE">Empresa</option>
               </select>
             </div>
+            <div className="flex items-start gap-3 p-lg bg-primary-fixed/20 border border-outline-variant rounded-lg">
+              <input
+                type="checkbox"
+                id="addon-whatsapp"
+                checked={form.addons.includes('WHATSAPP_AI')}
+                onChange={(e) => {
+                  const addons = e.target.checked
+                    ? [...form.addons, 'WHATSAPP_AI']
+                    : form.addons.filter((a) => a !== 'WHATSAPP_AI');
+                  setForm({ ...form, addons });
+                }}
+                className="mt-1 w-5 h-5 accent-[var(--color-primary)]"
+              />
+              <label htmlFor="addon-whatsapp" className="cursor-pointer">
+                <span className="font-label-md text-label-md text-on-surface flex items-center gap-1.5">
+                  Addon: WhatsApp con IA + Chatbot
+                  <span className="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold">$499/mes</span>
+                </span>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">
+                  Chatbot con IA 24/7 y reserva de citas por WhatsApp. Requiere plan PRO.
+                </span>
+              </label>
+            </div>
             <div className="col-span-full flex gap-3 pt-md">
               <button type="submit" className="px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">{editing ? 'Actualizar Negocio' : 'Crear Negocio'}</button>
               <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="px-lg py-3 border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container-low transition-all">Cancelar</button>
@@ -150,6 +173,11 @@ export default function ClientsPage() {
                   </td>
                   <td className="px-lg py-4">
                     <span className="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-[10px] font-bold uppercase">{client.plan}</span>
+                    {(client.addons || []).length > 0 && (
+                      <span className="ml-2 px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold uppercase">
+                        +{(client.addons || []).length} addon{(client.addons || []).length > 1 ? 's' : ''}
+                      </span>
+                    )}
                   </td>
                   <td className="px-lg py-4 font-body-sm text-body-sm">{client._count?.services || 0}</td>
                   <td className="px-lg py-4 font-body-sm text-body-sm">{client._count?.bookings || 0}</td>

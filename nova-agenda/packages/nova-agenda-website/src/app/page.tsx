@@ -203,7 +203,7 @@ export default function HomePage() {
                   <span className="text-on-primary-container">/mes</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'WhatsApp con IA integrada', 'Chatbot automático 24/7', 'Servicios ilimitados', 'Citas ilimitadas'].map(f => (
+                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Pagos en línea (cobra a tus clientes con Stripe)', 'Servicios ilimitados', 'Citas ilimitadas'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-on-primary-fixed-variant text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm text-on-primary-fixed">{f}</span>
@@ -227,6 +227,27 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <Link href="mailto:ventas@novagenda.com" className="w-full py-3 rounded-lg border border-outline text-primary font-label-md text-label-md font-bold hover:bg-surface-container-low transition-all text-center block">Contactar Ventas</Link>
+              </div>
+            </div>
+
+            {/* Addon: WhatsApp con IA */}
+            <div className="mt-10 bg-tertiary-container p-xl rounded-2xl border border-tertiary flex flex-col md:flex-row md:items-center gap-lg">
+              <div className="w-16 h-16 bg-surface-container-lowest rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-3xl text-tertiary">smart_toy</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 flex-wrap mb-sm">
+                  <h3 className="font-headline-md text-headline-md text-on-tertiary-container">Addon: WhatsApp con IA + Chatbot</h3>
+                  <span className="px-3 py-1 bg-on-tertiary-container text-tertiary-container rounded-full text-[10px] font-bold uppercase">Complemento</span>
+                </div>
+                <p className="font-body-md text-body-md text-on-tertiary-container">
+                  Chatbot con IA 24/7 que agenda citas por WhatsApp, conectado a tu número real por código QR.
+                  Se agrega a cualquier plan a <strong>$499/mes</strong>.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <span className="font-headline-xl text-headline-xl text-on-tertiary-container whitespace-nowrap">$499<span className="font-body-md text-body-md">/mes</span></span>
+                <Link href="mailto:ventas@novagenda.com?subject=Quiero%20el%20addon%20de%20WhatsApp%20con%20IA%20(%24499%2Fmes)" className="px-6 py-3 rounded-lg bg-on-tertiary-container text-tertiary-container font-label-md text-label-md font-bold hover:opacity-90 transition-all text-center whitespace-nowrap">Solicitar addon</Link>
               </div>
             </div>
           </div>

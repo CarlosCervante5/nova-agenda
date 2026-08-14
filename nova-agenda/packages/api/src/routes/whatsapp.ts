@@ -4,19 +4,26 @@ import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { whatsappHandler } from '../services/whatsapp-handler';
 import { whatsappService } from '../services/whatsapp';
 import { getPlanLevel } from '../middleware/plan-check';
+import { parseAddons } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// Helper: check if client has PRO plan
-async function requireProPlan(clientId: string): Promise<{ allowed: boolean; error?: string }> {
+// Helper: WhatsApp es un ADDON ($499/mes) además del plan PRO
+async function requireWhatsappAddon(clientId: string): Promise<{ allowed: boolean; error?: string }> {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
-    select: { plan: true },
+    select: { plan: true, addons: true },
   });
   if (!client) return { allowed: false, error: 'Cliente no encontrado' };
   if (getPlanLevel(client.plan) < getPlanLevel('PRO')) {
-    return { allowed: false, error: 'WhatsApp requiere el plan Business (PRO)' };
+    return { allowed: false, error: 'WhatsApp con IA requiere el plan PRO.' };
+  }
+  if (!parseAddons(client.addons).includes('WHATSAPP_AI')) {
+    return {
+      allowed: false,
+      error: 'WhatsApp con IA es un addon de $499/mes aparte del plan. Actívalo desde Facturación o contacta a ventas.',
+    };
   }
   return { allowed: true };
 }
@@ -30,14 +37,18 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: phone, message, clientSlug' });
     }
 
-    // Check plan before processing
+    // Check plan + addon before processing
     const client = await prisma.client.findUnique({
       where: { slug: clientSlug },
-      select: { id: true, plan: true },
+      select: { id: true, plan: true, addons: true },
     });
 
-    if (!client || getPlanLevel(client.plan) < getPlanLevel('PRO')) {
-      return res.status(403).json({ error: 'WhatsApp no disponible para este plan' });
+    if (
+      !client ||
+      getPlanLevel(client.plan) < getPlanLevel('PRO') ||
+      !parseAddons(client.addons).includes('WHATSAPP_AI')
+    ) {
+      return res.status(403).json({ error: 'WhatsApp con IA no disponible: es un addon de $499/mes.' });
     }
 
     // Process asynchronously to respond to webhook quickly
@@ -66,7 +77,7 @@ router.get('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Plan check
-    const planCheck = await requireProPlan(clientId);
+    const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
       return res.status(403).json({ error: planCheck.error });
     }
@@ -102,7 +113,7 @@ router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
     }
 
     // Plan check
-    const planCheck = await requireProPlan(clientId);
+    const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
       return res.status(403).json({ error: planCheck.error });
     }
@@ -203,7 +214,7 @@ router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const planCheck = await requireProPlan(clientId);
+    const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
       return res.status(403).json({ error: planCheck.error });
     }
@@ -252,7 +263,7 @@ router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) 
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const planCheck = await requireProPlan(clientId);
+    const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
       return res.status(403).json({ error: planCheck.error });
     }
@@ -293,7 +304,7 @@ router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res)
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    const planCheck = await requireProPlan(clientId);
+    const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
       return res.status(403).json({ error: planCheck.error });
     }

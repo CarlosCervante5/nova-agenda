@@ -26,7 +26,7 @@ function Sidebar() {
     { href: '/dashboard/booking', label: 'Agenda pública', icon: 'event_available' },
     { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
     { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
-    { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat', minPlan: 'PRO' },
+    { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat' },
     { href: '/dashboard/billing', label: 'Facturación', icon: 'payments' },
     { href: '/dashboard/settings', label: 'Configuración', icon: 'settings' },
   ];

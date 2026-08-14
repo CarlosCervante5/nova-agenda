@@ -26,6 +26,7 @@ interface WhatsAppLog {
 export default function WhatsAppPage() {
   const { user } = useAuth();
   const [clientPlan, setClientPlan] = useState<string>('FREE');
+  const [clientAddons, setClientAddons] = useState<string[]>([]);
   const [config, setConfig] = useState<WhatsAppConfig>({
     isOpenAIEnabled: true,
     aiPersonality:
@@ -108,7 +109,10 @@ export default function WhatsAppPage() {
   useEffect(() => {
     if (clientId) {
       loadData();
-      api.getClient(clientId).then((c) => setClientPlan(c.plan)).catch(() => {});
+      api.getClient(clientId).then((c) => {
+        setClientPlan(c.plan);
+        setClientAddons(c.addons || []);
+      }).catch(() => {});
     }
     return () => stopPolling();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,30 +213,40 @@ export default function WhatsAppPage() {
     );
   }
 
-  if (clientPlan !== 'PRO') {
+  const hasWhatsappAddon = clientAddons.includes('WHATSAPP_AI');
+
+  if (!hasWhatsappAddon) {
     return (
       <div className="space-y-gutter">
         <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">WhatsApp Business</h2>
+          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">WhatsApp con IA</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">
             Conecta WhatsApp con IA para atender citas automáticamente
           </p>
         </div>
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm text-center py-16">
           <div className="w-16 h-16 bg-tertiary-container rounded-full flex items-center justify-center mx-auto mb-lg">
-            <span className="material-symbols-outlined text-3xl text-on-tertiary-container">lock</span>
+            <span className="material-symbols-outlined text-3xl text-on-tertiary-container">smart_toy</span>
           </div>
           <h3 className="font-headline-md text-headline-md text-on-surface mb-sm">
-            Función exclusiva del plan Business
+            Addon: WhatsApp con IA + Chatbot
           </h3>
           <p className="font-body-md text-body-md text-on-surface-variant mb-lg max-w-md mx-auto">
-            WhatsApp con IA solo está disponible en el plan Business. Actualiza tu plan para conectar tu número
-            escaneando un código QR.
+            Este es un addon de <strong>$499/mes</strong> aparte de tu plan. Incluye chatbot con IA 24/7,
+            reserva de citas por chat y conexión con tu número real por código QR.
           </p>
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold">
-            <span className="material-symbols-outlined">upgrade</span>
-            Plan actual: {clientPlan}
+          <div className="inline-flex flex-col sm:flex-row items-center gap-2 mb-lg">
+            <a
+              href="mailto:ventas@novagenda.com?subject=Quiero%20el%20addon%20de%20WhatsApp%20con%20IA%20(%24499%2Fmes)"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined">upgrade</span>
+              Solicitar addon de WhatsApp
+            </a>
           </div>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            Plan actual: {clientPlan} · Se activa con un cobro mensual de $499 vía Stripe.
+          </p>
         </div>
       </div>
     );
