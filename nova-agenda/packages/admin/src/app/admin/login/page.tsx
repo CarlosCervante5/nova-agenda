@@ -4,27 +4,38 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 import PasswordInput from '@/components/PasswordInput';
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, user, loading: authLoading } = useAuth();
+  const { user, login, setUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (authLoading) return;
+    if (user && user.role === 'SUPER_ADMIN') {
       router.replace('/dashboard');
+    } else if (user) {
+      router.replace('/login');
     }
   }, [authLoading, user, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      const loggedUser = await login(email, password);
+      if (loggedUser.role !== 'SUPER_ADMIN') {
+        api.clearToken();
+        setUser(null);
+        setError('Acceso restringido. Esta cuenta no es administradora de la plataforma.');
+        return;
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
@@ -49,10 +60,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center text-on-primary mx-auto mb-4 shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined text-3xl">spa</span>
+            <span className="material-symbols-outlined text-3xl">admin_panel_settings</span>
           </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Nova Agenda</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Panel de Administración</p>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Administración de la Plataforma</p>
         </div>
 
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
@@ -102,12 +113,8 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center font-body-sm text-body-sm text-on-surface-variant">
-          ¿No tienes cuenta?{' '}
-          <Link href="/register" className="text-primary font-bold hover:underline">Crear Gratis</Link>
-        </p>
-        <p className="mt-2 text-center font-body-sm text-body-sm text-on-surface-variant">
-          ¿Eres administrador de la plataforma?{' '}
-          <Link href="/admin/login" className="text-primary font-bold hover:underline">Ingresa aquí</Link>
+          ¿Tienes un negocio en Nova Agenda?{' '}
+          <Link href="/login" className="text-primary font-bold hover:underline">Inicia sesión aquí</Link>
         </p>
       </div>
     </div>

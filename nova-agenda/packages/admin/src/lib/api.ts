@@ -184,7 +184,7 @@ class ApiClient {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         const path = window.location.pathname;
-        const isAuthPage = path === '/login' || path === '/register';
+        const isAuthPage = path === '/login' || path === '/register' || path === '/admin/login';
         if (!isAuthPage) {
           window.location.href = '/login';
         }

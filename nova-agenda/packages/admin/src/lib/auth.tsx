@@ -6,17 +6,19 @@ import { api, User } from './api';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: async () => {},
+  login: async () => ({} as User),
   logout: () => {},
   refreshUser: async () => {},
+  setUser: () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -42,12 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const data = await api.login(email, password);
     setUser(data.user);
+    return data.user;
   };
 
   const logout = () => {
+    const wasAdmin = user?.role === 'SUPER_ADMIN';
     api.clearToken();
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = wasAdmin ? '/admin/login' : '/login';
   };
 
   const refreshUser = async () => {
@@ -56,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, setUser }}>
       {children}
     </AuthContext.Provider>
   );
