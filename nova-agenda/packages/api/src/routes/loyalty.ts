@@ -962,13 +962,17 @@ router.get('/programs/:clientId/join-qr', async (req: AuthRequest, res: Response
       return res.status(404).json({ error: 'Negocio no encontrado' });
     }
 
-    // Resolver la URL base del portal del negocio
-    let base = typeof req.query.base === 'string' ? req.query.base.replace(/\/+$/, '') : '';
-    if (!base && client.domain) {
+    // Resolver la URL base del portal del negocio.
+    // Prioridad: dominio propio del cliente → CLIENT_SITES_URL (autoritativo) → base → origin.
+    let base = '';
+    if (client.domain) {
       base = `https://${client.domain.replace(/^https?:\/\//, '')}`;
     }
     if (!base) {
       base = (process.env.CLIENT_SITES_URL || process.env.NEXT_PUBLIC_CLIENT_PORTAL_URL || '').replace(/\/+$/, '');
+    }
+    if (!base) {
+      base = typeof req.query.base === 'string' ? req.query.base.replace(/\/+$/, '') : '';
     }
     if (!base) {
       const origin = req.headers.origin || req.headers.referer || '';

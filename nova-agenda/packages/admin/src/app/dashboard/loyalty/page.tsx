@@ -5,7 +5,6 @@ import { api, Service } from '@/lib/api';
 import { LoyaltyProgram, LoyaltyReward } from './interface';
 import { useAuth } from '@/lib/auth';
 import LoyaltyCardsPanel from './LoyaltyCardsPanel';
-import { getClientPortalBaseUrl } from '@/lib/booking-url';
 
 type RewardDraft = {
   name: string;
@@ -84,8 +83,7 @@ export default function LoyaltyPage() {
     setJoinQrLoading(true);
     setError('');
     try {
-      const base = getClientPortalBaseUrl();
-      const data = await api.getProgramJoinQr(program.clientId, base);
+      const data = await api.getProgramJoinQr(program.clientId);
       setJoinQr(data);
     } catch (err: any) {
       setError(err?.message || 'No se pudo generar el QR de fidelidad.');
