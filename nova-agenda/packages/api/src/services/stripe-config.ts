@@ -4,18 +4,17 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const PLAN_PRICE_KEYS: Record<string, string[]> = {
-  BASIC: ['stripe_price_id_basic', 'stripe_price_id'],
-  PRO: ['stripe_price_id_pro'],
+  PRO: ['stripe_price_id_pro', 'stripe_price_id'],
+  CUSTOM: ['stripe_price_id_custom'],
 };
 
 const ENV_PRICE_KEYS: Record<string, string[]> = {
-  BASIC: ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
-  PRO: ['STRIPE_PRICE_ID_PRO'],
+  PRO: ['STRIPE_PRICE_ID_PRO', 'STRIPE_PRICE_ID'],
+  CUSTOM: ['STRIPE_PRICE_ID_CUSTOM'],
 };
 
 /** Price IDs de producción (Stripe) — se usan si no hay env ni platform_config */
 const PRODUCTION_PRICE_IDS: Record<string, string> = {
-  BASIC: 'price_1TpIVoCu5CVszYevnZarLk48',
   PRO: 'price_1TpIa5Cu5CVszYevMhC70wqE',
 };
 
@@ -77,7 +76,7 @@ export async function getPriceIdForPlan(plan: string): Promise<string> {
     (await getConfigValue(envKeys || [], dbKeys)) || PRODUCTION_PRICE_IDS[plan] || null;
 
   if (!priceId) {
-    const label = plan === 'PRO' ? 'Business ($99)' : 'Profesional ($49)';
+    const label = plan === 'PRO' ? 'PRO ($99)' : 'Personalizado';
     throw new Error(
       `Price ID no configurado para el plan ${label}. Un SUPER_ADMIN debe ir a Configuración → Stripe y agregar stripe_price_id_${plan.toLowerCase()}, o definir STRIPE_PRICE_ID_${plan} en Railway.`
     );
@@ -92,18 +91,15 @@ export async function getPriceIdForPlan(plan: string): Promise<string> {
   return priceId;
 }
 
-export async function getPlanForPriceId(priceId: string): Promise<'BASIC' | 'PRO' | 'FREE'> {
+export async function getPlanForPriceId(priceId: string): Promise<'PRO' | 'CUSTOM' | 'FREE'> {
   const proPrice =
-    (await getConfigValue(['STRIPE_PRICE_ID_PRO'], ['stripe_price_id_pro'])) ||
+    (await getConfigValue(['STRIPE_PRICE_ID_PRO', 'STRIPE_PRICE_ID'], ['stripe_price_id_pro', 'stripe_price_id'])) ||
     PRODUCTION_PRICE_IDS.PRO;
   if (proPrice && priceId === proPrice) return 'PRO';
 
-  const basicPrice =
-    (await getConfigValue(
-      ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
-      ['stripe_price_id_basic', 'stripe_price_id']
-    )) || PRODUCTION_PRICE_IDS.BASIC;
-  if (basicPrice && priceId === basicPrice) return 'BASIC';
+  const customPrice =
+    await getConfigValue(['STRIPE_PRICE_ID_CUSTOM'], ['stripe_price_id_custom']);
+  if (customPrice && priceId === customPrice) return 'CUSTOM';
 
   return 'FREE';
 }
@@ -111,19 +107,16 @@ export async function getPlanForPriceId(priceId: string): Promise<'BASIC' | 'PRO
 export async function isStripeConfigured(): Promise<{
   configured: boolean;
   hasSecretKey: boolean;
-  hasBasicPrice: boolean;
   hasProPrice: boolean;
+  hasCustomPrice: boolean;
   missing: string[];
 }> {
   const secretKey = await getConfigValue(['STRIPE_SECRET_KEY'], ['stripe_secret_key']);
-  const basicPrice =
-    (await getConfigValue(
-      ['STRIPE_PRICE_ID_BASIC', 'STRIPE_PRICE_ID'],
-      ['stripe_price_id_basic', 'stripe_price_id']
-    )) || PRODUCTION_PRICE_IDS.BASIC;
   const proPrice =
-    (await getConfigValue(['STRIPE_PRICE_ID_PRO'], ['stripe_price_id_pro'])) ||
+    (await getConfigValue(['STRIPE_PRICE_ID_PRO', 'STRIPE_PRICE_ID'], ['stripe_price_id_pro', 'stripe_price_id'])) ||
     PRODUCTION_PRICE_IDS.PRO;
+  const customPrice =
+    await getConfigValue(['STRIPE_PRICE_ID_CUSTOM'], ['stripe_price_id_custom']);
 
   const missing: string[] = [];
   if (!secretKey) missing.push('STRIPE_SECRET_KEY / stripe_secret_key');
@@ -131,8 +124,8 @@ export async function isStripeConfigured(): Promise<{
   return {
     configured: Boolean(secretKey),
     hasSecretKey: Boolean(secretKey),
-    hasBasicPrice: Boolean(basicPrice),
     hasProPrice: Boolean(proPrice),
+    hasCustomPrice: Boolean(customPrice),
     missing,
   };
 }
