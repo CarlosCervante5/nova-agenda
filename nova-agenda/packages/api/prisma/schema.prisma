@@ -39,9 +39,14 @@ model Client {
   stripeCustomerId     String?
   stripeSubscriptionId String?
   // Cuenta Stripe propia del negocio para cobrar a sus clientes
-  stripeSecretKey       String?
-  stripePublishableKey  String?
-  stripeWebhookSecret   String?
+  // Modo activo: "test" o "live" (cambiar con el toggle en Configuración de Cobros)
+  stripeMode            String  @default("test")
+  stripeTestSecretKey   String?
+  stripeTestPublishableKey String?
+  stripeTestWebhookSecret  String?
+  stripeLiveSecretKey   String?
+  stripeLivePublishableKey String?
+  stripeLiveWebhookSecret  String?
   // Addons contratados (JSON array, ej: ["WHATSAPP_AI"])
   addons        String    @default("[]")
   createdAt     DateTime  @default(now())

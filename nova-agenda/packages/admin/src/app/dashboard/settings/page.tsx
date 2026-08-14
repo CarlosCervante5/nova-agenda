@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, ClientStripeConfig } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import PasswordInput from '@/components/PasswordInput';
 
@@ -14,9 +14,11 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  const [clientStripe, setClientStripe] = useState({
+  const [clientStripe, setClientStripe] = useState<ClientStripeConfig>({
+    mode: 'test',
+    test: { configured: false, hasSecretKey: false, hasPublishableKey: false, hasWebhookSecret: false },
+    live: { configured: false, hasSecretKey: false, hasPublishableKey: false, hasWebhookSecret: false },
     configured: false,
-    mode: null as 'test' | 'live' | null,
     secretKey: '',
     publishableKey: '',
     webhookSecret: '',
@@ -24,6 +26,10 @@ export default function SettingsPage() {
     hasPublishableKey: false,
     hasWebhookSecret: false,
   });
+  const [editMode, setEditMode] = useState<'test' | 'live'>('test');
+  const [testKeys, setTestKeys] = useState({ secretKey: '', publishableKey: '', webhookSecret: '' });
+  const [liveKeys, setLiveKeys] = useState({ secretKey: '', publishableKey: '', webhookSecret: '' });
+  const [switchingMode, setSwitchingMode] = useState(false);
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
@@ -86,13 +92,12 @@ export default function SettingsPage() {
     setMessage('');
     try {
       if (!isSuperAdmin) {
-        const data = await api.updateClientStripeConfig({
-          secretKey: clientStripe.secretKey,
-          publishableKey: clientStripe.publishableKey,
-          webhookSecret: clientStripe.webhookSecret,
-        });
+        const keys = editMode === 'test' ? testKeys : liveKeys;
+        const data = await api.updateClientStripeConfig({ mode: editMode, ...keys });
         setClientStripe((prev) => ({ ...prev, ...data }));
-        setMessage('Configuración de Stripe guardada exitosamente');
+        if (editMode === 'test') setTestKeys({ secretKey: '', publishableKey: '', webhookSecret: '' });
+        else setLiveKeys({ secretKey: '', publishableKey: '', webhookSecret: '' });
+        setMessage(`Configuración de Stripe (modo ${editMode === 'test' ? 'prueba' : 'producción'}) guardada exitosamente`);
         return;
       }
 
@@ -115,6 +120,28 @@ export default function SettingsPage() {
     }
   }
 
+  async function switchActiveMode(next: 'test' | 'live') {
+    const target = next === 'test' ? clientStripe.test : clientStripe.live;
+    const label = next === 'test' ? 'prueba' : 'producción';
+    if (!target.configured) {
+      const confirmed = window.confirm(
+        `El modo ${label} aún no tiene una Secret Key guardada. Si lo activas, los cobros usarán la cuenta de la plataforma hasta que configures el modo ${label}. ¿Deseas activarlo de todos modos?`
+      );
+      if (!confirmed) return;
+    }
+    setSwitchingMode(true);
+    setMessage('');
+    try {
+      const data = await api.updateClientStripeConfig({ activeMode: next });
+      setClientStripe((prev) => ({ ...prev, ...data }));
+      setMessage(`Modo activo cambiado a ${label === 'producción' ? 'producción' : 'prueba'}.`);
+    } catch (error: any) {
+      setMessage('Error: ' + error.message);
+    } finally {
+      setSwitchingMode(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-gutter animate-pulse">
@@ -125,6 +152,11 @@ export default function SettingsPage() {
   }
 
   if (!isSuperAdmin) {
+    const keys = editMode === 'test' ? testKeys : liveKeys;
+    const setKeys = (patch: Partial<typeof testKeys>) =>
+      editMode === 'test' ? setTestKeys({ ...testKeys, ...patch }) : setLiveKeys({ ...liveKeys, ...patch });
+    const editStatus = clientStripe[editMode];
+
     return (
       <div className="space-y-gutter">
         <div>
@@ -148,55 +180,118 @@ export default function SettingsPage() {
             </div>
             <div>
               <h3 className="font-headline-md text-headline-md text-on-surface">Stripe</h3>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Tu cuenta de Stripe para recibir pagos de tus clientes</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">Tu cuenta de Stripe para recibir pagos de tus clientes. Guarda claves de prueba y de producción, y alterna el modo activo cuando quieras.</p>
             </div>
           </div>
 
-          <div className={`p-4 rounded-lg flex items-start gap-3 ${
-            clientStripe.configured
-              ? 'bg-secondary-container/40 text-on-secondary-container'
-              : 'bg-tertiary-container/40 text-on-tertiary-container'
-          }`}>
-            <span className="material-symbols-outlined">{clientStripe.configured ? 'verified_user' : 'info'}</span>
-            <div className="space-y-1">
-              <p className="font-body-sm text-body-sm font-bold">
-                {clientStripe.configured
-                  ? `Stripe conectado${clientStripe.mode ? ` (modo ${clientStripe.mode === 'live' ? 'producción' : 'prueba'})` : ''}`
-                  : 'Stripe no conectado aún'}
-              </p>
-              <p className="font-body-sm text-body-sm">
-                {clientStripe.configured
-                  ? 'Ya puedes cobrar a tus clientes con esta cuenta. Puedes actualizar las claves cuando quieras.'
-                  : 'Pega las claves de tu cuenta Stripe para empezar a cobrar a tus clientes.'}
-              </p>
+          {/* Estado de cada modo + switch de modo activo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-lg">
+            {([
+              { key: 'test' as const, label: 'Prueba', icon: 'science', desc: 'Pagos simulados, no mueve dinero real', env: 'sk_test_' },
+              { key: 'live' as const, label: 'Producción', icon: 'verified', desc: 'Cobros reales a tus clientes', env: 'sk_live_' },
+            ]).map(({ key, label, icon, desc, env }) => {
+              const status = clientStripe[key];
+              const active = clientStripe.mode === key;
+              return (
+                <div key={key} className={`p-4 rounded-lg border flex flex-col gap-3 ${
+                  active
+                    ? 'bg-secondary-container/40 border-secondary text-on-secondary-container'
+                    : 'bg-surface-container-low border-outline-variant text-on-surface-variant'
+                }`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-label-md text-label-md font-bold flex items-center gap-2 uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-lg">{icon}</span>
+                      {label}
+                    </span>
+                    {active && (
+                      <span className="px-2.5 py-0.5 bg-secondary text-on-secondary rounded-full text-[10px] font-bold uppercase">Activo</span>
+                    )}
+                  </div>
+                  <p className="font-body-sm text-body-sm">{desc}</p>
+                  <p className="font-body-sm text-body-sm">
+                    {status.configured
+                      ? `Claves guardadas (${status.hasSecretKey ? 'secret ✓' : 'sin secret'} · ${status.hasPublishableKey ? 'pk ✓' : 'sin pk'} · ${status.hasWebhookSecret ? 'whsec ✓' : 'sin whsec'})`
+                      : `No configurado. Claves de ${label.toLowerCase()} en tu Dashboard de Stripe (${env}...).`}
+                  </p>
+                  {!active && (
+                    <button
+                      onClick={() => switchActiveMode(key)}
+                      disabled={switchingMode}
+                      className={`self-start mt-auto px-4 py-2 rounded-lg font-label-sm text-label-sm font-bold transition-all disabled:opacity-50 ${
+                        status.configured
+                          ? 'bg-primary text-on-primary shadow-md shadow-primary/20 hover:opacity-90'
+                          : 'border border-outline text-on-surface-variant hover:bg-surface-container-high'
+                      }`}
+                    >
+                      {switchingMode ? 'Cambiando...' : `Usar modo ${label.toLowerCase()}`}
+                    </button>
+                  )}
+                  {active && (
+                    <p className="font-body-sm text-body-sm mt-auto font-bold text-on-secondary-container">
+                      Este modo está recibiendo los cobros ahora mismo.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Selector de qué modo se está editando */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-md p-4 bg-primary-fixed/20 border border-outline-variant rounded-lg">
+            <div>
+              <p className="font-label-md text-label-md text-on-surface font-bold">Editar claves de</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">Cada modo guarda su propio par de claves.</p>
+            </div>
+            <div className="flex gap-2">
+              {([
+                { key: 'test' as const, label: 'Prueba' },
+                { key: 'live' as const, label: 'Producción' },
+              ]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => { setEditMode(key); setMessage(''); }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-label-md text-label-md whitespace-nowrap transition-all ${
+                    editMode === key
+                      ? 'bg-primary text-on-primary shadow-md'
+                      : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">{key === 'test' ? 'science' : 'verified'}</span>
+                  {label}
+                  {clientStripe[key].configured && (
+                    <span className={`w-2 h-2 rounded-full ${editMode === key ? 'bg-on-primary' : 'bg-secondary'}`} />
+                  )}
+                </button>
+              ))}
             </div>
           </div>
 
+          {/* Claves del modo en edición */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
             <div>
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">Secret Key</label>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Secret Key ({editMode === 'test' ? 'sk_test_' : 'sk_live_'})</label>
               <PasswordInput
-                value={clientStripe.secretKey}
-                onChange={(e) => setClientStripe({ ...clientStripe, secretKey: e.target.value })}
-                placeholder={clientStripe.hasSecretKey ? 'sk_•••••••••••• (guardada)' : 'sk_live_... o sk_test_...'}
+                value={keys.secretKey}
+                onChange={(e) => setKeys({ secretKey: e.target.value })}
+                placeholder={editStatus.hasSecretKey ? 'sk_•••••••••••• (guardada)' : `${editMode === 'test' ? 'sk_test_' : 'sk_live_'}...`}
               />
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Créala en tu Dashboard de Stripe → Developers → API Keys. Se guarda cifrada y solo se muestra parcialmente.</p>
             </div>
             <div>
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">Publishable Key</label>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Publishable Key ({editMode === 'test' ? 'pk_test_' : 'pk_live_'})</label>
               <input
-                value={clientStripe.publishableKey}
-                onChange={(e) => setClientStripe({ ...clientStripe, publishableKey: e.target.value })}
+                value={keys.publishableKey}
+                onChange={(e) => setKeys({ publishableKey: e.target.value })}
                 className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                placeholder="pk_live_... o pk_test_..."
+                placeholder={editStatus.hasPublishableKey ? 'pk_•••••••• (guardada)' : `${editMode === 'test' ? 'pk_test_' : 'pk_live_'}...`}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">Webhook Secret</label>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Webhook Secret (whsec_)</label>
               <PasswordInput
-                value={clientStripe.webhookSecret}
-                onChange={(e) => setClientStripe({ ...clientStripe, webhookSecret: e.target.value })}
-                placeholder={clientStripe.hasWebhookSecret ? 'whsec_•••••••• (guardado)' : 'whsec_...'}
+                value={keys.webhookSecret}
+                onChange={(e) => setKeys({ webhookSecret: e.target.value })}
+                placeholder={editStatus.hasWebhookSecret ? 'whsec_•••••••• (guardado)' : 'whsec_...'}
               />
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">De tu Dashboard de Stripe → Developers → Webhooks. Es opcional por ahora, pero necesario para confirmar pagos automáticamente.</p>
             </div>
@@ -208,8 +303,8 @@ export default function SettingsPage() {
               <code className="text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/stripe/webhook</code>
             </p>
             <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
-              La clave secreta y la publicable deben ser del mismo modo (ambas test o ambas live) y pertenecer a la misma cuenta de Stripe.
-              Tus clientes pagarán directamente a esta cuenta.
+              La clave secreta, la publicable y el webhook secret deben ser del mismo modo (todos test o todos live) y pertenecer a la misma cuenta de Stripe.
+              Guarda cada conjunto desde su pestaña (Prueba / Producción) y luego activa el modo que quieras cobrar. Tus clientes pagarán directamente a esta cuenta.
             </p>
           </div>
         </div>
@@ -220,7 +315,7 @@ export default function SettingsPage() {
             disabled={saving}
             className="px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-[0.98]"
           >
-            {saving ? 'Guardando...' : 'Guardar Configuración de Stripe'}
+            {saving ? 'Guardando...' : `Guardar claves de ${editMode === 'test' ? 'Prueba' : 'Producción'}`}
           </button>
         </div>
       </div>

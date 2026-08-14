@@ -151,9 +151,15 @@ export function resetStripeClient() {
 }
 
 export interface ClientStripeConfig {
+  mode: 'test' | 'live';
   secretKey: string | null;
   publishableKey: string | null;
   webhookSecret: string | null;
+}
+
+export function getStripeModeFromKey(secretKey: string | null): 'test' | 'live' | null {
+  if (!secretKey) return null;
+  return secretKey.startsWith('sk_test_') ? 'test' : 'live';
 }
 
 /** Cuenta Stripe propia del negocio (para cobrar a sus clientes finales). */
@@ -161,17 +167,23 @@ export async function getClientStripeConfig(clientId: string): Promise<ClientStr
   const client = await prisma.client.findUnique({
     where: { id: clientId },
     select: {
-      stripeSecretKey: true,
-      stripePublishableKey: true,
-      stripeWebhookSecret: true,
+      stripeMode: true,
+      stripeTestSecretKey: true,
+      stripeTestPublishableKey: true,
+      stripeTestWebhookSecret: true,
+      stripeLiveSecretKey: true,
+      stripeLivePublishableKey: true,
+      stripeLiveWebhookSecret: true,
     },
   });
 
-  return {
-    secretKey: client?.stripeSecretKey?.trim() || null,
-    publishableKey: client?.stripePublishableKey?.trim() || null,
-    webhookSecret: client?.stripeWebhookSecret?.trim() || null,
-  };
+  const mode: 'test' | 'live' = client?.stripeMode === 'live' ? 'live' : 'test';
+  const testKeys = mode === 'test';
+  const secretKey = (testKeys ? client?.stripeTestSecretKey : client?.stripeLiveSecretKey)?.trim() || null;
+  const publishableKey = (testKeys ? client?.stripeTestPublishableKey : client?.stripeLivePublishableKey)?.trim() || null;
+  const webhookSecret = (testKeys ? client?.stripeTestWebhookSecret : client?.stripeLiveWebhookSecret)?.trim() || null;
+
+  return { mode, secretKey, publishableKey, webhookSecret };
 }
 
 /** Client de Stripe de la cuenta del negocio. Fallback a la cuenta de la plataforma. */

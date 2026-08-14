@@ -121,6 +121,26 @@ export interface Booking {
   service: { name: string; color: string; duration?: number };
 }
 
+export interface ClientStripeModeStatus {
+  configured: boolean;
+  hasSecretKey: boolean;
+  hasPublishableKey: boolean;
+  hasWebhookSecret: boolean;
+}
+
+export interface ClientStripeConfig {
+  mode: 'test' | 'live';
+  test: ClientStripeModeStatus;
+  live: ClientStripeModeStatus;
+  configured: boolean;
+  secretKey: string;
+  publishableKey: string;
+  webhookSecret: string;
+  hasSecretKey: boolean;
+  hasPublishableKey: boolean;
+  hasWebhookSecret: boolean;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -423,32 +443,16 @@ class ApiClient {
 
   // Configuración de Stripe propia del negocio (para cobrar a sus clientes)
   async getClientStripeConfig() {
-    return this.request<{
-      configured: boolean;
-      mode: 'test' | 'live' | null;
-      secretKey: string;
-      publishableKey: string;
-      webhookSecret: string;
-      hasSecretKey: boolean;
-      hasPublishableKey: boolean;
-      hasWebhookSecret: boolean;
-    }>('/api/clients/me/stripe');
+    return this.request<ClientStripeConfig>('/api/clients/me/stripe');
   }
   async updateClientStripeConfig(data: {
+    mode?: 'test' | 'live';
     secretKey?: string;
     publishableKey?: string;
     webhookSecret?: string;
+    activeMode?: 'test' | 'live';
   }) {
-    return this.request<{
-      configured: boolean;
-      mode: 'test' | 'live' | null;
-      secretKey: string;
-      publishableKey: string;
-      webhookSecret: string;
-      hasSecretKey: boolean;
-      hasPublishableKey: boolean;
-      hasWebhookSecret: boolean;
-    }>('/api/clients/me/stripe', {
+    return this.request<ClientStripeConfig>('/api/clients/me/stripe', {
       method: 'PUT',
       body: JSON.stringify(data),
     });
