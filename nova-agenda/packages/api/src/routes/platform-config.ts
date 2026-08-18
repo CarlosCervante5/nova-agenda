@@ -13,7 +13,7 @@ const CONFIG_SCHEMA: Record<string, Array<{ key: string; label: string; type: st
     { key: 'stripe_publishable_key', label: 'Publishable Key', type: 'text' },
     { key: 'stripe_webhook_secret', label: 'Webhook Secret', type: 'password' },
     { key: 'stripe_price_id_basic', label: 'Price ID — Plan Profesional ($49)', type: 'text' },
-    { key: 'stripe_price_id_pro', label: 'Price ID — Plan Business ($99)', type: 'text' },
+    { key: 'stripe_price_id_pro', label: 'Price ID — Plan Business ($149)', type: 'text' },
     { key: 'stripe_price_id', label: 'Price ID (legacy / fallback BASIC)', type: 'text' },
   ],
   evo_cloud: [

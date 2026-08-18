@@ -199,7 +199,7 @@ export default function HomePage() {
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-on-primary px-4 py-1 rounded-full font-label-sm text-label-sm uppercase font-bold">Más Popular</div>
                 <span className="font-label-md text-label-md text-on-primary-container mb-md uppercase tracking-widest">PRO</span>
                 <div className="mb-lg">
-                  <span className="font-headline-xl text-headline-xl text-on-primary-fixed">$99</span>
+                  <span className="font-headline-xl text-headline-xl text-on-primary-fixed">$149</span>
                   <span className="text-on-primary-container">/mes</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">

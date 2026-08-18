@@ -76,7 +76,7 @@ export async function getPriceIdForPlan(plan: string): Promise<string> {
     (await getConfigValue(envKeys || [], dbKeys)) || PRODUCTION_PRICE_IDS[plan] || null;
 
   if (!priceId) {
-    const label = plan === 'PRO' ? 'PRO ($99)' : 'Personalizado';
+    const label = plan === 'PRO' ? 'PRO ($149)' : 'Personalizado';
     throw new Error(
       `Price ID no configurado para el plan ${label}. Un SUPER_ADMIN debe ir a Configuración → Stripe y agregar stripe_price_id_${plan.toLowerCase()}, o definir STRIPE_PRICE_ID_${plan} en Railway.`
     );

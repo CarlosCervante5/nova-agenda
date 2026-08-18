@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth';
 
 const PLANS = {
   FREE: { name: 'Gratuito', price: 0, color: 'bg-surface-container-high text-on-surface-variant', icon: 'spa' },
-  PRO: { name: 'PRO', price: 99, color: 'bg-primary text-on-primary', icon: 'star' },
+  PRO: { name: 'PRO', price: 149, color: 'bg-primary text-on-primary', icon: 'star' },
   CUSTOM: { name: 'Personalizado', price: 0, color: 'bg-tertiary text-on-tertiary', icon: 'rocket_launch', isContact: true },
 };
 
