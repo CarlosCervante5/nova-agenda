@@ -1,0 +1,50 @@
+{
+  "name": "nova-pos",
+  "version": "1.0.0",
+  "description": "Nova Agenda - Punto de Venta de Escritorio",
+  "main": "src/main.js",
+  "author": "Nova Agenda",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.novagenda.pos",
+    "productName": "Nova Agenda POS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "src/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/icon.ico",
+      "uninstallerIcon": "src/icon.ico",
+      "installerHeaderIcon": "src/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nova Agenda POS",
+      "installerLanguages": [
+        "es_MX"
+      ],
+      "language": "2058"
+    }
+  }
+}

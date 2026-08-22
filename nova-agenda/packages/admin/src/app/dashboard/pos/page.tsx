@@ -228,18 +228,27 @@ export default function PosPage() {
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Punto de venta</h2>
           <p className="font-body-md text-on-surface-variant">Cobra servicios, productos o un monto libre.</p>
         </div>
-        {summary && (
-          <div className="flex gap-2 flex-wrap">
-            <div className="px-4 py-2 rounded-lg bg-surface-container-low">
-              <p className="font-label-sm text-on-surface-variant">Hoy</p>
-              <p className="font-headline-md text-on-surface">{money(summary.todayTotal)}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href="/dashboard/pos/desktop"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-lg font-label-sm text-on-surface hover:bg-surface-container-highest transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">download</span>
+            Descargar POS
+          </a>
+          {summary && (
+            <div className="flex gap-2">
+              <div className="px-4 py-2 rounded-lg bg-surface-container-low">
+                <p className="font-label-sm text-on-surface-variant">Hoy</p>
+                <p className="font-headline-md text-on-surface">{money(summary.todayTotal)}</p>
+              </div>
+              <div className="px-4 py-2 rounded-lg bg-surface-container-low">
+                <p className="font-label-sm text-on-surface-variant">Ventas</p>
+                <p className="font-headline-md text-on-surface">{summary.todayCount}</p>
+              </div>
             </div>
-            <div className="px-4 py-2 rounded-lg bg-surface-container-low">
-              <p className="font-label-sm text-on-surface-variant">Ventas</p>
-              <p className="font-headline-md text-on-surface">{summary.todayCount}</p>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 bg-surface-container-low rounded-lg p-1 w-fit">

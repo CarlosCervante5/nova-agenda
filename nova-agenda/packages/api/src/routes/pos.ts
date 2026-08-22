@@ -233,4 +233,15 @@ router.post('/sales/:id/void', async (req: AuthRequest, res: Response) => {
   res.json(sale);
 });
 
+router.get('/desktop/info', authenticate, (req: AuthRequest, res: Response) => {
+  const slug = req.user!.clientId || 'unknown';
+  res.json({
+    slug,
+    apiBase: req.protocol + '://' + req.get('host'),
+    version: '1.0.0',
+    downloadUrl: process.env.POS_DESKTOP_URL || null,
+    instructions: 'Abre Nova Agenda POS, ingresa la dirección del admin y tu slug para conectar.',
+  });
+});
+
 export default router;

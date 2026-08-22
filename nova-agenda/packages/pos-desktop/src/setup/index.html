@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nova Agenda POS — Configuración</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .bg-orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.08; pointer-events: none; }
+    .bg-orb.purple { width: 400px; height: 400px; background: #a855f7; top: -100px; right: -100px; }
+    .bg-orb.teal { width: 350px; height: 350px; background: #2dd4bf; bottom: -80px; left: -80px; }
+    .container { width: 100%; max-width: 520px; padding: 24px; position: relative; z-index: 1; }
+    .header { text-align: center; margin-bottom: 32px; }
+    .header .logo { width: 64px; height: 64px; background: linear-gradient(135deg, #a855f7, #6366f1); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 32px rgba(168,85,247,0.3); }
+    .header .logo .material-symbols-outlined { font-size: 32px; color: white; }
+    .header h1 { font-size: 22px; font-weight: 700; color: white; }
+    .header p { font-size: 14px; color: #888; margin-top: 4px; }
+    .steps { display: flex; gap: 8px; justify-content: center; margin-bottom: 28px; }
+    .step-dot { width: 32px; height: 4px; border-radius: 2px; background: #2a2a3e; transition: background 0.3s; }
+    .step-dot.active { background: #a855f7; }
+    .step-dot.done { background: #2dd4bf; }
+    .card { background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 16px; padding: 28px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    .step { display: none; }
+    .step.active { display: block; }
+    .step h2 { font-size: 18px; font-weight: 600; color: white; margin-bottom: 4px; }
+    .step .subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: #aaa; margin-bottom: 6px; }
+    .field input, .field select { width: 100%; padding: 12px 14px; background: #12121e; border: 1px solid #2a2a3e; border-radius: 10px; color: white; font-size: 14px; font-family: inherit; outline: none; transition: border 0.2s; }
+    .field input:focus, .field select:focus { border-color: #a855f7; }
+    .field input::placeholder { color: #555; }
+    .field select option { background: #1a1a2e; color: white; }
+    .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #a855f7, #6366f1); color: white; box-shadow: 0 4px 16px rgba(168,85,247,0.3); }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: #2a2a3e; color: #ccc; }
+    .btn-secondary:hover { background: #33334a; }
+    .btn-outline { background: transparent; border: 1px solid #3a3a5e; color: #aaa; }
+    .btn-outline:hover { border-color: #a855f7; color: white; }
+    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-group .btn { flex: 1; }
+    .printer-card { padding: 14px; background: #12121e; border: 1px solid #2a2a3e; border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+    .printer-card:hover { border-color: #a855f7; }
+    .printer-card.selected { border-color: #a855f7; background: rgba(168,85,247,0.08); }
+    .printer-card .name { font-size: 14px; font-weight: 600; color: white; }
+    .printer-card .info { font-size: 12px; color: #666; margin-top: 2px; }
+    .printer-card .check { float: right; color: #a855f7; display: none; }
+    .printer-card.selected .check { display: inline; }
+    .status-msg { padding: 12px 14px; border-radius: 10px; font-size: 13px; margin-top: 12px; display: none; }
+    .status-msg.success { display: block; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.3); color: #2dd4bf; }
+    .status-msg.error { display: block; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; }
+    .status-msg.info { display: block; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; }
+    .success-screen { text-align: center; padding: 20px 0; }
+    .success-screen .icon { width: 72px; height: 72px; background: rgba(45,212,191,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .success-screen .icon .material-symbols-outlined { font-size: 36px; color: #2dd4bf; }
+    .success-screen h2 { font-size: 20px; color: white; margin-bottom: 8px; }
+    .success-screen p { font-size: 14px; color: #888; line-height: 1.6; }
+    .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .size-options { display: flex; gap: 10px; }
+    .size-option { flex: 1; padding: 14px; background: #12121e; border: 1px solid #2a2a3e; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .size-option:hover { border-color: #a855f7; }
+    .size-option.selected { border-color: #a855f7; background: rgba(168,85,247,0.08); }
+    .size-option .size-label { font-size: 20px; font-weight: 700; color: white; }
+    .size-option .size-desc { font-size: 12px; color: #888; margin-top: 4px; }
+    .link { color: #a855f7; text-decoration: none; cursor: pointer; }
+    .link:hover { text-decoration: underline; }
+    .divider { height: 1px; background: #2a2a3e; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="bg-orb purple"></div>
+  <div class="bg-orb teal"></div>
+
+  <div class="container">
+    <div class="header">
+      <div class="logo"><span class="material-symbols-outlined">point_of_sale</span></div>
+      <h1>Nova Agenda POS</h1>
+      <p>Configura tu punto de venta en 3 pasos</p>
+    </div>
+
+    <div class="steps">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+      <div class="step-dot" id="dot3"></div>
+    </div>
+
+    <div class="card">
+      <!-- STEP 1: Business connection -->
+      <div class="step active" id="step1">
+        <h2>Conectar con tu negocio</h2>
+        <p class="subtitle">Ingresa la dirección de tu panel de administración</p>
+
+        <div class="field">
+          <label>Dirección del admin</label>
+          <input type="url" id="apiUrl" placeholder="https://spirited-determination-production-a075.up.railway.app" />
+        </div>
+        <div class="field">
+          <label>Slug de tu negocio</label>
+          <input type="text" id="businessSlug" placeholder="mi-negocio" />
+        </div>
+
+        <div id="connectMsg" class="status-msg"></div>
+
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnConnect" onclick="testConnection()">Conectar</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Printer -->
+      <div class="step" id="step2">
+        <h2>Configurar impresora</h2>
+        <p class="subtitle">Selecciona la impresora de tickets que usarás</p>
+
+        <div class="field">
+          <label>Tamaño del ticket</label>
+          <div class="size-options">
+            <div class="size-option selected" onclick="selectSize(80, this)">
+              <div class="size-label">80mm</div>
+              <div class="size-desc">Estándar</div>
+            </div>
+            <div class="size-option" onclick="selectSize(58, this)">
+              <div class="size-label">58mm</div>
+              <div class="size-desc">Compacto</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <label>Impresoras disponibles</label>
+          <div id="printerList" style="margin-bottom: 10px;">
+            <p style="font-size: 13px; color: #666;">Cargando impresoras...</p>
+          </div>
+        </div>
+
+        <button class="btn btn-outline" onclick="refreshPrinters()" style="margin-bottom: 12px;">
+          <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">refresh</span>
+          Refrescar lista
+        </button>
+
+        <div class="divider"></div>
+
+        <button class="btn btn-outline" onclick="installXprinter()" style="margin-bottom: 8px;">
+          <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">download</span>
+          Instalar drivers XPrinter
+        </button>
+        <p style="font-size: 12px; color: #666; margin-bottom: 16px;">
+          Si usas XPrinter XP-N160II o similar, descarga los drivers desde
+          <span class="link" onclick="window.posDesktop?.openExternal('https://www.xprintertech.com/downloads')">xprintertech.com</span>
+        </p>
+
+        <div id="printerMsg" class="status-msg"></div>
+
+        <button id="btnTestPrint" class="btn btn-secondary" onclick="testPrint()" style="margin-bottom: 12px;" disabled>
+          Probar impresión
+        </button>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="goStep(1)">Atrás</button>
+          <button class="btn btn-primary" id="btnPrinterNext" onclick="goStep(3)" disabled>Continuar</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Done -->
+      <div class="step" id="step3">
+        <div class="success-screen">
+          <div class="icon"><span class="material-symbols-outlined">check_circle</span></div>
+          <h2>¡Listo para vender!</h2>
+          <p>Tu punto de venta está configurado.<br/>Puedes cerrar esta ventana y abrir Nova Agenda POS desde el escritorio.</p>
+        </div>
+
+        <div class="btn-group" style="margin-top: 24px;">
+          <button class="btn btn-primary" onclick="launchPos()">
+            <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle; margin-right: 4px;">play_arrow</span>
+            Abrir Punto de Venta
+          </button>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-outline" onclick="restartSetup()" style="font-size: 12px;">Reconfigurar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedPrinter = '';
+    let printerWidth = 80;
+    let currentStep = 1;
+
+    function goStep(n) {
+      if (n === 3) {
+        window.posDesktop?.store.set('printerWidth', printerWidth);
+        window.posDesktop?.store.set('printerName', selectedPrinter);
+        window.posDesktop?.setup.complete();
+        return;
+      }
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('step' + n).classList.add('active');
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('dot' + i);
+        dot.classList.remove('active', 'done');
+        if (i < n) dot.classList.add('done');
+        else if (i === n) dot.classList.add('active');
+      }
+      currentStep = n;
+      if (n === 2) refreshPrinters();
+    }
+
+    function selectSize(size, el) {
+      printerWidth = size;
+      document.querySelectorAll('.size-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    async function testConnection() {
+      const url = document.getElementById('apiUrl').value.trim();
+      const slug = document.getElementById('businessSlug').value.trim();
+      const msg = document.getElementById('connectMsg');
+      const btn = document.getElementById('btnConnect');
+
+      if (!url || !slug) {
+        msg.className = 'status-msg error';
+        msg.textContent = 'Ingresa ambos campos.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> Conectando...';
+      msg.className = 'status-msg info';
+      msg.textContent = 'Verificando conexión...';
+
+      try {
+        await window.posDesktop?.store.set('apiUrl', url);
+        await window.posDesktop?.store.set('businessSlug', slug);
+        msg.className = 'status-msg success';
+        msg.textContent = 'Conexión exitosa. Negocio: ' + slug;
+        setTimeout(() => goStep(2), 1000);
+      } catch (err) {
+        msg.className = 'status-msg error';
+        msg.textContent = 'No se pudo conectar: ' + (err.message || err);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Conectar';
+      }
+    }
+
+    async function refreshPrinters() {
+      const list = document.getElementById('printerList');
+      list.innerHTML = '<p style="font-size: 13px; color: #666;">Buscando impresoras...</p>';
+
+      try {
+        const printers = await window.posDesktop?.printer.list();
+        if (!printers || printers.length === 0) {
+          list.innerHTML = '<p style="font-size: 13px; color: #888;">No se encontraron impresoras. Instala los drivers de XPrinter y conecta la impresora.</p>';
+          return;
+        }
+
+        list.innerHTML = '';
+        for (const p of printers) {
+          const card = document.createElement('div');
+          card.className = 'printer-card' + (p.name === selectedPrinter ? ' selected' : '');
+          card.innerHTML = `
+            <span class="material-symbols-outlined check">check_circle</span>
+            <div class="name">${p.name}</div>
+            <div class="info">${p.driver || 'Driver genérico'} ${p.port ? '· ' + p.port : ''}</div>
+          `;
+          card.onclick = () => selectPrinter(p.name);
+          list.appendChild(card);
+        }
+      } catch {
+        list.innerHTML = '<p style="font-size: 13px; color: #888;">Error al buscar impresoras.</p>';
+      }
+    }
+
+    function selectPrinter(name) {
+      selectedPrinter = name;
+      document.querySelectorAll('.printer-card').forEach(c => c.classList.remove('selected'));
+      event.currentTarget.closest('.printer-card')?.classList.add('selected');
+      document.getElementById('btnTestPrint').disabled = false;
+      document.getElementById('btnPrinterNext').disabled = false;
+    }
+
+    async function testPrint() {
+      if (!selectedPrinter) return;
+      const msg = document.getElementById('printerMsg');
+      const btn = document.getElementById('btnTestPrint');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> Imprimiendo...';
+
+      try {
+        const result = await window.posDesktop?.printer.test(selectedPrinter);
+        if (result?.ok) {
+          msg.className = 'status-msg success';
+          msg.textContent = 'Ticket de prueba enviado a ' + selectedPrinter;
+        } else {
+          msg.className = 'status-msg error';
+          msg.textContent = 'Error: ' + (result?.error || 'No se pudo imprimir');
+        }
+      } catch (err) {
+        msg.className = 'status-msg error';
+        msg.textContent = 'Error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Probar impresión';
+      }
+    }
+
+    async function installXprinter() {
+      try {
+        await window.posDesktop?.printer.installXprinter();
+      } catch {}
+    }
+
+    function launchPos() {
+      window.posDesktop?.setup.complete();
+    }
+
+    async function restartSetup() {
+      await window.posDesktop?.setup.restart();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const url = await window.posDesktop?.store.get('apiUrl');
+      const slug = await window.posDesktop?.store.get('businessSlug');
+      if (url) document.getElementById('apiUrl').value = url;
+      if (slug) document.getElementById('businessSlug').value = slug;
+    });
+  </script>
+</body>
+</html>
