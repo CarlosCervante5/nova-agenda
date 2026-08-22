@@ -18,6 +18,10 @@ export interface ClientInfo {
   address?: string;
   logo?: string;
   primaryColor: string;
+  headlineColor?: string;
+  bodyTextColor?: string;
+  labelTextColor?: string;
+  surfaceBgColor?: string;
   tagline?: string;
   about?: string;
   coverImage?: string;

@@ -5,7 +5,7 @@ import { api, ClientStripeConfig } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import PasswordInput from '@/components/PasswordInput';
 
-type Tab = 'stripe' | 'evo_cloud' | 'openai';
+type Tab = 'stripe' | 'appearance' | 'evo_cloud' | 'openai';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -30,6 +30,14 @@ export default function SettingsPage() {
   const [testKeys, setTestKeys] = useState({ secretKey: '', publishableKey: '', webhookSecret: '' });
   const [liveKeys, setLiveKeys] = useState({ secretKey: '', publishableKey: '', webhookSecret: '' });
   const [switchingMode, setSwitchingMode] = useState(false);
+
+  const [appearance, setAppearance] = useState({
+    primaryColor: '#2dd4bf',
+    headlineColor: '#0f172a',
+    bodyTextColor: '#334155',
+    labelTextColor: '#64748b',
+    surfaceBgColor: '#f8fafc',
+  });
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
@@ -59,9 +67,40 @@ export default function SettingsPage() {
       loadConfig();
     } else {
       loadClientStripe();
+      loadAppearance();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function loadAppearance() {
+    if (!user?.clientId) return;
+    try {
+      const client = await api.getClient(user.clientId);
+      setAppearance({
+        primaryColor: client.primaryColor || '#2dd4bf',
+        headlineColor: client.headlineColor || '#0f172a',
+        bodyTextColor: client.bodyTextColor || '#334155',
+        labelTextColor: client.labelTextColor || '#64748b',
+        surfaceBgColor: client.surfaceBgColor || '#f8fafc',
+      });
+    } catch (error) {
+      console.error('Error loading appearance:', error);
+    }
+  }
+
+  async function saveAppearance() {
+    if (!user?.clientId) return;
+    setSaving(true);
+    setMessage('');
+    try {
+      await api.updateClient(user.clientId, appearance);
+      setMessage('Apariencia guardada');
+    } catch (error: any) {
+      setMessage('Error: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function loadClientStripe() {
     try {
@@ -105,12 +144,9 @@ export default function SettingsPage() {
         case 'stripe':
           await api.updatePlatformConfig('stripe', stripe);
           break;
-        case 'evo_cloud':
-          await api.updatePlatformConfig('evo_cloud', evoCloud);
-          break;
-        case 'openai':
-          await api.updatePlatformConfig('openai', openai);
-          break;
+        case 'appearance':
+          await saveAppearance();
+          return;
       }
       setMessage('Configuración guardada exitosamente');
     } catch (error: any) {
@@ -334,11 +370,16 @@ export default function SettingsPage() {
     );
   }
 
-  const tabs: Array<{ id: Tab; label: string; icon: string }> = [
-    { id: 'stripe', label: 'Stripe (Pagos)', icon: 'payment' },
-    { id: 'evo_cloud', label: 'Evo Cloud (WhatsApp)', icon: 'chat' },
-    { id: 'openai', label: 'OpenAI (IA)', icon: 'smart_toy' },
-  ];
+  const tabs: Array<{ id: Tab; label: string; icon: string }> = isSuperAdmin
+    ? [
+        { id: 'stripe', label: 'Stripe (Pagos)', icon: 'payment' },
+        { id: 'evo_cloud', label: 'Evo Cloud (WhatsApp)', icon: 'chat' },
+        { id: 'openai', label: 'OpenAI (IA)', icon: 'smart_toy' },
+      ]
+    : [
+        { id: 'stripe', label: 'Cobros (Stripe)', icon: 'payment' },
+        { id: 'appearance', label: 'Apariencia', icon: 'palette' },
+      ];
 
   return (
     <div className="space-y-gutter">
@@ -567,16 +608,64 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Appearance */}
+        {activeTab === 'appearance' && (
+          <div className="space-y-lg">
+            <div className="flex items-center gap-3 mb-lg">
+              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                <span className="material-symbols-outlined text-on-primary">palette</span>
+              </div>
+              <div>
+                <h3 className="font-headline-md text-headline-md text-on-surface">Apariencia</h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Personaliza los colores de fuentes y superficies del admin y portal</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-lg">
+              {[
+                { key: 'primaryColor' as const, label: 'Color principal', desc: 'Acentos, botones, links', icon: 'circle' },
+                { key: 'headlineColor' as const, label: 'Color de titulos', desc: 'h1, h2, h3, encabezados', icon: 'title' },
+                { key: 'bodyTextColor' as const, label: 'Color de cuerpo', desc: 'Parrafos, contenido principal', icon: 'text_fields' },
+                { key: 'labelTextColor' as const, label: 'Color de etiquetas', desc: 'Subtitulos, metadata, secundario', icon: 'label' },
+                { key: 'surfaceBgColor' as const, label: 'Fondo principal', desc: 'Background del admin y portal', icon: 'square' },
+              ].map(({ key, label, desc, icon }) => (
+                <div key={key} className="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl border border-outline-variant">
+                  <div
+                    className="w-12 h-12 rounded-xl border-2 border-outline-variant shrink-0"
+                    style={{ backgroundColor: appearance[key] }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-label-md text-label-md text-on-surface">{label}</p>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">{desc}</p>
+                  </div>
+                  <input
+                    type="color"
+                    value={appearance[key]}
+                    onChange={(e) => setAppearance({ ...appearance, [key]: e.target.value })}
+                    className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 bg-primary-fixed/30 rounded-lg">
+              <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
+                Los colores se aplican en tiempo real al panel de administracion y al portal de reservas de tu negocio.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Save Button */}
       <div className="flex justify-end">
         <button
-          onClick={handleSave}
+          onClick={activeTab === 'appearance' ? saveAppearance : handleSave}
           disabled={saving}
           className="px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-[0.98]"
         >
-          {saving ? 'Guardando...' : 'Guardar Configuración'}
+          {saving ? 'Guardando...' : activeTab === 'appearance' ? 'Guardar Apariencia' : 'Guardar Configuración'}
         </button>
       </div>
     </div>

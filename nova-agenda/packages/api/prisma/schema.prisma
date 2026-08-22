@@ -17,6 +17,10 @@ model Client {
   address       String?
   logo          String?
   primaryColor  String    @default("#2dd4bf")
+  headlineColor String    @default("#0f172a")
+  bodyTextColor String    @default("#334155")
+  labelTextColor String   @default("#64748b")
+  surfaceBgColor String   @default("#f8fafc")
   tagline       String?
   about         String?
   coverImage    String?

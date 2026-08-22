@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BUSINESS_NAV, PLATFORM_NAV, homePath, isBusinessOnlyPath, isSuperAdmin } from '@/lib/roles';
+import { api } from '@/lib/api';
 
 function Sidebar() {
   const { user, logout } = useAuth();
@@ -108,6 +109,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [cssVars, setCssVars] = useState('');
 
   useEffect(() => {
     if (loading) return;
@@ -119,6 +121,19 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       router.replace(homePath(user));
     }
   }, [user, loading, router, pathname]);
+
+  useEffect(() => {
+    if (!user?.clientId || isSuperAdmin(user)) return;
+    api.getClient(user.clientId).then((client) => {
+      const vars: string[] = [];
+      if (client.primaryColor) vars.push(`--app-primary: ${client.primaryColor}`);
+      if (client.headlineColor) vars.push(`--app-headline: ${client.headlineColor}`);
+      if (client.bodyTextColor) vars.push(`--app-body: ${client.bodyTextColor}`);
+      if (client.labelTextColor) vars.push(`--app-label: ${client.labelTextColor}`);
+      if (client.surfaceBgColor) vars.push(`--app-surface-bg: ${client.surfaceBgColor}`);
+      if (vars.length) setCssVars(vars.join('; '));
+    }).catch(() => {});
+  }, [user?.clientId, user?.role]);
 
   if (loading) {
     return (
@@ -137,6 +152,20 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {cssVars && (
+        <style>{`
+          :root { ${cssVars}; }
+          .text-on-surface { color: var(--app-headline, #0f172a) !important; }
+          .font-headline-md, .font-headline-lg, .font-headline-xl, .text-headline-md, .text-headline-lg, .text-headline-xl { color: var(--app-headline, #0f172a) !important; }
+          .font-body-md, .font-body-lg, .font-body-sm, .text-body-md, .text-body-lg, .text-body-sm { color: var(--app-body, #334155) !important; }
+          .font-label-md, .font-label-sm, .text-label-md, .text-label-sm { color: var(--app-label, #64748b) !important; }
+          .bg-background, .bg-surface, .bg-surface-bright { background-color: var(--app-surface-bg, #f8fafc) !important; }
+          .bg-primary { background-color: var(--app-primary, #2dd4bf) !important; }
+          .text-primary { color: var(--app-primary, #2dd4bf) !important; }
+          .border-primary { border-color: var(--app-primary, #2dd4bf) !important; }
+          .shadow-primary\/20 { --tw-shadow-color: var(--app-primary, #2dd4bf); }
+        `}</style>
+      )}
       <Sidebar />
       <main className="flex-1 md:ml-[280px] min-h-screen flex flex-col">
         <header className="hidden md:flex justify-between items-center w-full px-lg h-16 sticky top-0 z-30 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md bg-opacity-90">

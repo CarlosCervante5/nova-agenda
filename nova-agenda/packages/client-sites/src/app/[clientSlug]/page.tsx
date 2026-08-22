@@ -58,14 +58,39 @@ export default async function ClientPage({
         : 'booking';
 
   return (
-    <BookingPage
-      client={client}
-      clientSlug={params.clientSlug}
-      loyaltyProgram={loyaltyProgram}
-      membershipPlans={membershipPlans}
-      membershipStatus={membershipStatus}
-      membershipSessionId={searchParams.session_id || null}
-      initialTab={initialTab}
-    />
+    <div
+      style={{
+        ...(client.primaryColor && { '--app-primary': client.primaryColor } as React.CSSProperties),
+        ...(client.headlineColor && { '--app-headline': client.headlineColor } as React.CSSProperties),
+        ...(client.bodyTextColor && { '--app-body': client.bodyTextColor } as React.CSSProperties),
+        ...(client.labelTextColor && { '--app-label': client.labelTextColor } as React.CSSProperties),
+        ...(client.surfaceBgColor && { '--app-surface-bg': client.surfaceBgColor } as React.CSSProperties),
+      } as React.CSSProperties}
+    >
+      <style>{`
+        :root {
+          --app-primary: ${client.primaryColor || '#2dd4bf'};
+          --app-headline: ${client.headlineColor || '#1a1a2e'};
+          --app-body: ${client.bodyTextColor || '#e0e0e0'};
+          --app-label: ${client.labelTextColor || '#888'};
+          --app-surface-bg: ${client.surfaceBgColor || '#0f0f1a'};
+        }
+        body { background-color: var(--app-surface-bg) !important; color: var(--app-body) !important; }
+        h1, h2, h3, h4, h5, h6 { color: var(--app-headline) !important; }
+        p, span, div { color: inherit; }
+        .text-primary { color: var(--app-primary) !important; }
+        .bg-primary { background-color: var(--app-primary) !important; }
+        .border-primary { border-color: var(--app-primary) !important; }
+      `}</style>
+      <BookingPage
+        client={client}
+        clientSlug={params.clientSlug}
+        loyaltyProgram={loyaltyProgram}
+        membershipPlans={membershipPlans}
+        membershipStatus={membershipStatus}
+        membershipSessionId={searchParams.session_id || null}
+        initialTab={initialTab}
+      />
+    </div>
   );
 }

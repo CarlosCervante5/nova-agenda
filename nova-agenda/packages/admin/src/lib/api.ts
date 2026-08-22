@@ -25,6 +25,10 @@ export interface Client {
   address?: string | null;
   logo?: string | null;
   primaryColor: string;
+  headlineColor?: string;
+  bodyTextColor?: string;
+  labelTextColor?: string;
+  surfaceBgColor?: string;
   tagline?: string | null;
   about?: string | null;
   coverImage?: string | null;
