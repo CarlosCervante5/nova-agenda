@@ -58,10 +58,9 @@ function statusClass(status: string) {
 
 interface Props {
   onBookingUpdated?: () => void;
-  clientPlan?: string;
 }
 
-export default function SmartCalendar({ onBookingUpdated, clientPlan = 'FREE' }: Props) {
+export default function SmartCalendar({ onBookingUpdated }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -367,7 +366,6 @@ export default function SmartCalendar({ onBookingUpdated, clientPlan = 'FREE' }:
           onBookingUpdated?.();
         }}
         initialDate={currentDate}
-        clientPlan={clientPlan}
       />
     </div>
   );

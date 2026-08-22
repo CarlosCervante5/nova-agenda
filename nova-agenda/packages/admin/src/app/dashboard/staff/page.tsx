@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { api, Client, Service, StaffMember } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
-
 type StaffForm = {
   name: string;
   email: string;
@@ -52,11 +50,6 @@ export default function StaffPage() {
     try {
       const clientData = await api.getClient(user!.clientId!);
       setClient(clientData);
-
-      if ((PLAN_LEVELS[clientData.plan] ?? 0) < PLAN_LEVELS.PRO) {
-        setLoading(false);
-        return;
-      }
 
       const [staffData, servicesData] = await Promise.all([
         api.getStaff(),
@@ -160,8 +153,6 @@ export default function StaffPage() {
     }
   }
 
-  const hasAccess = (PLAN_LEVELS[client?.plan || 'FREE'] ?? 0) >= PLAN_LEVELS.PRO;
-
   if (loading) {
     return <div className="glass-card rounded-xl h-64 animate-pulse" />;
   }
@@ -170,34 +161,6 @@ export default function StaffPage() {
     return (
       <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant text-center">
         <p className="font-body-md text-on-surface-variant">Inicia sesión con una cuenta de negocio.</p>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="space-y-gutter">
-        <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Personal</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Agrega quién atiende las citas en tu negocio
-          </p>
-        </div>
-        <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant text-center max-w-xl mx-auto">
-          <div className="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mx-auto mb-lg text-primary">
-            <span className="material-symbols-outlined text-4xl">badge</span>
-          </div>
-          <h3 className="font-headline-md text-on-surface mb-2">Disponible en plan PRO</h3>
-          <p className="font-body-sm text-on-surface-variant mb-lg">
-            Gestiona estilistas, terapeutas u otro personal, asígnales servicios y deja que tus clientes elijan quién los atiende.
-          </p>
-          <Link
-            href="/dashboard/billing"
-            className="inline-flex items-center gap-2 px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold hover:opacity-90"
-          >
-            Mejorar a PRO
-          </Link>
-        </div>
       </div>
     );
   }

@@ -4,8 +4,8 @@ const prisma = new PrismaClient();
 
 export const PLAN_LIMITS = {
   FREE: {
-    maxServices: 3,
-    maxBookingsPerMonth: 50,
+    maxServices: null as number | null,
+    maxBookingsPerMonth: null as number | null,
     publicBooking: true,
   },
   PRO: {

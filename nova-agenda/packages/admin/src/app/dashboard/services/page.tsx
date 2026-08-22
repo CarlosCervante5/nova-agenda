@@ -7,8 +7,6 @@ import { useAuth } from '@/lib/auth';
 import WorkingHoursEditor from '@/components/WorkingHoursEditor';
 import ServiceCategoriesPanel from '@/components/ServiceCategoriesPanel';
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
-
 export default function ServicesPage() {
   const { user } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
@@ -25,42 +23,24 @@ export default function ServicesPage() {
     clientId: '',
     categoryId: '',
   });
-  const [currentPlan, setCurrentPlan] = useState('FREE');
-  const [serviceUsage, setServiceUsage] = useState<{ used: number; limit: number | null } | null>(null);
 
   useEffect(() => { loadServices(); }, [user]);
 
   async function loadServices() {
     try {
-      const [servicesData, plansData] = await Promise.all([
+      const [servicesData] = await Promise.all([
         api.getServices(),
-        user?.clientId ? api.getPlans().catch(() => null) : Promise.resolve(null),
       ]);
       setServices(servicesData);
-      if (plansData) {
-        setCurrentPlan(plansData.currentPlan);
-        setServiceUsage(plansData.usage?.services ?? null);
-        if ((PLAN_LEVELS[plansData.currentPlan] ?? 0) >= PLAN_LEVELS.PRO) {
-          try {
-            setCategoriesFlat(await api.getServiceCategoriesFlat());
-          } catch {
-            setCategoriesFlat([]);
-          }
-        } else {
-          setCategoriesFlat([]);
-        }
+      try {
+        setCategoriesFlat(await api.getServiceCategoriesFlat());
+      } catch {
+        setCategoriesFlat([]);
       }
     } finally { setLoading(false); }
   }
 
-  const serviceLimit = serviceUsage?.limit ?? null;
-  const serviceUsed = serviceUsage?.used ?? services.length;
-  const atServiceLimit = serviceLimit !== null && serviceUsed >= serviceLimit;
-  const upgradePlan = currentPlan === 'FREE' ? 'PRO' : 'Personalizado';
-  const canCategories = (PLAN_LEVELS[currentPlan] ?? 0) >= PLAN_LEVELS.PRO;
-
   function openCreateForm() {
-    if (atServiceLimit) return;
     setShowForm(true);
     setEditing(null);
     setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '' });
@@ -75,7 +55,7 @@ export default function ServicesPage() {
         duration: Number(form.duration),
         price: form.price ? Number(form.price) : undefined,
         color: form.color,
-        categoryId: canCategories ? form.categoryId || null : undefined,
+        categoryId: form.categoryId || null,
       };
       if (editing) { await api.updateService(editing.id, data); }
       else { await api.createService(data); }
@@ -136,61 +116,19 @@ export default function ServicesPage() {
             <span className="material-symbols-outlined text-base">share</span>
             Compartir formulario de agenda
           </Link>
-          {serviceLimit !== null && (
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-              {serviceUsed} de {serviceLimit} servicios en tu plan
-            </p>
-          )}
         </div>
         <button
           onClick={openCreateForm}
-          disabled={atServiceLimit}
-          className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
           Agregar Servicio
         </button>
       </div>
 
-      {serviceLimit !== null && (
-        <div className={`p-lg rounded-xl border flex flex-col sm:flex-row sm:items-center gap-md ${
-          atServiceLimit
-            ? 'bg-error-container/20 border-error-container text-on-error-container'
-            : 'bg-surface-container-low border-outline-variant'
-        }`}>
-          <div className="flex items-start gap-3 flex-1">
-            <span className="material-symbols-outlined mt-0.5">{atServiceLimit ? 'block' : 'info'}</span>
-            <div>
-              <p className="font-label-md text-label-md text-on-surface mb-1">
-                {atServiceLimit ? 'Límite de servicios alcanzado' : 'Uso de servicios de tu plan'}
-              </p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                {atServiceLimit
-                  ? `Tu plan permite hasta ${serviceLimit} servicios. Actualiza a ${upgradePlan} para agregar más.`
-                  : `Te quedan ${serviceLimit - serviceUsed} servicio${serviceLimit - serviceUsed === 1 ? '' : 's'} disponible${serviceLimit - serviceUsed === 1 ? '' : 's'} en tu plan actual.`}
-              </p>
-              <div className="mt-3 h-2 rounded-full bg-surface-container-high overflow-hidden max-w-xs">
-                <div
-                  className={`h-full rounded-full transition-all ${atServiceLimit ? 'bg-error' : 'bg-primary'}`}
-                  style={{ width: `${Math.min((serviceUsed / serviceLimit) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-          {atServiceLimit && (
-            <a
-              href="/dashboard/billing"
-              className="px-lg py-2.5 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold text-center whitespace-nowrap hover:opacity-90 transition-all"
-            >
-              Ver planes
-            </a>
-          )}
-        </div>
-      )}
-
       {user?.clientId && <WorkingHoursEditor clientId={user.clientId} />}
 
-      <ServiceCategoriesPanel enabled={canCategories} onChange={loadServices} />
+      <ServiceCategoriesPanel enabled={true} onChange={loadServices} />
 
       {showForm && (
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
@@ -204,23 +142,21 @@ export default function ServicesPage() {
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Duración (minutos) *</label>
               <input type="number" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" min="5" step="5" required />
             </div>
-            {canCategories && (
-              <div className="md:col-span-2">
-                <label className="font-label-md text-label-md text-on-surface mb-xs block">Categoría</label>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                  className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
-                >
-                  <option value="">Sin categoría</option>
-                  {categoriesFlat.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.parent ? `${c.parent.name} › ${c.name}` : c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="md:col-span-2">
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Categoría</label>
+              <select
+                value={form.categoryId}
+                onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+              >
+                <option value="">Sin categoría</option>
+                {categoriesFlat.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.parent ? `${c.parent.name} › ${c.name}` : c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="md:col-span-2">
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Descripción</label>
               <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" rows={3} placeholder="Describe el servicio..." />
@@ -250,9 +186,7 @@ export default function ServicesPage() {
           <thead className="bg-surface-container-low">
             <tr>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Nombre</th>
-              {canCategories && (
-                <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Categoría</th>
-              )}
+              <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Categoría</th>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Duración</th>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Precio</th>
               <th className="p-lg font-label-sm text-label-sm text-on-surface-variant uppercase">Estado</th>
@@ -273,11 +207,9 @@ export default function ServicesPage() {
                     </div>
                   </div>
                 </td>
-                {canCategories && (
-                  <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">
-                    {categoryLabel(service) || '—'}
-                  </td>
-                )}
+                <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">
+                  {categoryLabel(service) || '—'}
+                </td>
                 <td className="p-lg font-body-sm text-body-sm text-on-surface-variant">{service.duration} Min</td>
                 <td className="p-lg font-label-md text-label-md text-on-surface">{service.price ? `$${service.price.toFixed(2)}` : 'Gratis'}</td>
                 <td className="p-lg">

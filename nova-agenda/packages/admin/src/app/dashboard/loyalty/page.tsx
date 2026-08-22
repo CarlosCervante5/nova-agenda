@@ -68,7 +68,6 @@ export default function LoyaltyPage() {
   const { user } = useAuth();
   const [programs, setPrograms] = useState<LoyaltyProgram[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [clientPlan, setClientPlan] = useState('FREE');
   const [loading, setLoading] = useState(true);
   const [showProgramForm, setShowProgramForm] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<LoyaltyProgram | null>(null);
@@ -106,7 +105,6 @@ export default function LoyaltyPage() {
       ]);
       setPrograms(programsData);
       setServices(servicesData.filter((s) => s.isActive));
-      if (client) setClientPlan(client.plan);
     } catch (err) {
       console.error('Error loading loyalty programs:', err);
     } finally {
@@ -296,7 +294,6 @@ export default function LoyaltyPage() {
         <LoyaltyCardsPanel
           program={programs[0]}
           clientId={programs[0].clientId}
-          clientPlan={clientPlan}
         />
       )}
 

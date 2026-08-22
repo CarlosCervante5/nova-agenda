@@ -4,25 +4,17 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api } from '@/lib/api';
 
 function Sidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [clientPlan, setClientPlan] = useState<string>('FREE');
-
-  useEffect(() => {
-    if (user?.clientId) {
-      api.getClient(user.clientId).then(c => setClientPlan(c.plan)).catch(() => {});
-    }
-  }, [user]);
 
   const navLinks = [
     { href: '/dashboard', label: 'Panel', icon: 'dashboard' },
     { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN'] },
-    { href: '/dashboard/website', label: 'Mi página web', icon: 'language', minPlan: 'PRO' },
-    { href: '/dashboard/staff', label: 'Personal', icon: 'badge', minPlan: 'PRO' },
+    { href: '/dashboard/website', label: 'Mi página web', icon: 'language' },
+    { href: '/dashboard/staff', label: 'Personal', icon: 'badge' },
     { href: '/dashboard/booking', label: 'Agenda pública', icon: 'event_available' },
     { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
     { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
@@ -32,12 +24,8 @@ function Sidebar() {
     { href: '/dashboard/settings', label: 'Configuración', icon: 'settings' },
   ];
 
-  const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
-  const userPlanLevel = PLAN_LEVELS[clientPlan] ?? 0;
-
   const filteredLinks = navLinks.filter((l) => {
     if (l.roles && !l.roles.includes(user?.role || '')) return false;
-    if (l.minPlan && userPlanLevel < PLAN_LEVELS[l.minPlan]) return false;
     return true;
   });
 

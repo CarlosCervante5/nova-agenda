@@ -185,7 +185,7 @@ export default function HomePage() {
                   <span className="text-on-surface-variant">/siempre</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Agenda de Citas Inteligente', 'Formulario de reservas compartible', 'Hasta 3 servicios', 'Hasta 50 citas/mes'].map(f => (
+                  {['Agenda de Citas Inteligente', 'Formulario de reservas compartible', 'Servicios ilimitados', 'Citas ilimitadas', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm">{f}</span>
@@ -203,7 +203,7 @@ export default function HomePage() {
                   <span className="text-on-primary-container">/mes</span>
                 </div>
                 <ul className="space-y-4 mb-xl flex-grow">
-                  {['Todo lo del plan Gratuito', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios', 'Pagos en línea (cobra a tus clientes con Stripe)', 'Servicios ilimitados', 'Citas ilimitadas'].map(f => (
+                  {['Todo lo del plan Gratuito', 'Pagos en línea (cobra a tus clientes con Stripe)', 'Soporte prioritario'].map(f => (
                     <li key={f} className="flex items-center gap-3">
                       <span className="material-symbols-outlined text-on-primary-fixed-variant text-lg">check_circle</span>
                       <span className="font-body-sm text-body-sm text-on-primary-fixed">{f}</span>

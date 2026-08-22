@@ -131,7 +131,7 @@ export default function ClientsPage() {
                   <span className="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold">$499/mes</span>
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  Chatbot con IA 24/7 y reserva de citas por WhatsApp. Requiere plan PRO.
+                  Chatbot con IA 24/7 y reserva de citas por WhatsApp.
                 </span>
               </label>
             </div>

@@ -9,17 +9,13 @@ interface Props {
   onClose: () => void;
   onCreated: () => void;
   initialDate?: Date;
-  clientPlan?: string;
 }
-
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
 export default function CreateBookingModal({
   open,
   onClose,
   onCreated,
   initialDate,
-  clientPlan = 'FREE',
 }: Props) {
   const [services, setServices] = useState<Service[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -38,9 +34,6 @@ export default function CreateBookingModal({
     enrollLoyalty: false,
   });
 
-  const canLoyaltyPhone = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.PRO;
-  const canStaff = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.PRO;
-
   useEffect(() => {
     if (!open) return;
     setForm((prev) => ({
@@ -58,14 +51,10 @@ export default function CreateBookingModal({
       const active = servicesData.filter((s) => s.isActive);
       setServices(active);
 
-      if (canStaff) {
-        try {
-          const staffData = await api.getStaff();
-          setStaff(staffData.filter((s) => s.isActive));
-        } catch {
-          setStaff([]);
-        }
-      } else {
+      try {
+        const staffData = await api.getStaff();
+        setStaff(staffData.filter((s) => s.isActive));
+      } catch {
         setStaff([]);
       }
 
@@ -102,7 +91,7 @@ export default function CreateBookingModal({
         notes: form.notes.trim() || undefined,
       });
 
-      if (canLoyaltyPhone && form.enrollLoyalty && form.customerPhone.trim()) {
+      if (form.enrollLoyalty && form.customerPhone.trim()) {
         try {
           await api.createLoyaltyCardAdmin({
             customerName: form.customerName.trim(),
@@ -184,7 +173,7 @@ export default function CreateBookingModal({
                   </select>
                 </div>
 
-                {canStaff && staffForService.length > 0 && (
+                {staffForService.length > 0 && (
                   <div>
                     <label className="font-label-md text-on-surface mb-xs block">Personal (opcional)</label>
                     <select
@@ -259,8 +248,7 @@ export default function CreateBookingModal({
                   </div>
                 </div>
 
-                {canLoyaltyPhone && (
-                  <label className="flex items-start gap-3 p-md rounded-lg border border-outline-variant bg-surface-container-low cursor-pointer">
+                <label className="flex items-start gap-3 p-md rounded-lg border border-outline-variant bg-surface-container-low cursor-pointer">
                     <input
                       type="checkbox"
                       checked={form.enrollLoyalty}
@@ -275,7 +263,6 @@ export default function CreateBookingModal({
                       </span>
                     </div>
                   </label>
-                )}
 
                 <div>
                   <label className="font-label-md text-on-surface mb-xs block">Notas</label>

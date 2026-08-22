@@ -6,8 +6,6 @@ import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getBookingFormUrl, getClientPortalBaseUrl, getPortalUrl } from '@/lib/booking-url';
 
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
-
 type WebsiteForm = {
   name: string;
   slug: string;
@@ -136,8 +134,6 @@ export default function WebsitePage() {
     }
   }
 
-  const plan = client?.plan || 'FREE';
-  const hasAccess = (PLAN_LEVELS[plan] ?? 0) >= PLAN_LEVELS.PRO;
   const publicUrl = portalUrl || (form.slug ? getBookingFormUrl(form.slug) : '');
   const portalReady = !!portalUrl && portalUrl.startsWith('http');
 
@@ -156,34 +152,6 @@ export default function WebsitePage() {
     return (
       <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant text-center">
         <p className="font-body-md text-on-surface-variant">Inicia sesión con una cuenta de negocio.</p>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="space-y-gutter">
-        <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Mi página web</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Crea y personaliza la página pública de tu negocio
-          </p>
-        </div>
-        <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant text-center max-w-xl mx-auto">
-          <div className="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mx-auto mb-lg text-primary">
-            <span className="material-symbols-outlined text-4xl">language</span>
-          </div>
-          <h3 className="font-headline-md text-on-surface mb-2">Disponible en plan PRO</h3>
-          <p className="font-body-sm text-on-surface-variant mb-lg">
-            Personaliza colores, logo, textos, contacto, redes sociales y dominio de tu página de reservas.
-          </p>
-          <Link
-            href="/dashboard/billing"
-            className="inline-flex items-center gap-2 px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold hover:opacity-90"
-          >
-            Mejorar a PRO
-          </Link>
-        </div>
       </div>
     );
   }

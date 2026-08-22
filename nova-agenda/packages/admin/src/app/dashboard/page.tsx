@@ -12,7 +12,6 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ clients: 0, services: 0, bookings: 0, revenue: 0 });
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [clientPlan, setClientPlan] = useState('FREE');
   const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
@@ -34,12 +33,10 @@ export default function DashboardPage() {
         setStats({ clients: clients.length, services: services.length, bookings: bookings.length, revenue });
         setRecentBookings(bookings.slice(0, 5));
       } else {
-        const [services, bookings, client] = await Promise.all([
+        const [services, bookings] = await Promise.all([
           api.getServices(),
           api.getBookings({ date: today }),
-          user.clientId ? api.getClient(user.clientId) : Promise.resolve(null),
         ]);
-        if (client) setClientPlan(client.plan);
         const revenue = bookings.reduce((sum, b) => sum + ((b as { service?: { price?: number } }).service?.price || 0), 0);
         setStats({ clients: 0, services: services.length, bookings: bookings.length, revenue });
         setRecentBookings(bookings.slice(0, 5));
@@ -152,7 +149,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <SmartCalendar onBookingUpdated={loadData} clientPlan={clientPlan} />
+      <SmartCalendar onBookingUpdated={loadData} />
 
       <div className="glass-card rounded-xl overflow-hidden shadow-sm">
         <div className="px-lg py-md border-b border-outline-variant flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-surface-container-low">
@@ -219,7 +216,6 @@ export default function DashboardPage() {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={loadData}
-        clientPlan={clientPlan}
       />
     </div>
   );

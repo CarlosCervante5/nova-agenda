@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { api } from '@/lib/api';
 import { LoyaltyCard, LoyaltyProgram } from './interface';
 import { format } from 'date-fns';
@@ -10,10 +9,7 @@ import { es } from 'date-fns/locale';
 interface Props {
   program: LoyaltyProgram;
   clientId: string;
-  clientPlan?: string;
 }
-
-const PLAN_LEVELS: Record<string, number> = { FREE: 0, PRO: 1, CUSTOM: 2 };
 
 function StampGrid({ earned, total, stampIcon, stampColor }: { earned: number; total: number; stampIcon: string; stampColor: string }) {
   const slots = Math.max(total, earned);
@@ -37,7 +33,7 @@ function StampGrid({ earned, total, stampIcon, stampColor }: { earned: number; t
   );
 }
 
-export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FREE' }: Props) {
+export default function LoyaltyCardsPanel({ program, clientId }: Props) {
   const [cards, setCards] = useState<LoyaltyCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -45,8 +41,6 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
   const [registering, setRegistering] = useState(false);
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({ customerName: '', customerPhone: '', customerEmail: '' });
-
-  const canRegisterByPhone = (PLAN_LEVELS[clientPlan] ?? 0) >= PLAN_LEVELS.PRO;
 
   const loadCards = async () => {
     try {
@@ -114,22 +108,13 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
         <p className="font-body-sm text-body-sm text-on-surface-variant">
           Cada visita completada suma 1 sello. Con el teléfono el cliente consulta su tarjeta en el portal.
         </p>
-        {canRegisterByPhone ? (
-          <button
-            type="button"
-            onClick={() => setShowRegister(!showRegister)}
-            className="px-md py-2 bg-primary text-on-primary rounded-lg font-label-sm font-bold hover:opacity-90 whitespace-nowrap"
-          >
-            {showRegister ? 'Cerrar' : 'Registrar por teléfono'}
-          </button>
-        ) : (
-          <Link
-            href="/dashboard/billing"
-            className="px-md py-2 border border-outline-variant rounded-lg font-label-sm font-bold text-primary hover:bg-surface-container-low whitespace-nowrap"
-          >
-            PRO: registrar por teléfono
-          </Link>
-        )}
+        <button
+          type="button"
+          onClick={() => setShowRegister(!showRegister)}
+          className="px-md py-2 bg-primary text-on-primary rounded-lg font-label-sm font-bold hover:opacity-90 whitespace-nowrap"
+        >
+          {showRegister ? 'Cerrar' : 'Registrar por teléfono'}
+        </button>
       </div>
 
       {message && (
@@ -144,7 +129,7 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
         </div>
       )}
 
-      {canRegisterByPhone && showRegister && (
+      {showRegister && (
         <form
           onSubmit={handleRegister}
           className="bg-surface-container-lowest p-lg rounded-xl border border-outline-variant grid grid-cols-1 md:grid-cols-3 gap-md"
@@ -197,9 +182,7 @@ export default function LoyaltyCardsPanel({ program, clientId, clientPlan = 'FRE
           <span className="material-symbols-outlined text-5xl text-on-surface-variant mb-3">credit_card</span>
           <h3 className="font-headline-md text-on-surface mb-sm">Sin tarjetas aún</h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            {canRegisterByPhone
-              ? 'Registra un cliente con su teléfono o espera a que se inscriba en el portal.'
-              : 'Las tarjetas se crean en el portal público. En plan PRO puedes registrarlas aquí por teléfono.'}
+            Registra un cliente con su teléfono o espera a que se inscriba en el portal.
           </p>
         </div>
       ) : (
