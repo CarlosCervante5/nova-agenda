@@ -18,8 +18,5 @@ COPY --from=base /app/package.json ./
 COPY --from=base /app/prisma ./prisma
 COPY --from=base /app/scripts ./scripts
 
-RUN mkdir -p /data/uploads
-VOLUME ["/data"]
-
 EXPOSE 3001
 CMD ["sh", "scripts/start.sh"]
