@@ -1,6 +1,7 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
+import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
-import { authenticate, authorize, AuthRequest } from '../middleware/auth';
+import { authenticate, canAccessTenant, AuthRequest } from '../middleware/auth';
 import { whatsappHandler } from '../services/whatsapp-handler';
 import { whatsappService } from '../services/whatsapp';
 import { getPlanLevel } from '../middleware/plan-check';
@@ -8,6 +9,43 @@ import { parseAddons } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+function denyUnlessTenant(req: AuthRequest, res: import('express').Response, clientId: string) {
+  if (!canAccessTenant(req, clientId)) {
+    res.status(403).json({ error: 'Not authorized' });
+    return false;
+  }
+  return true;
+}
+
+function extractWebhookToken(req: Request): string {
+  const header = req.headers['x-webhook-token'];
+  if (typeof header === 'string' && header.trim()) return header.trim();
+
+  const apikey = req.headers.apikey;
+  if (typeof apikey === 'string' && apikey.trim()) return apikey.trim();
+
+  const auth = req.headers.authorization;
+  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+
+  const query = req.query.token;
+  if (typeof query === 'string' && query.trim()) return query.trim();
+
+  return typeof req.body?.token === 'string' ? req.body.token.trim() : '';
+}
+
+function tokensMatch(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (!provided || !expected || a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+function newWebhookToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
 
 // Helper: WhatsApp es un ADDON ($499/mes) además del plan PRO
 async function requireWhatsappAddon(clientId: string): Promise<{ allowed: boolean; error?: string }> {
@@ -37,21 +75,33 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: phone, message, clientSlug' });
     }
 
-    // Check plan + addon before processing
+    const providedToken = extractWebhookToken(req);
+    if (!providedToken) {
+      return res.status(401).json({ error: 'Webhook token required' });
+    }
+
     const client = await prisma.client.findUnique({
       where: { slug: clientSlug },
-      select: { id: true, plan: true, addons: true },
+      select: {
+        id: true,
+        plan: true,
+        addons: true,
+        whatsappConfig: { select: { webhookToken: true, isActive: true } },
+      },
     });
 
+    const expectedToken = client?.whatsappConfig?.webhookToken;
+    if (!client || !expectedToken || !tokensMatch(providedToken, expectedToken)) {
+      return res.status(401).json({ error: 'Invalid webhook token' });
+    }
+
     if (
-      !client ||
       getPlanLevel(client.plan) < getPlanLevel('PRO') ||
       !parseAddons(client.addons).includes('WHATSAPP_AI')
     ) {
       return res.status(403).json({ error: 'WhatsApp con IA no disponible: es un addon de $499/mes.' });
     }
 
-    // Process asynchronously to respond to webhook quickly
     whatsappHandler.processIncomingMessage({
       phone,
       message,
@@ -72,9 +122,7 @@ router.get('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
     const { clientId } = req.params;
 
     // Authorization check
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     // Plan check
     const planCheck = await requireWhatsappAddon(clientId);
@@ -82,7 +130,7 @@ router.get('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
       return res.status(403).json({ error: planCheck.error });
     }
 
-    const config = await prisma.whatsAppConfig.findUnique({
+    let config = await prisma.whatsAppConfig.findUnique({
       where: { clientId },
       select: {
         id: true,
@@ -90,10 +138,28 @@ router.get('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
         isOpenAIEnabled: true,
         aiPersonality: true,
         isActive: true,
+        webhookToken: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+
+    if (config && !config.webhookToken) {
+      config = await prisma.whatsAppConfig.update({
+        where: { clientId },
+        data: { webhookToken: newWebhookToken() },
+        select: {
+          id: true,
+          phoneNumberId: true,
+          isOpenAIEnabled: true,
+          aiPersonality: true,
+          isActive: true,
+          webhookToken: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    }
 
     res.json(config || null);
   } catch (error: any) {
@@ -108,9 +174,7 @@ router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
     const { phoneNumberId, apiKey, instanceId, webhookToken, isOpenAIEnabled, aiPersonality } = req.body;
 
     // Authorization check
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     // Plan check
     const planCheck = await requireWhatsappAddon(clientId);
@@ -119,6 +183,7 @@ router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
     }
 
     const existing = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    const resolvedToken = webhookToken || existing?.webhookToken || newWebhookToken();
 
     let config;
     if (existing) {
@@ -128,7 +193,7 @@ router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
           ...(phoneNumberId && { phoneNumberId }),
           ...(apiKey && { apiKey }),
           ...(instanceId !== undefined && { instanceId }),
-          ...(webhookToken !== undefined && { webhookToken }),
+          webhookToken: resolvedToken,
           ...(isOpenAIEnabled !== undefined && { isOpenAIEnabled }),
           ...(aiPersonality !== undefined && { aiPersonality }),
         },
@@ -140,7 +205,7 @@ router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
           phoneNumberId: phoneNumberId || '',
           apiKey: apiKey || '',
           instanceId: instanceId || `client_${clientId}`,
-          webhookToken,
+          webhookToken: resolvedToken,
           isOpenAIEnabled: isOpenAIEnabled ?? true,
           aiPersonality: aiPersonality || 'Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.',
           isActive: false,
@@ -148,7 +213,12 @@ router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
       });
     }
 
-    res.json({ id: config.id, phoneNumberId: config.phoneNumberId, isActive: config.isActive });
+    res.json({
+      id: config.id,
+      phoneNumberId: config.phoneNumberId,
+      isActive: config.isActive,
+      webhookToken: config.webhookToken,
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -159,9 +229,7 @@ router.patch('/config/:clientId/toggle', authenticate, async (req: AuthRequest, 
   try {
     const { clientId } = req.params;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
     if (!config) {
@@ -184,9 +252,7 @@ router.get('/config/:clientId/status', authenticate, async (req: AuthRequest, re
   try {
     const { clientId } = req.params;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
     if (!config) {
@@ -210,9 +276,7 @@ router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
@@ -230,6 +294,7 @@ router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
           phoneNumberId: '',
           apiKey: '',
           instanceId: instanceName,
+          webhookToken: newWebhookToken(),
           isActive: false,
         },
       });
@@ -259,9 +324,7 @@ router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) 
   try {
     const { clientId } = req.params;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
@@ -300,9 +363,7 @@ router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res)
   try {
     const { clientId } = req.params;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const planCheck = await requireWhatsappAddon(clientId);
     if (!planCheck.allowed) {
@@ -335,9 +396,7 @@ router.get('/logs/:clientId', authenticate, async (req: AuthRequest, res) => {
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const logs = await prisma.whatsAppLog.findMany({
       where: { clientId },
@@ -360,9 +419,7 @@ router.post('/test/:clientId', authenticate, async (req: AuthRequest, res) => {
     const { clientId } = req.params;
     const { phone, message } = req.body;
 
-    if (req.user?.role === 'CLIENT' && req.user?.clientId !== clientId) {
-      return res.status(403).json({ error: 'Not authorized' });
-    }
+    if (!denyUnlessTenant(req, res, clientId)) return;
 
     const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
     if (!config) {

@@ -28,12 +28,12 @@ async function assertStaffPlan(clientId: string, res: Response) {
     res.status(404).json({ error: 'Negocio no encontrado' });
     return null;
   }
-  if (getPlanLevel(client.plan) < getPlanLevel('BASIC')) {
+  if (getPlanLevel(client.plan) < getPlanLevel('PRO')) {
     res.status(403).json({
-      error: 'El módulo de personal requiere el plan Profesional o superior.',
+      error: 'El módulo de personal requiere el plan PRO o superior.',
       code: 'PLAN_UPGRADE_REQUIRED',
       currentPlan: client.plan,
-      requiredPlan: 'BASIC',
+      requiredPlan: 'PRO',
     });
     return null;
   }

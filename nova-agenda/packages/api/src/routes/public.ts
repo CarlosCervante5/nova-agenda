@@ -46,7 +46,7 @@ const DEFAULT_WORKING_HOURS = [
 // Register new business
 router.post('/register', async (req, res: Response) => {
   try {
-    const { businessName, ownerName, email, password, plan } = req.body;
+    const { businessName, ownerName, email, password } = req.body;
 
     if (!businessName || !ownerName || !email || !password) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
@@ -74,7 +74,6 @@ router.post('/register', async (req, res: Response) => {
       counter++;
     }
 
-    const validPlan = ['FREE', 'BASIC', 'PRO'].includes(plan) ? plan : 'FREE';
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const client = await prisma.client.create({
@@ -82,7 +81,7 @@ router.post('/register', async (req, res: Response) => {
         name: businessName,
         slug: finalSlug,
         email,
-        plan: validPlan,
+        plan: 'FREE',
         users: {
           create: {
             email,

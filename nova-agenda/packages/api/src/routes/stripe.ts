@@ -356,16 +356,16 @@ router.post('/webhook', async (req, res) => {
 
     let event: Stripe.Event;
 
-    if (webhookSecret) {
-      const sig = req.headers['stripe-signature'] as string;
-      if (!sig) {
-        return res.status(400).json({ error: 'Missing stripe-signature header' });
-      }
-      event = s.webhooks.constructEvent(payload, sig, webhookSecret);
-    } else {
-      event = JSON.parse(payload.toString('utf8')) as Stripe.Event;
-      console.warn('[Stripe Webhook] Sin STRIPE_WEBHOOK_SECRET — firma no verificada');
+    if (!webhookSecret) {
+      console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET no configurado — rechazando');
+      return res.status(503).json({ error: 'Webhook de Stripe no configurado' });
     }
+
+    const sig = req.headers['stripe-signature'] as string;
+    if (!sig) {
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+    event = s.webhooks.constructEvent(payload, sig, webhookSecret);
 
     switch (event.type) {
       case 'checkout.session.completed': {

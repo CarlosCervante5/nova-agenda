@@ -220,10 +220,10 @@ class ApiClient {
     return data;
   }
 
-  async register(businessName: string, ownerName: string, email: string, password: string, plan: string) {
+  async register(businessName: string, ownerName: string, email: string, password: string) {
     const data = await this.request<{ token: string; user: User; client: { id: string; name: string; slug: string; plan: string } }>('/api/public/register', {
       method: 'POST',
-      body: JSON.stringify({ businessName, ownerName, email, password, plan }),
+      body: JSON.stringify({ businessName, ownerName, email, password }),
     });
     this.setToken(data.token);
     return data;

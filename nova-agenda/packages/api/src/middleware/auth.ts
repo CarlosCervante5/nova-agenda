@@ -55,6 +55,13 @@ export function authorize(...roles: string[]) {
   };
 }
 
+/** SUPER_ADMIN ve todo; el resto solo su propio negocio (ADMIN, CLIENT, etc.). */
+export function canAccessTenant(req: AuthRequest, clientId: string): boolean {
+  if (!req.user) return false;
+  if (req.user.role === 'SUPER_ADMIN') return true;
+  return Boolean(req.user.clientId && req.user.clientId === clientId);
+}
+
 export async function resolveTenant(req: TenantRequest, res: Response, next: NextFunction) {
   // Extract subdomain from host
   const host = req.headers.host || '';

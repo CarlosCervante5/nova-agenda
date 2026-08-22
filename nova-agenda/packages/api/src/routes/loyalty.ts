@@ -295,7 +295,7 @@ function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, '').trim();
 }
 
-// Register loyalty card from admin (BASIC+ — acceso por teléfono)
+// Register loyalty card from admin (PRO+ — acceso por teléfono)
 router.post('/cards/admin', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const clientId =
@@ -317,11 +317,11 @@ router.post('/cards/admin', authenticate, async (req: AuthRequest, res: Response
     if (!client) {
       return res.status(404).json({ error: 'Negocio no encontrado' });
     }
-    if (getPlanLevel(client.plan) < getPlanLevel('BASIC')) {
+    if (getPlanLevel(client.plan) < getPlanLevel('PRO')) {
       return res.status(403).json({
-        error: 'Registrar tarjetas por teléfono requiere el plan Profesional o superior.',
+        error: 'Registrar tarjetas por teléfono requiere el plan PRO o superior.',
         code: 'PLAN_UPGRADE_REQUIRED',
-        requiredPlan: 'BASIC',
+        requiredPlan: 'PRO',
       });
     }
 

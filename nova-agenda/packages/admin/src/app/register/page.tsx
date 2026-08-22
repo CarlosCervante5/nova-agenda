@@ -33,9 +33,9 @@ function RegisterForm() {
     setError('');
     setLoading(true);
     try {
-      await api.register(businessName, ownerName, email, password, plan);
+      await api.register(businessName, ownerName, email, password);
       await refreshUser();
-      router.push('/dashboard');
+      router.push(plan === 'PRO' ? '/dashboard/billing' : '/dashboard');
     } catch (err: any) {
       setError(err.message || 'Error al crear la cuenta');
     } finally {

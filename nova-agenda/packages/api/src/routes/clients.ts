@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { parseAddons } from '../middleware/plan-limits';
+import { sanitizeClient, sanitizeClients } from '../utils/sanitize-client';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -29,7 +30,7 @@ router.get('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest,
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json(clients.map((c) => ({ ...c, addons: parseAddons(c.addons) })));
+    res.json(sanitizeClients(clients.map((c) => ({ ...c, addons: parseAddons(c.addons) }))));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -57,7 +58,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    res.json({ ...client, addons: parseAddons(client.addons) });
+    res.json(sanitizeClient({ ...client, addons: parseAddons(client.addons) }));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -259,9 +260,9 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 
     if (touchesWebsite && existing.plan === 'FREE' && req.user!.role !== 'SUPER_ADMIN') {
       return res.status(403).json({
-        error: 'La página web personalizada requiere el plan Profesional o superior.',
+        error: 'La página web personalizada requiere el plan PRO o superior.',
         code: 'PLAN_UPGRADE_REQUIRED',
-        requiredPlan: 'BASIC',
+        requiredPlan: 'PRO',
       });
     }
 
@@ -323,7 +324,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({ ...client, addons: parseAddons(client.addons) });
+    res.json(sanitizeClient({ ...client, addons: parseAddons(client.addons) }));
   } catch (error) {
     console.error('Update client error:', error);
     res.status(500).json({ error: 'Internal server error' });

@@ -14,7 +14,7 @@ async function resolveCategoryId(
 ): Promise<string | null | undefined> {
   if (categoryId === undefined) return undefined;
   if (!categoryId) return null;
-  if (getPlanLevel(plan) < getPlanLevel('BASIC')) return null;
+  if (getPlanLevel(plan) < getPlanLevel('PRO')) return null;
 
   const category = await prisma.serviceCategory.findFirst({
     where: { id: categoryId, clientId },

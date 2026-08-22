@@ -19,12 +19,12 @@ async function assertCategoriesPlan(clientId: string, res: Response) {
     res.status(404).json({ error: 'Negocio no encontrado' });
     return null;
   }
-  if (getPlanLevel(client.plan) < getPlanLevel('BASIC')) {
+  if (getPlanLevel(client.plan) < getPlanLevel('PRO')) {
     res.status(403).json({
-      error: 'Las categorías de servicios requieren el plan Profesional o superior.',
+      error: 'Las categorías de servicios requieren el plan PRO o superior.',
       code: 'PLAN_UPGRADE_REQUIRED',
       currentPlan: client.plan,
-      requiredPlan: 'BASIC',
+      requiredPlan: 'PRO',
     });
     return null;
   }

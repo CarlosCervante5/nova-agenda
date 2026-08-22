@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
 import { assertCanCreateBooking, sendPlanLimitError } from '../middleware/plan-limits';
@@ -15,15 +15,20 @@ import {
 const router = Router();
 const prisma = new PrismaClient();
 
-async function hasScheduleConflict(params: {
-  clientId: string;
-  dayStart: Date;
-  dayEnd: Date;
-  startTime: string;
-  endTime: string;
-  gapMinutes: number;
-  staffId?: string | null;
-}) {
+type DbClient = Prisma.TransactionClient | PrismaClient;
+
+async function hasScheduleConflict(
+  db: DbClient,
+  params: {
+    clientId: string;
+    dayStart: Date;
+    dayEnd: Date;
+    startTime: string;
+    endTime: string;
+    gapMinutes: number;
+    staffId?: string | null;
+  }
+) {
   const where: {
     clientId: string;
     date: { gte: Date; lte: Date };
@@ -36,7 +41,7 @@ async function hasScheduleConflict(params: {
   };
   if (params.staffId) where.staffId = params.staffId;
 
-  const bookings = await prisma.booking.findMany({
+  const bookings = await db.booking.findMany({
     where,
     select: { startTime: true, endTime: true },
   });
@@ -47,6 +52,32 @@ async function hasScheduleConflict(params: {
   return bookings.some((b) =>
     slotConflictsWithBooking(slotStart, slotEnd, b.startTime, b.endTime, params.gapMinutes)
   );
+}
+
+class ScheduleConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ScheduleConflictError';
+  }
+}
+
+async function createBookingWithLock<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await prisma.$transaction(fn, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        timeout: 10000,
+      });
+    } catch (error) {
+      lastError = error;
+      if (error instanceof ScheduleConflictError) throw error;
+      const code = (error as { code?: string })?.code;
+      if (code === 'P2034') continue;
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 // Get bookings
@@ -147,41 +178,51 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
     const { start, end } = parseDateOnly(date);
     const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
 
-    const conflict = await hasScheduleConflict({
-      clientId: client.id,
-      dayStart: start,
-      dayEnd: end,
-      startTime,
-      endTime,
-      gapMinutes,
-      staffId: resolvedStaffId,
-    });
+    let booking;
+    try {
+      booking = await createBookingWithLock(async (tx) => {
+        const conflict = await hasScheduleConflict(tx, {
+          clientId: client.id,
+          dayStart: start,
+          dayEnd: end,
+          startTime,
+          endTime,
+          gapMinutes,
+          staffId: resolvedStaffId,
+        });
 
-    if (conflict) {
-      return res.status(409).json({
-        error: `Ese horario no está disponible (incluye ${gapMinutes} min de espacio entre citas)`,
+        if (conflict) {
+          throw new ScheduleConflictError(
+            `Ese horario no está disponible (incluye ${gapMinutes} min de espacio entre citas)`
+          );
+        }
+
+        return tx.booking.create({
+          data: {
+            clientId: client.id,
+            serviceId,
+            staffId: resolvedStaffId,
+            customerName,
+            customerEmail,
+            customerPhone,
+            date: bookingDate,
+            startTime,
+            endTime,
+            notes,
+            status: 'PENDING',
+          },
+          include: {
+            service: { select: { name: true, color: true } },
+            staff: { select: { id: true, name: true, color: true, title: true } },
+          },
+        });
       });
+    } catch (error) {
+      if (error instanceof ScheduleConflictError) {
+        return res.status(409).json({ error: error.message });
+      }
+      throw error;
     }
-
-    const booking = await prisma.booking.create({
-      data: {
-        clientId: client.id,
-        serviceId,
-        staffId: resolvedStaffId,
-        customerName,
-        customerEmail,
-        customerPhone,
-        date: bookingDate,
-        startTime,
-        endTime,
-        notes,
-        status: 'PENDING',
-      },
-      include: {
-        service: { select: { name: true, color: true } },
-        staff: { select: { id: true, name: true, color: true, title: true } },
-      },
-    });
 
     res.status(201).json(booking);
   } catch (error) {
@@ -252,41 +293,51 @@ router.post('/', async (req, res: Response) => {
     const { start, end } = parseDateOnly(date);
     const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
 
-    const conflict = await hasScheduleConflict({
-      clientId: client.id,
-      dayStart: start,
-      dayEnd: end,
-      startTime,
-      endTime,
-      gapMinutes,
-      staffId: resolvedStaffId,
-    });
+    let booking;
+    try {
+      booking = await createBookingWithLock(async (tx) => {
+        const conflict = await hasScheduleConflict(tx, {
+          clientId: client.id,
+          dayStart: start,
+          dayEnd: end,
+          startTime,
+          endTime,
+          gapMinutes,
+          staffId: resolvedStaffId,
+        });
 
-    if (conflict) {
-      return res.status(409).json({
-        error: `Ese horario no está disponible (incluye ${gapMinutes} min de espacio entre citas)`,
+        if (conflict) {
+          throw new ScheduleConflictError(
+            `Ese horario no está disponible (incluye ${gapMinutes} min de espacio entre citas)`
+          );
+        }
+
+        return tx.booking.create({
+          data: {
+            clientId: client.id,
+            serviceId,
+            staffId: resolvedStaffId,
+            customerName,
+            customerEmail,
+            customerPhone,
+            date: bookingDate,
+            startTime,
+            endTime,
+            notes: client.bookingShowNotes === false ? undefined : notes,
+            status: client.bookingConfirmAuto ? 'CONFIRMED' : 'PENDING',
+          },
+          include: {
+            service: { select: { name: true } },
+            staff: { select: { id: true, name: true } },
+          },
+        });
       });
+    } catch (error) {
+      if (error instanceof ScheduleConflictError) {
+        return res.status(409).json({ error: error.message });
+      }
+      throw error;
     }
-
-    const booking = await prisma.booking.create({
-      data: {
-        clientId: client.id,
-        serviceId,
-        staffId: resolvedStaffId,
-        customerName,
-        customerEmail,
-        customerPhone,
-        date: bookingDate,
-        startTime,
-        endTime,
-        notes: client.bookingShowNotes === false ? undefined : notes,
-        status: client.bookingConfirmAuto ? 'CONFIRMED' : 'PENDING',
-      },
-      include: {
-        service: { select: { name: true } },
-        staff: { select: { id: true, name: true } },
-      },
-    });
 
     res.status(201).json(booking);
   } catch (error) {

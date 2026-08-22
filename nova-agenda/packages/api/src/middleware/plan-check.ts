@@ -13,7 +13,7 @@ const PLAN_HIERARCHY: Record<string, number> = {
 
 /**
  * Middleware factory: checks if the authenticated user's client has at least the required plan.
- * Usage: router.get('/path', authenticate, checkPlan('BASIC'), handler)
+ * Usage: router.get('/path', authenticate, checkPlan('PRO'), handler)
  */
 export function checkPlan(requiredPlan: string) {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
