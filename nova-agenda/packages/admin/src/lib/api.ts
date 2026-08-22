@@ -578,6 +578,46 @@ class ApiClient {
   async getMembershipPurchases() {
     return this.request<MembershipPurchase[]>('/api/memberships/purchases');
   }
+
+  async getPosCatalog() {
+    return this.request<{ services: PosCatalogService[]; products: PosProduct[] }>('/api/pos/catalog');
+  }
+  async getPosSummary() {
+    return this.request<PosSummary>('/api/pos/summary');
+  }
+  async getPosProducts() {
+    return this.request<PosProduct[]>('/api/pos/products');
+  }
+  async createPosProduct(data: Partial<PosProduct>) {
+    return this.request<PosProduct>('/api/pos/products', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updatePosProduct(id: string, data: Partial<PosProduct>) {
+    return this.request<PosProduct>(`/api/pos/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deletePosProduct(id: string) {
+    return this.request(`/api/pos/products/${id}`, { method: 'DELETE' });
+  }
+  async getPosSales(from?: string, to?: string) {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const q = params.toString();
+    return this.request<PosSale[]>(`/api/pos/sales${q ? `?${q}` : ''}`);
+  }
+  async createPosSale(data: {
+    customerName?: string;
+    customerPhone?: string;
+    discount?: number;
+    paymentMethod: string;
+    notes?: string;
+    receivedAmount?: number;
+    items: { kind: string; name: string; quantity: number; unitPrice: number; serviceId?: string; productId?: string }[];
+  }) {
+    return this.request<PosSale>('/api/pos/sales', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async voidPosSale(id: string) {
+    return this.request<PosSale>(`/api/pos/sales/${id}/void`, { method: 'POST' });
+  }
 }
 
 export interface MembershipPlan {
@@ -606,6 +646,53 @@ export interface MembershipPurchase {
   currentPeriodEnd?: string | null;
   createdAt: string;
   plan?: { name: string; interval: string; price: number; currency: string };
+}
+
+export interface PosCatalogService {
+  id: string;
+  name: string;
+  price?: number | null;
+  duration: number;
+  color: string;
+}
+
+export interface PosProduct {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  sku?: string | null;
+  isActive: boolean;
+}
+
+export interface PosSaleItem {
+  id: string;
+  kind: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface PosSale {
+  id: string;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  subtotal: number;
+  discount: number;
+  total: number;
+  paymentMethod: string;
+  status: string;
+  notes?: string | null;
+  receivedAmount?: number | null;
+  createdAt: string;
+  items: PosSaleItem[];
+}
+
+export interface PosSummary {
+  todayCount: number;
+  todayTotal: number;
+  byMethod: Record<string, number>;
 }
 
 export const api = new ApiClient();

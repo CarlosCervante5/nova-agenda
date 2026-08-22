@@ -15,6 +15,7 @@ import staffRoutes from './routes/staff';
 import serviceCategoryRoutes from './routes/service-categories';
 import membershipRoutes from './routes/memberships';
 import uploadRoutes from './routes/uploads';
+import posRoutes from './routes/pos';
 import { ensureUploadDir, getUploadDir } from './lib/uploads';
 import { whatsappHandler } from './services/whatsapp-handler';
 
@@ -70,6 +71,7 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/memberships', membershipRoutes);
 app.use('/api/uploads/files', express.static(ensureUploadDir(getUploadDir()), { maxAge: '7d' }));
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/pos', posRoutes);
 
 // Start server — bind 0.0.0.0 for Railway/Docker
 const host = '0.0.0.0';

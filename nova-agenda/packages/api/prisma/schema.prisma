@@ -63,6 +63,8 @@ model Client {
   loyaltyProgram LoyaltyProgram?
   membershipPlans MembershipPlan[]
   membershipPurchases MembershipPurchase[]
+  posProducts PosProduct[]
+  posSales    PosSale[]
 
   @@map("clients")
 }
@@ -377,6 +379,61 @@ model MembershipPurchase {
 
   @@index([clientId, status])
   @@map("membership_purchases")
+}
+
+model PosProduct {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  sku         String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+
+  @@map("pos_products")
+}
+
+model PosSale {
+  id             String    @id @default(cuid())
+  customerName   String?
+  customerPhone  String?
+  subtotal       Float
+  discount       Float     @default(0)
+  total          Float
+  paymentMethod  String
+  status         String    @default("COMPLETED")
+  notes          String?
+  receivedAmount Float?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId       String
+  soldById       String?
+  items          PosSaleItem[]
+
+  @@index([clientId, createdAt])
+  @@map("pos_sales")
+}
+
+model PosSaleItem {
+  id         String  @id @default(cuid())
+  kind       String
+  name       String
+  quantity   Int     @default(1)
+  unitPrice  Float
+  total      Float
+  serviceId  String?
+  productId  String?
+
+  sale       PosSale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId     String
+
+  @@map("pos_sale_items")
 }
 
 model PlatformConfig {

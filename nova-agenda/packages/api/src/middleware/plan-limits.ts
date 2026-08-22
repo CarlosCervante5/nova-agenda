@@ -49,9 +49,9 @@ export const ADDONS: Record<AddonKey, {
     price: 199,
     description: 'Cobra en caja, registra ventas y pagos del negocio desde el panel.',
     features: [
-      'Caja y cobros en el local',
-      'Registro de ventas y pagos',
-      'Compatible con tu catálogo de servicios',
+      'Caja con servicios, productos y cobro libre',
+      'Pagos en efectivo, tarjeta o transferencia',
+      'Historial de ventas y anulación',
       'Activación desde Facturación o por el super admin',
     ],
   },
@@ -77,6 +77,19 @@ export async function getClientAddons(clientId: string): Promise<string[]> {
 
 export function hasAddon(addons: string[], key: string): boolean {
   return addons.includes(key);
+}
+
+export async function assertHasAddon(clientId: string, key: AddonKey) {
+  const addons = await getClientAddons(clientId);
+  if (!hasAddon(addons, key)) {
+    return {
+      ok: false as const,
+      status: 403,
+      error: `Este negocio no tiene el addon ${ADDONS[key].name} activo.`,
+      code: 'ADDON_REQUIRED' as const,
+    };
+  }
+  return { ok: true as const };
 }
 
 export function getPlanLimits(plan: string) {
