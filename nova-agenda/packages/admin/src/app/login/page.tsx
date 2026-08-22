@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { homePath } from '@/lib/roles';
 import PasswordInput from '@/components/PasswordInput';
 
 export default function LoginPage() {
@@ -16,7 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace('/dashboard');
+      router.replace(homePath(user));
     }
   }, [authLoading, user, router]);
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,8 +25,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      router.push('/dashboard');
+      const loggedUser = await login(email, password);
+      router.push(homePath(loggedUser));
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {

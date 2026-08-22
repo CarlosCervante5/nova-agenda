@@ -17,7 +17,9 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: String(email), mode: 'insensitive' } },
+    });
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -29,12 +31,25 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    const platformEmails = (process.env.PLATFORM_ADMIN_EMAILS || 'admin@novaagenda.com')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    const sessionUser =
+      platformEmails.includes(user.email.toLowerCase()) && (user.role !== 'SUPER_ADMIN' || user.clientId)
+        ? await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'SUPER_ADMIN', clientId: null },
+          })
+        : user;
+
     const token = jwt.sign(
       {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        clientId: user.clientId,
+        id: sessionUser.id,
+        email: sessionUser.email,
+        role: sessionUser.role,
+        clientId: sessionUser.clientId,
       },
       config.jwtSecret,
       { expiresIn: '7d' }
@@ -43,11 +58,11 @@ router.post('/login', async (req: Request, res: Response) => {
     res.json({
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        clientId: user.clientId,
+        id: sessionUser.id,
+        email: sessionUser.email,
+        name: sessionUser.name,
+        role: sessionUser.role,
+        clientId: sessionUser.clientId,
       },
     });
   } catch (error) {

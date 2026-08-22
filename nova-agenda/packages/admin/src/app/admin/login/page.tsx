@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
+import { homePath } from '@/lib/roles';
 import PasswordInput from '@/components/PasswordInput';
 
 export default function AdminLoginPage() {
@@ -18,7 +19,7 @@ export default function AdminLoginPage() {
   useEffect(() => {
     if (authLoading) return;
     if (user && user.role === 'SUPER_ADMIN') {
-      router.replace('/dashboard');
+      router.replace(homePath(user));
     } else if (user) {
       router.replace('/login');
     }
@@ -36,7 +37,7 @@ export default function AdminLoginPage() {
         setError('Acceso restringido. Esta cuenta no es administradora de la plataforma.');
         return;
       }
-      router.push('/dashboard');
+      router.push(homePath(loggedUser));
     } catch (err: any) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {

@@ -3,20 +3,27 @@
 import { useEffect, useState } from 'react';
 import { api, Booking } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { homePath, isSuperAdmin } from '@/lib/roles';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import SmartCalendar from '@/components/SmartCalendar';
 import CreateBookingModal from '@/components/CreateBookingModal';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState({ clients: 0, services: 0, bookings: 0, revenue: 0 });
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
+    if (isSuperAdmin(user)) {
+      router.replace(homePath(user));
+      return;
+    }
     if (user) loadData();
-  }, [user]);
+  }, [user, router]);
 
   async function loadData() {
     if (!user) return;

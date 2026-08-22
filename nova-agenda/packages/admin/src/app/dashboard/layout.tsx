@@ -4,29 +4,15 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { BUSINESS_NAV, PLATFORM_NAV, homePath, isBusinessOnlyPath, isSuperAdmin } from '@/lib/roles';
 
 function Sidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const platform = isSuperAdmin(user);
 
-  const navLinks = [
-    { href: '/dashboard', label: 'Panel', icon: 'dashboard' },
-    { href: '/dashboard/clients', label: 'Negocios', icon: 'group', roles: ['SUPER_ADMIN'] },
-    { href: '/dashboard/website', label: 'Mi página web', icon: 'language' },
-    { href: '/dashboard/staff', label: 'Personal', icon: 'badge' },
-    { href: '/dashboard/booking', label: 'Agenda pública', icon: 'event_available' },
-    { href: '/dashboard/services', label: 'Servicios', icon: 'inventory_2' },
-    { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
-    { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat' },
-    { href: '/dashboard/billing', label: 'Facturación', icon: 'payments' },
-    { href: '/dashboard/settings', label: 'Configuración', icon: 'settings' },
-  ];
-
-  const filteredLinks = navLinks.filter((l) => {
-    if (l.roles && !l.roles.includes(user?.role || '')) return false;
-    return true;
-  });
+  const filteredLinks = platform ? PLATFORM_NAV : BUSINESS_NAV;
 
   const bottomTabs = filteredLinks.slice(0, 5);
 
@@ -56,7 +42,9 @@ function Sidebar() {
             </div>
             <div>
               <h1 className="font-headline-md text-[20px] font-bold text-on-surface">Nova Agenda</h1>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">Consola de Admin</p>
+              <p className="font-label-sm text-label-sm text-on-surface-variant">
+                {platform ? 'Consola de plataforma' : 'Consola de Admin'}
+              </p>
             </div>
           </div>
         </div>
@@ -119,12 +107,18 @@ function Sidebar() {
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.push('/login');
+      return;
     }
-  }, [user, loading, router]);
+    if (isSuperAdmin(user) && isBusinessOnlyPath(pathname)) {
+      router.replace(homePath(user));
+    }
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return (
@@ -147,13 +141,17 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 md:ml-[280px] min-h-screen flex flex-col">
         <header className="hidden md:flex justify-between items-center w-full px-lg h-16 sticky top-0 z-30 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md bg-opacity-90">
           <div className="flex items-center gap-4">
-            <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Resumen</h2>
+            <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
+              {isSuperAdmin(user) ? 'Plataforma' : 'Resumen'}
+            </h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pl-4 border-l border-outline-variant">
               <div className="text-right">
                 <p className="font-label-md text-label-md text-on-surface">{user.name}</p>
-                <p className="font-label-sm text-label-sm text-on-surface-variant">{user.role}</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant">
+                  {isSuperAdmin(user) ? 'Administrador de plataforma' : user.role}
+                </p>
               </div>
               <div className="w-10 h-10 rounded-full border-2 border-primary-container/30 bg-primary-fixed flex items-center justify-center text-primary font-bold">
                 {user.name.charAt(0)}
