@@ -1,13 +1,12 @@
-import { getClientInfo, getLoyaltyProgram } from '@/lib/api';
+import { getClientInfo, getLoyaltyProgram, getMembershipPlans } from '@/lib/api';
 import BookingPage from './BookingPage';
-import { notFound } from 'next/navigation';
 
 export default async function ClientPage({
   params,
   searchParams,
 }: {
   params: { clientSlug: string };
-  searchParams: { loyalty?: string };
+  searchParams: { loyalty?: string; membership?: string; session_id?: string };
 }) {
   const client = await getClientInfo(params.clientSlug);
 
@@ -41,14 +40,32 @@ export default async function ClientPage({
     );
   }
 
-  const loyaltyProgram = await getLoyaltyProgram(client.id);
+  const [loyaltyProgram, membershipPlans] = await Promise.all([
+    getLoyaltyProgram(client.id),
+    getMembershipPlans(params.clientSlug),
+  ]);
+
+  const membershipStatus =
+    searchParams.membership === 'success' || searchParams.membership === 'canceled'
+      ? searchParams.membership
+      : null;
+
+  const initialTab =
+    membershipStatus
+      ? 'memberships'
+      : searchParams.loyalty === '1' && loyaltyProgram
+        ? 'loyalty'
+        : 'booking';
 
   return (
     <BookingPage
       client={client}
       clientSlug={params.clientSlug}
       loyaltyProgram={loyaltyProgram}
-      initialTab={searchParams.loyalty === '1' && loyaltyProgram ? 'loyalty' : 'booking'}
+      membershipPlans={membershipPlans}
+      membershipStatus={membershipStatus}
+      membershipSessionId={searchParams.session_id || null}
+      initialTab={initialTab}
     />
   );
 }

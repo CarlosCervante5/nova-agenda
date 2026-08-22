@@ -192,3 +192,60 @@ export async function createLoyaltyCard(data: {
   }
   return res.json();
 }
+
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  currency: string;
+  interval: string;
+  benefits: string[];
+}
+
+export async function getMembershipPlans(slug: string): Promise<MembershipPlan[]> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/memberships/public/${slug}`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.plans || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createMembershipCheckout(data: {
+  clientSlug: string;
+  planId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  returnUrl: string;
+}): Promise<{ url: string; sessionId: string }> {
+  const res = await fetch(`${getApiBaseUrl()}/api/memberships/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'No se pudo iniciar el checkout' }));
+    throw new Error(error.error);
+  }
+  return res.json();
+}
+
+export async function confirmMembership(data: {
+  sessionId: string;
+  clientSlug: string;
+}): Promise<{ status: string; plan?: { name: string } }> {
+  const res = await fetch(`${getApiBaseUrl()}/api/memberships/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'No se pudo confirmar la compra' }));
+    throw new Error(error.error);
+  }
+  return res.json();
+}

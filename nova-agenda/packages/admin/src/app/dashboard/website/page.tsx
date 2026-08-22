@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { getBookingFormUrl, getClientPortalBaseUrl, getPortalUrl } from '@/lib/booking-url';
+import ImageUpload from '@/components/ImageUpload';
 
 type WebsiteForm = {
   name: string;
@@ -280,21 +281,21 @@ export default function WebsitePage() {
               </div>
             </div>
             <div>
-              <label className="font-label-md text-on-surface mb-xs block">URL del logo</label>
-              <input
+              <ImageUpload
+                label="Logo"
                 value={form.logo}
-                onChange={(e) => updateField('logo', e.target.value)}
-                placeholder="https://..."
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+                onChange={(url) => updateField('logo', url)}
+                kind="logo"
+                preview="square"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="font-label-md text-on-surface mb-xs block">Imagen de portada (URL)</label>
-              <input
+              <ImageUpload
+                label="Imagen de portada"
                 value={form.coverImage}
-                onChange={(e) => updateField('coverImage', e.target.value)}
-                placeholder="https://..."
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+                onChange={(url) => updateField('coverImage', url)}
+                kind="cover"
+                preview="wide"
               />
             </div>
             <div className="md:col-span-2">
@@ -440,6 +441,9 @@ export default function WebsitePage() {
             </Link>
             <Link href="/dashboard/loyalty" className="px-md py-2 rounded-lg bg-surface-container-lowest border border-outline-variant font-label-sm font-bold hover:border-primary">
               Fidelidad
+            </Link>
+            <Link href="/dashboard/memberships" className="px-md py-2 rounded-lg bg-surface-container-lowest border border-outline-variant font-label-sm font-bold hover:border-primary">
+              Membresías
             </Link>
           </div>
         </section>

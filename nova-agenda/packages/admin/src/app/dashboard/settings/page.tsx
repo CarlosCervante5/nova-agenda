@@ -299,7 +299,19 @@ export default function SettingsPage() {
 
           <div className="p-4 bg-primary-fixed/30 rounded-lg space-y-2">
             <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
-              <strong>Webhook URL:</strong>{' '}
+              <strong>Webhook de membresías:</strong>{' '}
+              <code className="text-xs break-all">
+                {typeof window !== 'undefined' && user?.clientId
+                  ? `${window.location.origin}/api/memberships/webhook/${user.clientId}`
+                  : '/api/memberships/webhook/{tu-negocio}'}
+              </code>
+            </p>
+            <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
+              En Stripe, crea un endpoint con esa URL y eventos <code>checkout.session.completed</code> y <code>customer.subscription.deleted</code>.
+              El checkout también confirma el pago al volver a tu página, así que el webhook es opcional.
+            </p>
+            <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">
+              <strong>Webhook general:</strong>{' '}
               <code className="text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/stripe/webhook</code>
             </p>
             <p className="font-body-sm text-body-sm text-on-primary-fixed-variant">

@@ -13,6 +13,9 @@ import stripeRoutes from './routes/stripe';
 import loyaltyRoutes from './routes/loyalty';
 import staffRoutes from './routes/staff';
 import serviceCategoryRoutes from './routes/service-categories';
+import membershipRoutes from './routes/memberships';
+import uploadRoutes from './routes/uploads';
+import { ensureUploadDir, getUploadDir } from './lib/uploads';
 import { whatsappHandler } from './services/whatsapp-handler';
 
 const app = express();
@@ -44,8 +47,10 @@ app.use(cors(corsOptions));
 
 // Stripe webhook needs raw body; no aplicar express.json() a esa ruta
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/memberships/webhook', express.raw({ type: 'application/json' }));
 app.use((req, res, next) => {
   if (req.originalUrl.startsWith('/api/stripe/webhook')) return next();
+  if (req.originalUrl.startsWith('/api/memberships/webhook')) return next();
   return express.json()(req, res, next);
 });
 
@@ -62,11 +67,15 @@ app.use('/api/platform-config', platformConfigRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/memberships', membershipRoutes);
+app.use('/api/uploads/files', express.static(ensureUploadDir(getUploadDir()), { maxAge: '7d' }));
+app.use('/api/uploads', uploadRoutes);
 
 // Start server — bind 0.0.0.0 for Railway/Docker
 const host = '0.0.0.0';
 app.listen(config.port, host, () => {
   console.log(`🚀 API server running on http://${host}:${config.port}`);
+  console.log(`[uploads] Directorio persistente: ${ensureUploadDir()}`);
 
   // Start WhatsApp reminder scheduler
   whatsappHandler.startReminderScheduler();

@@ -8,3 +8,7 @@ healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+
+# Imágenes: en Railway → API → Volumes → New Volume
+# Mount path: /data
+# Variable de entorno: UPLOAD_DIR=/data/uploads

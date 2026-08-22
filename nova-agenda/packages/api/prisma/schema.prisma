@@ -61,6 +61,8 @@ model Client {
   whatsappConfig WhatsAppConfig?
   whatsappLogs   WhatsAppLog[]
   loyaltyProgram LoyaltyProgram?
+  membershipPlans MembershipPlan[]
+  membershipPurchases MembershipPurchase[]
 
   @@map("clients")
 }
@@ -316,6 +318,48 @@ model LoyaltyStamp {
   booking       Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   @@map("loyalty_stamps")
+}
+
+model MembershipPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  currency    String   @default("mxn")
+  interval    String   @default("month")
+  benefits    String   @default("[]")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+  purchases   MembershipPurchase[]
+
+  @@map("membership_plans")
+}
+
+model MembershipPurchase {
+  id                      String    @id @default(cuid())
+  customerName            String
+  customerEmail           String
+  customerPhone           String?
+  status                  String    @default("PENDING")
+  stripeCheckoutSessionId String?   @unique
+  stripeSubscriptionId    String?
+  stripeCustomerId        String?
+  currentPeriodEnd        DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  client      Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId    String
+  plan        MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId      String
+
+  @@index([clientId, status])
+  @@map("membership_purchases")
 }
 
 model PlatformConfig {

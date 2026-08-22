@@ -5,6 +5,7 @@ import { api, Service } from '@/lib/api';
 import { LoyaltyProgram, LoyaltyReward } from './interface';
 import { useAuth } from '@/lib/auth';
 import LoyaltyCardsPanel from './LoyaltyCardsPanel';
+import ImageUpload from '@/components/ImageUpload';
 
 type RewardDraft = {
   name: string;
@@ -684,18 +685,14 @@ export default function LoyaltyPage() {
                     <span className="material-symbols-outlined text-sm">image</span>
                     Plantilla de Tarjeta
                   </h5>
-                  <div>
-                    <label className="font-label-sm text-on-surface-variant mb-1 block">URL de plantilla (opcional)</label>
-                    <input
-                      value={formData.cardTemplateUrl || ''}
-                      onChange={(e) => setFormData({ ...formData, cardTemplateUrl: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface-bright border border-outline-variant rounded-lg font-body-sm outline-none focus:border-primary"
-                      placeholder="https://tu-cdn.com/tarjeta-template.png"
-                    />
-                    <p className="text-xs text-on-surface-variant mt-1">
-                      Si no se proporciona, se genera automáticamente con el QR del cliente.
-                    </p>
-                  </div>
+                  <ImageUpload
+                    label="Plantilla de tarjeta (opcional)"
+                    value={formData.cardTemplateUrl || ''}
+                    onChange={(url) => setFormData({ ...formData, cardTemplateUrl: url })}
+                    kind="loyalty"
+                    preview="wide"
+                    hint="Si no subes una, se genera automáticamente con el QR del cliente."
+                  />
                 </div>
               )}
             </div>

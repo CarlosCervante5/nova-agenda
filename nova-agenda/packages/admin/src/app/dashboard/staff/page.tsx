@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, Client, Service, StaffMember } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import ImageUpload from '@/components/ImageUpload';
 
 type StaffForm = {
   name: string;
@@ -253,12 +254,12 @@ export default function StaffPage() {
               </div>
             </div>
             <div>
-              <label className="font-label-md text-on-surface mb-xs block">URL de foto (opcional)</label>
-              <input
+              <ImageUpload
+                label="Foto (opcional)"
                 value={form.avatarUrl}
-                onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+                onChange={(url) => setForm({ ...form, avatarUrl: url })}
+                kind="avatar"
+                preview="square"
               />
             </div>
             <div className="md:col-span-2">

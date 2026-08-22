@@ -2,20 +2,36 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram } from '@/lib/api';
+import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
 import LoyaltySection from './LoyaltySection';
+import MembershipsSection from './MembershipsSection';
+
+type Tab = 'booking' | 'loyalty' | 'memberships';
 
 interface Props {
   client: ClientInfo;
   clientSlug: string;
   loyaltyProgram?: LoyaltyProgram | null;
-  initialTab?: 'booking' | 'loyalty';
+  membershipPlans?: MembershipPlan[];
+  membershipStatus?: 'success' | 'canceled' | null;
+  membershipSessionId?: string | null;
+  initialTab?: Tab;
 }
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-export default function BookingPage({ client, clientSlug, loyaltyProgram, initialTab = 'booking' }: Props) {
-  const [activeTab, setActiveTab] = useState<'booking' | 'loyalty'>(initialTab);
+export default function BookingPage({
+  client,
+  clientSlug,
+  loyaltyProgram,
+  membershipPlans = [],
+  membershipStatus = null,
+  membershipSessionId = null,
+  initialTab = 'booking',
+}: Props) {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const showMemberships = membershipPlans.length > 0 || Boolean(membershipStatus);
+  const showTabs = Boolean(loyaltyProgram) || showMemberships;
   const [step, setStep] = useState<'service' | 'staff' | 'datetime' | 'confirm' | 'success'>('service');
   const [selectedService, setSelectedService] = useState<ClientInfo['services'][0] | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<NonNullable<ClientInfo['staff']>[0] | null>(null);
@@ -187,11 +203,11 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram, initia
               )}
             </div>
           </div>
-          {loyaltyProgram && (
+          {showTabs && (
             <nav className="flex items-center gap-1 bg-surface-container-low rounded-lg p-1">
               <button
                 onClick={() => setActiveTab('booking')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all ${
                   activeTab === 'booking'
                     ? 'bg-surface-container-lowest text-on-surface shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -199,17 +215,32 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram, initia
               >
                 Reservar
               </button>
-              <button
-                onClick={() => setActiveTab('loyalty')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
-                  activeTab === 'loyalty'
-                    ? 'bg-surface-container-lowest text-on-surface shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">loyalty</span>
-                Fidelidad
-              </button>
+              {loyaltyProgram && (
+                <button
+                  onClick={() => setActiveTab('loyalty')}
+                  className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    activeTab === 'loyalty'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">loyalty</span>
+                  Fidelidad
+                </button>
+              )}
+              {showMemberships && (
+                <button
+                  onClick={() => setActiveTab('memberships')}
+                  className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                    activeTab === 'memberships'
+                      ? 'bg-surface-container-lowest text-on-surface shadow-sm'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">card_membership</span>
+                  Membresías
+                </button>
+              )}
             </nav>
           )}
         </div>
@@ -233,6 +264,27 @@ export default function BookingPage({ client, clientSlug, loyaltyProgram, initia
               </div>
               <span className="font-headline-md text-on-surface text-lg">{client.name}</span>
             </div>
+          </div>
+        </footer>
+        </>
+      ) : activeTab === 'memberships' ? (
+        <>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+          <MembershipsSection
+            clientSlug={clientSlug}
+            clientName={client.name}
+            primaryColor={client.primaryColor}
+            plans={membershipPlans}
+            checkoutStatus={membershipStatus}
+            sessionId={membershipSessionId}
+          />
+        </main>
+        <footer className="mt-12 bg-surface-container-lowest border-t border-outline-variant py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2">
+            <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: client.primaryColor + '30', color: client.primaryColor }}>
+              <span className="material-symbols-outlined text-sm">spa</span>
+            </div>
+            <span className="font-headline-md text-on-surface text-lg">{client.name}</span>
           </div>
         </footer>
         </>

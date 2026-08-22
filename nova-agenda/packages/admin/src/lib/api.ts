@@ -231,6 +231,39 @@ class ApiClient {
 
   async getMe() { return this.request<User>('/api/auth/me'); }
 
+  async uploadImage(file: File, kind = 'image') {
+    const headers: Record<string, string> = {};
+    if (this.token) headers.Authorization = `Bearer ${this.token}`;
+
+    const body = new FormData();
+    body.append('file', file);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    let res: Response;
+    try {
+      res = await fetch(`${getApiBaseUrl()}/api/uploads?kind=${encodeURIComponent(kind)}`, {
+        method: 'POST',
+        headers,
+        body,
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new Error('La subida tardó demasiado. Intenta con una imagen más ligera.');
+      }
+      throw new Error('No se pudo subir la imagen.');
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'No se pudo subir la imagen' }));
+      throw new Error(error.error || 'No se pudo subir la imagen');
+    }
+    return res.json() as Promise<{ url: string }>;
+  }
+
   // Clients
   async getClients() { return this.request<Client[]>('/api/clients'); }
   async getClient(id: string) { return this.request<Client>(`/api/clients/${id}`); }
@@ -527,6 +560,46 @@ class ApiClient {
   async getCardQR(cardId: string) {
     return this.request<any>(`/api/loyalty/cards/${cardId}/qr`);
   }
+
+  async getMemberships() {
+    return this.request<MembershipPlan[]>('/api/memberships');
+  }
+  async createMembership(data: Partial<MembershipPlan> & { benefits?: string[] | string }) {
+    return this.request<MembershipPlan>('/api/memberships', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateMembership(id: string, data: Partial<MembershipPlan> & { benefits?: string[] | string }) {
+    return this.request<MembershipPlan>(`/api/memberships/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteMembership(id: string) {
+    return this.request(`/api/memberships/${id}`, { method: 'DELETE' });
+  }
+  async getMembershipPurchases() {
+    return this.request<MembershipPurchase[]>('/api/memberships/purchases');
+  }
+}
+
+export interface MembershipPlan {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  currency: string;
+  interval: string;
+  benefits: string[];
+  isActive: boolean;
+  sortOrder: number;
+  _count?: { purchases: number };
+}
+
+export interface MembershipPurchase {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string | null;
+  status: string;
+  currentPeriodEnd?: string | null;
+  createdAt: string;
+  plan?: { name: string; interval: string; price: number; currency: string };
 }
 
 export const api = new ApiClient();
