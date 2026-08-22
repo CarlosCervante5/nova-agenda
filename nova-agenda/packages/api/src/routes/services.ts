@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { assertCanCreateService, sendPlanLimitError } from '../middleware/plan-limits';
 import { getPlanLevel } from '../middleware/plan-check';
+import { syncServiceHours } from '../lib/working-hours';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -40,6 +41,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       where: { clientId: targetClientId },
       include: {
         _count: { select: { bookings: true } },
+        workingHours: { orderBy: { dayOfWeek: 'asc' } },
         category: {
           select: {
             id: true,
@@ -72,7 +74,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       ? (req.body.clientId || clientId)
       : clientId;
 
-    const { name, description, duration, price, color, categoryId } = req.body;
+    const { name, description, duration, price, color, categoryId, useCustomHours, workingHours } = req.body;
 
     if (!name || !duration) {
       return res.status(400).json({ error: 'Name and duration are required' });
@@ -106,8 +108,10 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         color: color || '#2dd4bf',
         clientId: targetClientId,
         categoryId: resolvedCategoryId ?? null,
+        useCustomHours: useCustomHours === true,
       },
       include: {
+        workingHours: { orderBy: { dayOfWeek: 'asc' } },
         category: {
           select: {
             id: true,
@@ -120,7 +124,27 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.status(201).json(service);
+    if (useCustomHours === true) {
+      await syncServiceHours(prisma, service.id, workingHours);
+    }
+
+    const created = await prisma.service.findUnique({
+      where: { id: service.id },
+      include: {
+        workingHours: { orderBy: { dayOfWeek: 'asc' } },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    res.status(201).json(created);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -130,7 +154,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, duration, price, color, isActive, categoryId } = req.body;
+    const { name, description, duration, price, color, isActive, categoryId, useCustomHours, workingHours } = req.body;
 
     const service = await prisma.service.findUnique({ where: { id } });
 
@@ -166,8 +190,10 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         ...(color && { color }),
         ...(typeof isActive === 'boolean' && { isActive }),
         ...(resolvedCategoryId !== undefined && { categoryId: resolvedCategoryId }),
+        ...(typeof useCustomHours === 'boolean' && { useCustomHours }),
       },
       include: {
+        workingHours: { orderBy: { dayOfWeek: 'asc' } },
         category: {
           select: {
             id: true,
@@ -180,7 +206,31 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json(updated);
+    if (typeof useCustomHours === 'boolean' || workingHours !== undefined) {
+      if (updated.useCustomHours) {
+        await syncServiceHours(prisma, updated.id, workingHours ?? updated.workingHours);
+      } else if (useCustomHours === false) {
+        await prisma.serviceWorkingHours.deleteMany({ where: { serviceId: updated.id } });
+      }
+    }
+
+    const saved = await prisma.service.findUnique({
+      where: { id: updated.id },
+      include: {
+        workingHours: { orderBy: { dayOfWeek: 'asc' } },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            parentId: true,
+            parent: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    res.json(saved);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

@@ -6,6 +6,12 @@ import { LoyaltyProgram, LoyaltyReward } from './interface';
 import { useAuth } from '@/lib/auth';
 import LoyaltyCardsPanel from './LoyaltyCardsPanel';
 import ImageUpload from '@/components/ImageUpload';
+import LoyaltyStampCard, {
+  CardDesign,
+  DEFAULT_CARD_DESIGN,
+  ESTUDIO_CARD_DESIGN,
+  parseCardDesign,
+} from '@/components/LoyaltyStampCard';
 
 type RewardDraft = {
   name: string;
@@ -118,19 +124,22 @@ export default function LoyaltyPage() {
     setError('');
     const cardSize = program?.stampsToReward || 10;
     setFormData(
-      program || {
-        name: '',
-        description: '',
-        stampsToReward: 10,
-        isActive: false,
-        stampIcon: 'local_fire_department',
-        stampColor: '#2dd4bf',
-        backgroundColor: '#ffffff',
-        textColor: '#191c1e',
-        enableWhatsApp: false,
-        welcomeMessage: '¡Bienvenido al programa de fidelidad! Recibirás un sello por cada visita.',
-        rewardMessage: '¡Felicitaciones! Has completado tu tarjeta y ganado una recompensa.',
-      }
+      program
+        ? { ...program, cardDesign: parseCardDesign(program.cardDesign) }
+        : {
+            name: '',
+            description: '',
+            stampsToReward: 10,
+            isActive: false,
+            stampIcon: 'local_fire_department',
+            stampColor: '#2dd4bf',
+            backgroundColor: '#ffffff',
+            textColor: '#191c1e',
+            enableWhatsApp: false,
+            welcomeMessage: '¡Bienvenido al programa de fidelidad! Recibirás un sello por cada visita.',
+            rewardMessage: '¡Felicitaciones! Has completado tu tarjeta y ganado una recompensa.',
+            cardDesign: { ...DEFAULT_CARD_DESIGN },
+          }
     );
     setRewards(rewardsToDraft(program?.rewards, cardSize));
     setShowProgramForm(true);
@@ -158,6 +167,33 @@ export default function LoyaltyPage() {
 
   function removeReward(index: number) {
     setRewards((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  const cardDesign = parseCardDesign(formData.cardDesign);
+
+  function updateDesign(patch: Partial<CardDesign>) {
+    setFormData((prev) => ({
+      ...prev,
+      cardDesign: { ...parseCardDesign(prev.cardDesign), ...patch },
+    }));
+  }
+
+  function applyEstudioPreset() {
+    setFormData((prev) => ({
+      ...prev,
+      stampsToReward: 20,
+      stampIcon: 'favorite',
+      stampColor: '#c9a27c',
+      backgroundColor: '#f4efe6',
+      textColor: '#1c1917',
+      cardDesign: { ...ESTUDIO_CARD_DESIGN, logoUrl: parseCardDesign(prev.cardDesign).logoUrl },
+    }));
+    setRewards([
+      { name: '10% de descuento', description: '', stampsRequired: 5, rewardType: 'PERCENTAGE_DISCOUNT', value: 10, serviceId: '', isActive: true },
+      { name: '20% de descuento', description: '', stampsRequired: 10, rewardType: 'PERCENTAGE_DISCOUNT', value: 20, serviceId: '', isActive: true },
+      { name: '50% de descuento', description: '', stampsRequired: 15, rewardType: 'PERCENTAGE_DISCOUNT', value: 50, serviceId: '', isActive: true },
+      { name: 'Gratis', description: '', stampsRequired: 20, rewardType: 'FREE_SERVICE', value: 0, serviceId: '', isActive: true },
+    ]);
   }
 
   function buildPayload() {
@@ -380,7 +416,149 @@ export default function LoyaltyPage() {
                   className="w-full h-12 border border-outline-variant rounded-lg cursor-pointer"
                 />
               </div>
+            </div>
 
+            <div className="pt-lg border-t border-outline-variant space-y-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="font-headline-md text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary">style</span>
+                    Diseño de la tarjeta
+                  </h4>
+                  <p className="font-body-sm text-on-surface-variant">
+                    Elige un estilo, textos y forma de sello. Las recompensas aparecen en el sello de esa visita (10%, Gratis…).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={applyEstudioPreset}
+                  className="px-md py-2 border border-outline-variant rounded-lg font-label-sm font-bold hover:bg-surface-container-low"
+                >
+                  Plantilla estudio (20 sellos)
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+                <div className="space-y-md">
+                  <div className="grid grid-cols-2 gap-md">
+                    <div>
+                      <label className="font-label-md text-on-surface mb-xs block">Estilo</label>
+                      <select
+                        value={cardDesign.style}
+                        onChange={(e) => updateDesign({ style: e.target.value === 'estudio' ? 'estudio' : 'classic' })}
+                        className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                      >
+                        <option value="classic">Clásico</option>
+                        <option value="estudio">Estudio</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-label-md text-on-surface mb-xs block">Forma del sello</label>
+                      <select
+                        value={cardDesign.stampShape}
+                        onChange={(e) => updateDesign({ stampShape: e.target.value as CardDesign['stampShape'] })}
+                        className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                      >
+                        <option value="heart">Corazón</option>
+                        <option value="circle">Círculo</option>
+                        <option value="star">Estrella</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-label-md text-on-surface mb-xs block">Columnas</label>
+                      <select
+                        value={cardDesign.columns}
+                        onChange={(e) => updateDesign({ columns: e.target.value === '10' ? 10 : 5 })}
+                        className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-label-md text-on-surface mb-xs block">Fondo</label>
+                      <input
+                        type="color"
+                        value={formData.backgroundColor || '#ffffff'}
+                        onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                        className="w-full h-12 border border-outline-variant rounded-lg cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-label-md text-on-surface mb-xs block">Texto</label>
+                      <input
+                        type="color"
+                        value={formData.textColor || '#191c1e'}
+                        onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
+                        className="w-full h-12 border border-outline-variant rounded-lg cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-label-md text-on-surface mb-xs block">Sello de premio</label>
+                      <input
+                        type="color"
+                        value={cardDesign.milestoneColor || '#1a1a1a'}
+                        onChange={(e) => updateDesign({ milestoneColor: e.target.value })}
+                        className="w-full h-12 border border-outline-variant rounded-lg cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-label-md text-on-surface mb-xs block">Título grande</label>
+                    <input
+                      value={cardDesign.title}
+                      onChange={(e) => updateDesign({ title: e.target.value })}
+                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-label-md text-on-surface mb-xs block">Texto superpuesto</label>
+                    <input
+                      value={cardDesign.script}
+                      onChange={(e) => updateDesign({ script: e.target.value })}
+                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-label-md text-on-surface mb-xs block">Pie (línea 1)</label>
+                    <input
+                      value={cardDesign.footerTitle}
+                      onChange={(e) => updateDesign({ footerTitle: e.target.value })}
+                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-label-md text-on-surface mb-xs block">Pie (línea 2)</label>
+                    <input
+                      value={cardDesign.footerSubtitle}
+                      onChange={(e) => updateDesign({ footerSubtitle: e.target.value })}
+                      className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg"
+                    />
+                  </div>
+                  <ImageUpload
+                    label="Logo en la tarjeta"
+                    value={cardDesign.logoUrl || ''}
+                    onChange={(url) => updateDesign({ logoUrl: url })}
+                    kind="loyalty"
+                    preview="square"
+                  />
+                </div>
+                <div>
+                  <p className="font-label-sm text-on-surface-variant mb-2">Vista previa</p>
+                  <LoyaltyStampCard
+                    design={cardDesign}
+                    stamps={formData.stampsToReward || 10}
+                    earned={formData.stampsToReward || 10}
+                    stampColor={formData.stampColor || '#2dd4bf'}
+                    backgroundColor={formData.backgroundColor || '#ffffff'}
+                    textColor={formData.textColor || '#191c1e'}
+                    rewards={rewards.filter((r) => r.name.trim())}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
               <div className="md:col-span-2">
                 <label className="font-label-md text-label-md text-on-surface mb-xs block">Mensaje de bienvenida</label>
                 <input

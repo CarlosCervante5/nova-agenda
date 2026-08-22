@@ -12,7 +12,7 @@ export interface User {
   name: string;
   role: string;
   clientId?: string;
-  client?: { id: string; name: string; slug: string; primaryColor: string };
+  client?: { id: string; name: string; slug: string; primaryColor: string; addons?: string[] };
 }
 
 export interface Client {
@@ -87,6 +87,8 @@ export interface Service {
     parentId?: string | null;
     parent?: { id: string; name: string } | null;
   } | null;
+  useCustomHours?: boolean;
+  workingHours?: WorkingHoursEntry[];
   _count?: { bookings: number };
 }
 

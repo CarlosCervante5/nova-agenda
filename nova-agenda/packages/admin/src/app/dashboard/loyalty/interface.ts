@@ -54,6 +54,7 @@ export interface LoyaltyProgram {
   walletTeamIdentifier?: string;
   walletOrganizationName?: string;
   cardTemplateUrl?: string;
+  cardDesign?: import('@/components/LoyaltyStampCard').CardDesign | string | null;
   qrSecret?: string;
   rewards?: LoyaltyReward[];
   _count?: { cards: number };

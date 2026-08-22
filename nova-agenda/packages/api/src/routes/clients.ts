@@ -2,7 +2,12 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
-import { parseAddons } from '../middleware/plan-limits';
+import { ADDON_KEYS, parseAddons } from '../middleware/plan-limits';
+
+function sanitizeAddonList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((key): key is string => typeof key === 'string' && (ADDON_KEYS as readonly string[]).includes(key));
+}
 import { sanitizeClient, sanitizeClients } from '../utils/sanitize-client';
 
 const router = Router();
@@ -181,7 +186,7 @@ router.post('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest
         address,
         primaryColor: primaryColor || '#2dd4bf',
         plan: resolvedPlan,
-        ...(Array.isArray(addons) && { addons: JSON.stringify(addons) }),
+        ...(Array.isArray(addons) && { addons: JSON.stringify(sanitizeAddonList(addons)) }),
         users: {
           create: {
             email: email.trim(),
@@ -408,7 +413,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         ...(typeof bookingConfirmAuto === 'boolean' && { bookingConfirmAuto }),
         ...(plan && req.user!.role === 'SUPER_ADMIN' && { plan }),
         ...(typeof isActive === 'boolean' && req.user!.role === 'SUPER_ADMIN' && { isActive }),
-        ...(Array.isArray(addons) && req.user!.role === 'SUPER_ADMIN' && { addons: JSON.stringify(addons) }),
+        ...(Array.isArray(addons) && req.user!.role === 'SUPER_ADMIN' && { addons: JSON.stringify(sanitizeAddonList(addons)) }),
       },
       include: {
         workingHours: { orderBy: { dayOfWeek: 'asc' } },

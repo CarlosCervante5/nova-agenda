@@ -40,6 +40,8 @@ export interface ClientInfo {
       parentId?: string | null;
       parent?: { id: string; name: string; color: string } | null;
     } | null;
+    useCustomHours?: boolean;
+    workingHours?: { dayOfWeek: number; openTime: string; closeTime: string; isOpen: boolean }[];
   }[];
   categories?: {
     id: string;
@@ -95,6 +97,7 @@ export interface LoyaltyProgram {
   welcomeMessage?: string;
   rewardMessage?: string;
   rewards: LoyaltyReward[];
+  cardDesign?: unknown;
 }
 
 export interface LoyaltyCard {

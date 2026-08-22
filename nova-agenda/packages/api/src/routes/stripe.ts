@@ -2,8 +2,7 @@ import { Router, Response } from 'express';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import { getClientPlanUsage } from '../middleware/plan-limits';
-import { getClientAddons } from '../middleware/plan-limits';
+import { ADDONS, getClientPlanUsage, getClientAddons } from '../middleware/plan-limits';
 import {
   getStripeClient,
   getStripeWebhookSecret,
@@ -20,21 +19,6 @@ const PLANS: Record<string, { name: string; price: number; features: string[]; i
   FREE: { name: 'Gratuito', price: 0, features: ['Agenda de citas', 'Formulario de reservas compartible', 'Servicios ilimitados', 'Citas ilimitadas', 'Página web personalizada', 'Personal para atender', 'Categorías de servicios'] },
   PRO: { name: 'PRO', price: 149, features: ['Todo del plan Gratuito', 'Pagos en línea (cobra a tus clientes con Stripe)', 'Soporte prioritario'] },
   CUSTOM: { name: 'Personalizado', price: 0, isContact: true, features: ['Todo del plan PRO', 'Onboarding dedicado', 'Soporte prioritario 24/7', 'Desarrollo a medida', 'SLA garantizado', 'Infraestructura dedicada'] },
-};
-
-const ADDONS: Record<string, { name: string; price: number; description: string; features: string[] }> = {
-  WHATSAPP_AI: {
-    name: 'WhatsApp con IA + Chatbot',
-    price: 499,
-    description: 'Atiende citas, responde dudas y reserva automáticamente por WhatsApp 24/7 con IA.',
-    features: [
-      'Conexión por código QR (tu número real)',
-      'Chatbot con IA 24/7',
-      'Reserva de citas por chat',
-      'Respuestas personalizadas con la personalidad de tu negocio',
-      'Registro y seguimiento de conversaciones',
-    ],
-  },
 };
 
 function getAdminOrigin(req: AuthRequest): string {

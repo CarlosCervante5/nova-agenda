@@ -23,7 +23,7 @@ export const PLAN_LIMITS = {
 export type PlanKey = keyof typeof PLAN_LIMITS;
 
 // Addons disponibles en la plataforma
-export const ADDON_KEYS = ['WHATSAPP_AI'] as const;
+export const ADDON_KEYS = ['WHATSAPP_AI', 'POS'] as const;
 export type AddonKey = (typeof ADDON_KEYS)[number];
 
 export const ADDONS: Record<AddonKey, {
@@ -42,6 +42,17 @@ export const ADDONS: Record<AddonKey, {
       'Reserva de citas por chat',
       'Respuestas personalizadas con la personalidad de tu negocio',
       'Registro y seguimiento de conversaciones',
+    ],
+  },
+  POS: {
+    name: 'Punto de venta',
+    price: 199,
+    description: 'Cobra en caja, registra ventas y pagos del negocio desde el panel.',
+    features: [
+      'Caja y cobros en el local',
+      'Registro de ventas y pagos',
+      'Compatible con tu catálogo de servicios',
+      'Activación desde Facturación o por el super admin',
     ],
   },
 };

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import PasswordInput from '@/components/PasswordInput';
+import { ADDON_OPTIONS } from '@/lib/addons';
 
 const emptyForm = {
   name: '',
@@ -154,28 +155,33 @@ export default function ClientsPage() {
                 <option value="CUSTOM">Personalizado</option>
               </select>
             </div>
-            <div className="flex items-start gap-3 p-lg bg-primary-fixed/20 border border-outline-variant rounded-lg">
-              <input
-                type="checkbox"
-                id="addon-whatsapp"
-                checked={form.addons.includes('WHATSAPP_AI')}
-                onChange={(e) => {
-                  const addons = e.target.checked
-                    ? [...form.addons, 'WHATSAPP_AI']
-                    : form.addons.filter((a) => a !== 'WHATSAPP_AI');
-                  setForm({ ...form, addons });
-                }}
-                className="mt-1 w-5 h-5 accent-[var(--color-primary)]"
-              />
-              <label htmlFor="addon-whatsapp" className="cursor-pointer">
-                <span className="font-label-md text-label-md text-on-surface flex items-center gap-1.5">
-                  Addon: WhatsApp con IA + Chatbot
-                  <span className="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold">$499/mes</span>
-                </span>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  Chatbot con IA 24/7 y reserva de citas por WhatsApp.
-                </span>
-              </label>
+            <div className="md:col-span-2 space-y-3">
+              <p className="font-label-md text-on-surface">Addons</p>
+              {ADDON_OPTIONS.map((addon) => (
+                <div key={addon.key} className="flex items-start gap-3 p-lg bg-primary-fixed/20 border border-outline-variant rounded-lg">
+                  <input
+                    type="checkbox"
+                    id={`addon-${addon.key}`}
+                    checked={form.addons.includes(addon.key)}
+                    onChange={(e) => {
+                      const addons = e.target.checked
+                        ? [...form.addons, addon.key]
+                        : form.addons.filter((a) => a !== addon.key);
+                      setForm({ ...form, addons });
+                    }}
+                    className="mt-1 w-5 h-5 accent-[var(--color-primary)]"
+                  />
+                  <label htmlFor={`addon-${addon.key}`} className="cursor-pointer">
+                    <span className="font-label-md text-label-md text-on-surface flex items-center gap-1.5">
+                      {addon.name}
+                      <span className="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold">
+                        ${addon.price}/mes
+                      </span>
+                    </span>
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">{addon.description}</span>
+                  </label>
+                </div>
+              ))}
             </div>
             <div className="col-span-full flex gap-3 pt-md">
               <button type="submit" className="px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">{editing ? 'Actualizar Negocio' : 'Crear Negocio'}</button>

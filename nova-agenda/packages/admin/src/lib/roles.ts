@@ -20,6 +20,7 @@ export const BUSINESS_NAV = [
   { href: '/dashboard/loyalty', label: 'Fidelidad', icon: 'loyalty' },
   { href: '/dashboard/memberships', label: 'Membresías', icon: 'card_membership' },
   { href: '/dashboard/whatsapp', label: 'WhatsApp', icon: 'chat' },
+  { href: '/dashboard/pos', label: 'Punto de venta', icon: 'point_of_sale' },
   { href: '/dashboard/billing', label: 'Facturación', icon: 'payments' },
   { href: '/dashboard/settings', label: 'Configuración', icon: 'settings' },
 ];

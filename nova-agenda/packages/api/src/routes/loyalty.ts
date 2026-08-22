@@ -43,6 +43,49 @@ type RewardInput = {
   sortOrder?: number;
 };
 
+function parseCardDesign(raw: unknown) {
+  const fallback = {
+    style: 'classic',
+    title: 'TARJETA',
+    script: 'de fidelidad',
+    footerTitle: 'Gracias por tu visita',
+    footerSubtitle: 'Acumula visitas y obtén recompensas',
+    stampShape: 'circle',
+    columns: 5,
+    logoUrl: '',
+    milestoneColor: '#191c1e',
+  };
+  let parsed = raw;
+  if (typeof raw === 'string') {
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = null;
+    }
+  }
+  if (!parsed || typeof parsed !== 'object') return fallback;
+  const d = parsed as Record<string, unknown>;
+  return {
+    style: d.style === 'estudio' ? 'estudio' : 'classic',
+    title: String(d.title || fallback.title).slice(0, 40),
+    script: String(d.script || fallback.script).slice(0, 40),
+    footerTitle: String(d.footerTitle ?? fallback.footerTitle).slice(0, 80),
+    footerSubtitle: String(d.footerSubtitle ?? fallback.footerSubtitle).slice(0, 140),
+    stampShape: d.stampShape === 'heart' || d.stampShape === 'star' ? d.stampShape : 'circle',
+    columns: d.columns === 10 ? 10 : 5,
+    logoUrl: typeof d.logoUrl === 'string' ? d.logoUrl.slice(0, 500) : '',
+    milestoneColor: typeof d.milestoneColor === 'string' ? d.milestoneColor : fallback.milestoneColor,
+  };
+}
+
+function serializeProgram<T extends { cardDesign?: string | null }>(program: T) {
+  return { ...program, cardDesign: parseCardDesign(program.cardDesign) };
+}
+
+function stringifyCardDesign(raw: unknown) {
+  return JSON.stringify(parseCardDesign(raw));
+}
+
 function normalizeRewards(rewards: RewardInput[] | undefined, fallbackCardSize: number) {
   if (!Array.isArray(rewards) || rewards.length === 0) {
     return [
@@ -100,7 +143,7 @@ router.get('/programs', authenticate, async (req: AuthRequest, res: Response) =>
         include: programInclude,
         orderBy: { createdAt: 'desc' },
       });
-      return res.json(programs);
+      return res.json(programs.map(serializeProgram));
     }
 
     if (!req.user!.clientId) {
@@ -112,7 +155,7 @@ router.get('/programs', authenticate, async (req: AuthRequest, res: Response) =>
       include: programInclude,
     });
 
-    res.json(program ? [program] : []);
+    res.json(program ? [serializeProgram(program)] : []);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -144,6 +187,9 @@ router.post('/programs', authenticate, async (req: AuthRequest, res: Response) =
       rewardMessage,
       isActive,
       rewards,
+      cardModes,
+      cardTemplateUrl,
+      cardDesign,
     } = req.body;
 
     if (!name) {
@@ -172,12 +218,15 @@ router.post('/programs', authenticate, async (req: AuthRequest, res: Response) =
         enableWhatsApp: enableWhatsApp || false,
         welcomeMessage: welcomeMessage || '¡Bienvenido al programa de fidelidad! Recibirás un sello por cada visita.',
         rewardMessage: rewardMessage || '¡Felicitaciones! Has completado tu tarjeta y ganado una recompensa.',
+        cardModes: cardModes || 'QR',
+        cardTemplateUrl: cardTemplateUrl || null,
+        cardDesign: stringifyCardDesign(cardDesign),
         rewards: { create: rewardRows },
       },
       include: programInclude,
     });
 
-    res.status(201).json(program);
+    res.status(201).json(serializeProgram(program));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -205,6 +254,9 @@ router.put('/programs/:clientId', authenticate, async (req: AuthRequest, res: Re
       rewardMessage,
       isActive,
       rewards,
+      cardModes,
+      cardTemplateUrl,
+      cardDesign,
     } = req.body;
 
     const existing = await prisma.loyaltyProgram.findUnique({ where: { clientId } });
@@ -239,11 +291,14 @@ router.put('/programs/:clientId', authenticate, async (req: AuthRequest, res: Re
         welcomeMessage: welcomeMessage !== undefined ? welcomeMessage : undefined,
         rewardMessage: rewardMessage !== undefined ? rewardMessage : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
+        ...(cardModes !== undefined && { cardModes }),
+        ...(cardTemplateUrl !== undefined && { cardTemplateUrl: cardTemplateUrl || null }),
+        ...(cardDesign !== undefined && { cardDesign: stringifyCardDesign(cardDesign) }),
       },
       include: programInclude,
     });
 
-    res.json(program);
+    res.json(serializeProgram(program));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -269,7 +324,7 @@ router.patch('/programs/:clientId/toggle', authenticate, async (req: AuthRequest
       include: programInclude,
     });
 
-    res.json(updated);
+    res.json(serializeProgram(updated));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -437,7 +492,7 @@ router.get('/programs/client/:clientId', async (req: AuthRequest, res: Response)
       return res.status(404).json({ error: 'Loyalty program not found' });
     }
 
-    res.json(program);
+    res.json(serializeProgram(program));
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

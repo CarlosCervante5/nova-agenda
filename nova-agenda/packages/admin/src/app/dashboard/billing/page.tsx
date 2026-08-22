@@ -31,6 +31,11 @@ const PLAN_COLORS: Record<string, string> = {
   CUSTOM: 'bg-tertiary-container text-on-tertiary-container',
 };
 
+const ADDON_ICONS: Record<string, string> = {
+  WHATSAPP_AI: 'smart_toy',
+  POS: 'point_of_sale',
+};
+
 export default function BillingPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -348,7 +353,7 @@ export default function BillingPage() {
                   <div className="flex items-start justify-between gap-md mb-md">
                     <div className="flex items-center gap-3">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isActive ? 'bg-primary text-on-primary' : 'bg-tertiary-container text-on-tertiary-container'}`}>
-                        <span className="material-symbols-outlined text-xl">smart_toy</span>
+                        <span className="material-symbols-outlined text-xl">{ADDON_ICONS[key] || 'extension'}</span>
                       </div>
                       <div>
                         <h4 className="font-headline-md text-headline-md text-on-surface">{addon.name}</h4>

@@ -9,6 +9,7 @@ import {
   normalizeSlotGap,
   slotConflictsWithBooking,
 } from '../utils/date-only';
+import { resolveHoursForDay } from '../lib/working-hours';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -32,16 +33,6 @@ async function resolvePublicClient(req: TenantRequest) {
   }
   return null;
 }
-
-const DEFAULT_WORKING_HOURS = [
-  { dayOfWeek: 1, openTime: '09:00', closeTime: '18:00', isOpen: true },
-  { dayOfWeek: 2, openTime: '09:00', closeTime: '18:00', isOpen: true },
-  { dayOfWeek: 3, openTime: '09:00', closeTime: '18:00', isOpen: true },
-  { dayOfWeek: 4, openTime: '09:00', closeTime: '18:00', isOpen: true },
-  { dayOfWeek: 5, openTime: '09:00', closeTime: '18:00', isOpen: true },
-  { dayOfWeek: 6, openTime: '10:00', closeTime: '14:00', isOpen: true },
-  { dayOfWeek: 0, openTime: '00:00', closeTime: '00:00', isOpen: false },
-];
 
 // Register new business
 router.post('/register', async (req, res: Response) => {
@@ -150,11 +141,12 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
 
     const { start, end, dayOfWeek } = parseDateOnly(date as string);
 
-    const dbHours = await prisma.workingHours.findUnique({
-      where: { clientId_dayOfWeek: { clientId: client.id, dayOfWeek } },
+    const workingHours = await resolveHoursForDay(prisma, {
+      clientId: client.id,
+      serviceId: service.id,
+      useCustomHours: service.useCustomHours,
+      dayOfWeek,
     });
-
-    const workingHours = dbHours ?? DEFAULT_WORKING_HOURS.find((wh) => wh.dayOfWeek === dayOfWeek) ?? null;
 
     if (!workingHours || !workingHours.isOpen) {
       return res.json({ slots: [], message: 'Closed on this day' });
@@ -260,6 +252,10 @@ router.get('/client/:slug', async (req, res: Response) => {
             price: true,
             color: true,
             categoryId: true,
+            useCustomHours: true,
+            workingHours: {
+              select: { dayOfWeek: true, openTime: true, closeTime: true, isOpen: true },
+            },
             category: {
               select: {
                 id: true,

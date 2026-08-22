@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api, Service, ServiceCategory } from '@/lib/api';
+import { api, Service, ServiceCategory, WorkingHoursEntry } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import WorkingHoursEditor from '@/components/WorkingHoursEditor';
 import ServiceCategoriesPanel from '@/components/ServiceCategoriesPanel';
+import HoursDayEditor, { DEFAULT_HOURS, normalizeHours } from '@/components/HoursDayEditor';
 
 export default function ServicesPage() {
   const { user } = useAuth();
@@ -22,7 +23,10 @@ export default function ServicesPage() {
     color: '#2dd4bf',
     clientId: '',
     categoryId: '',
+    useCustomHours: false,
   });
+  const [serviceHours, setServiceHours] = useState<WorkingHoursEntry[]>(DEFAULT_HOURS);
+  const [generalHours, setGeneralHours] = useState<WorkingHoursEntry[]>(DEFAULT_HOURS);
 
   useEffect(() => { loadServices(); }, [user]);
 
@@ -32,6 +36,13 @@ export default function ServicesPage() {
         api.getServices(),
       ]);
       setServices(servicesData);
+      if (user?.clientId) {
+        try {
+          setGeneralHours(normalizeHours(await api.getWorkingHours(user.clientId)));
+        } catch {
+          setGeneralHours(DEFAULT_HOURS);
+        }
+      }
       try {
         setCategoriesFlat(await api.getServiceCategoriesFlat());
       } catch {
@@ -43,7 +54,8 @@ export default function ServicesPage() {
   function openCreateForm() {
     setShowForm(true);
     setEditing(null);
-    setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '' });
+    setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '', useCustomHours: false });
+    setServiceHours(normalizeHours(generalHours));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,11 +68,14 @@ export default function ServicesPage() {
         price: form.price ? Number(form.price) : undefined,
         color: form.color,
         categoryId: form.categoryId || null,
+        useCustomHours: form.useCustomHours,
+        workingHours: form.useCustomHours ? serviceHours : [],
       };
       if (editing) { await api.updateService(editing.id, data); }
       else { await api.createService(data); }
       setShowForm(false); setEditing(null);
-      setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '' });
+      setForm({ name: '', description: '', duration: '30', price: '', color: '#2dd4bf', clientId: '', categoryId: '', useCustomHours: false });
+      setServiceHours(normalizeHours(generalHours));
       loadServices();
     } catch (err: any) { alert(err.message); }
   }
@@ -86,7 +101,13 @@ export default function ServicesPage() {
       color: service.color,
       clientId: service.clientId,
       categoryId: service.categoryId || '',
+      useCustomHours: Boolean(service.useCustomHours),
     });
+    setServiceHours(
+      service.useCustomHours && service.workingHours?.length
+        ? normalizeHours(service.workingHours)
+        : normalizeHours(generalHours)
+    );
     setShowForm(true);
   }
 
@@ -172,6 +193,31 @@ export default function ServicesPage() {
                 <span className="font-label-sm text-label-sm text-on-surface-variant">{form.color}</span>
               </div>
             </div>
+            <div className="md:col-span-2 p-lg rounded-xl border border-outline-variant bg-surface-container-low space-y-md">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.useCustomHours}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    setForm({ ...form, useCustomHours: on });
+                    if (on && !serviceHours.some((h) => h.isOpen)) {
+                      setServiceHours(normalizeHours(generalHours));
+                    }
+                  }}
+                  className="mt-1 w-4 h-4 rounded border-outline-variant text-primary"
+                />
+                <span>
+                  <span className="font-label-md text-on-surface block">Horario propio de este servicio</span>
+                  <span className="font-body-sm text-on-surface-variant">
+                    Si lo activas, sustituye el horario general del negocio solo para este servicio.
+                  </span>
+                </span>
+              </label>
+              {form.useCustomHours && (
+                <HoursDayEditor hours={serviceHours} onChange={setServiceHours} />
+              )}
+            </div>
             <div className="col-span-full flex gap-3 pt-md">
               <button type="submit" className="px-lg py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all">{editing ? 'Actualizar Servicio' : 'Crear Servicio'}</button>
               <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="px-lg py-3 border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container-low transition-all">Cancelar</button>
@@ -204,6 +250,9 @@ export default function ServicesPage() {
                     <div>
                       <span className="font-label-md text-label-md text-on-surface block">{service.name}</span>
                       {service.description && <span className="font-body-sm text-body-sm text-on-surface-variant block">{service.description}</span>}
+                      {service.useCustomHours && (
+                        <span className="font-label-sm text-primary">Horario propio</span>
+                      )}
                     </div>
                   </div>
                 </td>

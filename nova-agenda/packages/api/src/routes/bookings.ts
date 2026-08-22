@@ -11,6 +11,7 @@ import {
   normalizeSlotGap,
   slotConflictsWithBooking,
 } from '../utils/date-only';
+import { isWithinOpenHours, resolveHoursForDay } from '../lib/working-hours';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -290,8 +291,17 @@ router.post('/', async (req, res: Response) => {
 
     // Check for conflicts (por personal si se eligió + espacio entre citas)
     const bookingDate = bookingStorageDate(date);
-    const { start, end } = parseDateOnly(date);
+    const { start, end, dayOfWeek } = parseDateOnly(date);
     const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
+    const hours = await resolveHoursForDay(prisma, {
+      clientId: client.id,
+      serviceId: service.id,
+      useCustomHours: service.useCustomHours,
+      dayOfWeek,
+    });
+    if (!isWithinOpenHours(hours, startMin, startMin + service.duration)) {
+      return res.status(400).json({ error: 'Ese horario está fuera de la atención de este servicio.' });
+    }
 
     let booking;
     try {

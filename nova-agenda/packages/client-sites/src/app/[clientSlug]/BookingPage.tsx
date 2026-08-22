@@ -67,10 +67,15 @@ export default function BookingPage({
     setStep(newStep);
   };
 
+  const hoursSource =
+    selectedService?.useCustomHours && selectedService.workingHours?.length
+      ? selectedService.workingHours
+      : client.workingHours;
+
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
     const dayOfWeek = date.getDay();
-    const hours = client.workingHours.find((wh) => wh.dayOfWeek === dayOfWeek);
+    const hours = hoursSource.find((wh) => wh.dayOfWeek === dayOfWeek);
     return { date, dayOfWeek, isOpen: hours?.isOpen ?? false };
   });
 

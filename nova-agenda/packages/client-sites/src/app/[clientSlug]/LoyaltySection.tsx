@@ -8,6 +8,7 @@ import {
   LoyaltyCard,
   LoyaltyProgram,
 } from '@/lib/api';
+import LoyaltyStampCard, { parseCardDesign } from '@/components/LoyaltyStampCard';
 
 interface Props {
   clientId: string;
@@ -91,7 +92,6 @@ export default function LoyaltySection({ clientId, clientName, primaryColor, pro
   const visits = card?.visitsCount ?? earned;
   const stampsToShow = Math.max(program.stampsToReward, earned);
   const visitHistory = card?.stamps || [];
-  const progress = Math.min((earned / program.stampsToReward) * 100, 100);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -218,60 +218,22 @@ export default function LoyaltySection({ clientId, clientName, primaryColor, pro
 
       {view === 'card' && card && (
         <div className="space-y-lg">
-          <div
-            className="rounded-2xl p-xl border border-outline-variant shadow-lg overflow-hidden"
-            style={{ backgroundColor: program.backgroundColor, color: program.textColor }}
-          >
-            <div className="flex items-center justify-between mb-lg">
-              <div>
-                <p className="font-label-sm text-label-sm opacity-70">Tarjeta de</p>
-                <p className="font-headline-md">{card.customerName}</p>
-              </div>
-              {card.isCompleted && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-secondary-container text-on-secondary-container">
-                  ¡Completada!
-                </span>
-              )}
-            </div>
-
-            <div className="mb-md">
-              <div className="flex justify-between text-sm mb-2 opacity-80">
-                <span>{visits} {visits === 1 ? 'visita' : 'visitas'} · {earned} de {program.stampsToReward} sellos</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-black/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%`, backgroundColor: program.stampColor || primaryColor }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-5 gap-3">
-              {Array.from({ length: stampsToShow }).map((_, i) => {
-                const filled = i < earned;
-                return (
-                  <div
-                    key={i}
-                    className={`aspect-square rounded-xl flex items-center justify-center border-2 transition-all ${
-                      filled ? 'border-transparent shadow-md scale-105' : 'border-dashed opacity-40'
-                    }`}
-                    style={filled ? { backgroundColor: program.stampColor || primaryColor, color: '#fff' } : {}}
-                  >
-                    {filled && (
-                      <span className="material-symbols-outlined text-xl">{program.stampIcon}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {card.isCompleted && program.rewardMessage && (
-              <p className="mt-lg pt-lg border-t border-black/10 text-sm text-center font-medium">
-                {program.rewardMessage}
-              </p>
-            )}
-          </div>
+          <LoyaltyStampCard
+            design={parseCardDesign(program.cardDesign)}
+            stamps={stampsToShow}
+            earned={earned}
+            stampColor={program.stampColor || primaryColor}
+            backgroundColor={program.backgroundColor || '#ffffff'}
+            textColor={program.textColor || '#191c1e'}
+            rewards={program.rewards}
+            customerName={card.customerName}
+          />
+          {card.isCompleted && program.rewardMessage && (
+            <p className="text-sm text-center font-medium text-on-surface">{program.rewardMessage}</p>
+          )}
+          <p className="text-sm text-center text-on-surface-variant">
+            {visits} {visits === 1 ? 'visita' : 'visitas'} · {earned} de {program.stampsToReward} sellos
+          </p>
 
           {visitHistory.length > 0 && (
             <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant">

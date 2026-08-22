@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { config } from '../config';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { parseAddons } from '../middleware/plan-limits';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -55,6 +56,13 @@ router.post('/login', async (req: Request, res: Response) => {
       { expiresIn: '7d' }
     );
 
+    const client = sessionUser.clientId
+      ? await prisma.client.findUnique({
+          where: { id: sessionUser.clientId },
+          select: { id: true, name: true, slug: true, primaryColor: true, addons: true },
+        })
+      : null;
+
     res.json({
       token,
       user: {
@@ -63,6 +71,9 @@ router.post('/login', async (req: Request, res: Response) => {
         name: sessionUser.name,
         role: sessionUser.role,
         clientId: sessionUser.clientId,
+        client: client
+          ? { ...client, addons: parseAddons(client.addons) }
+          : undefined,
       },
     });
   } catch (error) {
@@ -83,7 +94,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         role: true,
         clientId: true,
         client: {
-          select: { id: true, name: true, slug: true, primaryColor: true },
+          select: { id: true, name: true, slug: true, primaryColor: true, addons: true },
         },
       },
     });
@@ -92,7 +103,12 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json(user);
+    res.json({
+      ...user,
+      client: user.client
+        ? { ...user.client, addons: parseAddons(user.client.addons) }
+        : user.client,
+    });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }

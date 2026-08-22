@@ -47,7 +47,7 @@ model Client {
   stripeLiveSecretKey   String?
   stripeLivePublishableKey String?
   stripeLiveWebhookSecret  String?
-  // Addons contratados (JSON array, ej: ["WHATSAPP_AI"])
+  // Addons contratados (JSON array, ej: ["WHATSAPP_AI","POS"])
   addons        String    @default("[]")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -120,8 +120,24 @@ model Service {
   categoryId    String?
   bookings      Booking[]
   staffServices StaffService[]
+  useCustomHours Boolean @default(false)
+  workingHours  ServiceWorkingHours[]
 
   @@map("services")
+}
+
+model ServiceWorkingHours {
+  id        String  @id @default(cuid())
+  dayOfWeek Int
+  openTime  String
+  closeTime String
+  isOpen    Boolean @default(true)
+
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId String
+
+  @@unique([serviceId, dayOfWeek])
+  @@map("service_working_hours")
 }
 
 model StaffMember {
@@ -249,6 +265,7 @@ model LoyaltyProgram {
   walletTeamIdentifier   String? // Apple Wallet team ID
   walletOrganizationName String? // Apple Wallet organization name
   cardTemplateUrl String? // URL for custom card image template
+  cardDesign    String? // JSON: estilo, textos, forma de sello, columnas, logo
   qrSecret      String? // Secret for QR code signing
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
