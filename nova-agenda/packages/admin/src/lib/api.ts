@@ -564,10 +564,10 @@ class ApiClient {
   async getMemberships() {
     return this.request<MembershipPlan[]>('/api/memberships');
   }
-  async createMembership(data: Partial<MembershipPlan> & { benefits?: string[] | string }) {
+  async createMembership(data: MembershipPlanInput) {
     return this.request<MembershipPlan>('/api/memberships', { method: 'POST', body: JSON.stringify(data) });
   }
-  async updateMembership(id: string, data: Partial<MembershipPlan> & { benefits?: string[] | string }) {
+  async updateMembership(id: string, data: MembershipPlanInput) {
     return this.request<MembershipPlan>(`/api/memberships/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
   async deleteMembership(id: string) {
@@ -590,6 +590,10 @@ export interface MembershipPlan {
   sortOrder: number;
   _count?: { purchases: number };
 }
+
+export type MembershipPlanInput = Omit<Partial<MembershipPlan>, 'benefits'> & {
+  benefits?: string[] | string;
+};
 
 export interface MembershipPurchase {
   id: string;
