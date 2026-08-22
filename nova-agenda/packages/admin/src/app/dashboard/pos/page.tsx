@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { hasAddon } from '@/lib/addons';
 
-type Tab = 'caja' | 'historial' | 'productos';
+type Tab = 'caja' | 'historial' | 'productos' | 'clientes';
 type CartLine = {
   key: string;
   kind: 'SERVICE' | 'PRODUCT' | 'CUSTOM';
@@ -247,6 +247,7 @@ export default function PosPage() {
           ['caja', 'Caja'],
           ['historial', 'Historial'],
           ['productos', 'Productos'],
+          ['clientes', 'Clientes'],
         ] as const).map(([id, label]) => (
           <button
             key={id}
@@ -489,6 +490,70 @@ export default function PosPage() {
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {tab === 'clientes' && (
+        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+          {sales.length === 0 ? (
+            <p className="p-xl text-on-surface-variant">Aún no hay ventas registradas.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-surface-container-low border-b border-outline-variant">
+                  <tr>
+                    <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Cliente</th>
+                    <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Teléfono</th>
+                    <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Visitas</th>
+                    <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Total gastado</th>
+                    <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Última compra</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant">
+                  {(() => {
+                    const clientMap = new Map<string, { name: string; phone: string; visits: number; totalSpent: number; lastDate: string }>();
+                    for (const sale of sales) {
+                      if (sale.status === 'VOIDED') continue;
+                      const key = sale.customerPhone || sale.customerName || '__anonymous__';
+                      if (key === '__anonymous__') continue;
+                      const existing = clientMap.get(key);
+                      if (existing) {
+                        existing.visits++;
+                        existing.totalSpent += sale.total;
+                        if (sale.createdAt > existing.lastDate) existing.lastDate = sale.createdAt;
+                        if (sale.customerName && !existing.name) existing.name = sale.customerName;
+                      } else {
+                        clientMap.set(key, {
+                          name: sale.customerName || 'Sin nombre',
+                          phone: sale.customerPhone || '',
+                          visits: 1,
+                          totalSpent: sale.total,
+                          lastDate: sale.createdAt,
+                        });
+                      }
+                    }
+                    const clients = Array.from(clientMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
+                    if (clients.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={5} className="px-lg py-xl text-on-surface-variant text-center">No hay clientes registrados en las ventas.</td>
+                        </tr>
+                      );
+                    }
+                    return clients.map((c, i) => (
+                      <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
+                        <td className="px-lg py-3 font-label-md">{c.name}</td>
+                        <td className="px-lg py-3 font-body-sm text-on-surface-variant">{c.phone || '—'}</td>
+                        <td className="px-lg py-3 font-body-sm">{c.visits}</td>
+                        <td className="px-lg py-3 font-label-md">{money(c.totalSpent)}</td>
+                        <td className="px-lg py-3 font-body-sm text-on-surface-variant">{new Date(c.lastDate).toLocaleDateString('es-MX')}</td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
