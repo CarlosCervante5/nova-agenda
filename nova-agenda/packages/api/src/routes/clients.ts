@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 import { parseAddons } from '../middleware/plan-limits';
@@ -9,6 +10,79 @@ const prisma = new PrismaClient();
 
 function canAccessClient(req: AuthRequest, clientId: string) {
   return req.user!.role === 'SUPER_ADMIN' || req.user!.clientId === clientId;
+}
+
+const VALID_PLANS = ['FREE', 'PRO', 'CUSTOM'] as const;
+
+class OwnerAccessError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function setClientOwnerAccess(params: {
+  clientId: string;
+  email: string;
+  password?: string;
+  name?: string;
+  requirePassword?: boolean;
+}) {
+  const email = params.email.trim();
+  if (!email) {
+    throw new OwnerAccessError(400, 'El correo del dueño es obligatorio para crear el acceso.');
+  }
+  if (params.requirePassword && !params.password) {
+    throw new OwnerAccessError(400, 'La contraseña es obligatoria.');
+  }
+  if (params.password && params.password.length < 6) {
+    throw new OwnerAccessError(400, 'La contraseña debe tener al menos 6 caracteres.');
+  }
+
+  const owner = await prisma.user.findFirst({
+    where: { clientId: params.clientId, role: { in: ['ADMIN', 'CLIENT'] } },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const emailTaken = await prisma.user.findFirst({
+    where: {
+      email: { equals: email, mode: 'insensitive' },
+      ...(owner ? { NOT: { id: owner.id } } : {}),
+    },
+  });
+  if (emailTaken) {
+    throw new OwnerAccessError(409, 'Ese correo ya está registrado en otra cuenta.');
+  }
+
+  const hashed = params.password ? await bcrypt.hash(params.password, 10) : undefined;
+  const name = params.name?.trim() || email.split('@')[0];
+
+  if (owner) {
+    return prisma.user.update({
+      where: { id: owner.id },
+      data: {
+        email,
+        ...(hashed && { password: hashed }),
+        ...(params.name !== undefined && { name }),
+        role: owner.role === 'SUPER_ADMIN' ? owner.role : 'ADMIN',
+      },
+    });
+  }
+
+  if (!hashed) {
+    throw new OwnerAccessError(400, 'La contraseña es obligatoria para crear el acceso.');
+  }
+
+  return prisma.user.create({
+    data: {
+      email,
+      password: hashed,
+      name,
+      role: 'ADMIN',
+      clientId: params.clientId,
+    },
+  });
 }
 
 const DEFAULT_WORKING_HOURS = [
@@ -67,46 +141,62 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 // Create client (super admin only)
 router.post('/', authenticate, authorize('SUPER_ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
-    const { name, slug, email, phone, address, primaryColor, plan } = req.body;
+    const { name, slug, email, phone, address, primaryColor, plan, addons, password, ownerName } = req.body;
 
     if (!name || !slug) {
       return res.status(400).json({ error: 'Name and slug are required' });
     }
+    if (!email?.trim() || !password) {
+      return res.status(400).json({ error: 'Correo y contraseña son obligatorios para el acceso del negocio.' });
+    }
+
+    const resolvedPlan = (VALID_PLANS as readonly string[]).includes(plan) ? plan : 'FREE';
 
     const existing = await prisma.client.findFirst({
-      where: { OR: [{ slug }, ...(email ? [{ email }] : [])] },
+      where: { OR: [{ slug }, { email: email.trim() }] },
     });
 
     if (existing) {
       return res.status(409).json({ error: 'Client with this slug or email already exists' });
     }
 
+    const emailTaken = await prisma.user.findFirst({
+      where: { email: { equals: String(email).trim(), mode: 'insensitive' } },
+    });
+    if (emailTaken) {
+      return res.status(409).json({ error: 'Ese correo ya está registrado en otra cuenta.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const client = await prisma.client.create({
       data: {
         name,
         slug,
-        email,
+        email: email.trim(),
         phone,
         address,
         primaryColor: primaryColor || '#2dd4bf',
-        plan: plan || 'FREE',
+        plan: resolvedPlan,
+        ...(Array.isArray(addons) && { addons: JSON.stringify(addons) }),
+        users: {
+          create: {
+            email: email.trim(),
+            password: hashedPassword,
+            name: (ownerName || name || email).toString().trim(),
+            role: 'ADMIN',
+          },
+        },
+        workingHours: {
+          create: DEFAULT_WORKING_HOURS,
+        },
       },
     });
 
-    // Create default working hours
-    for (let day = 0; day < 7; day++) {
-      await prisma.workingHours.create({
-        data: {
-          clientId: client.id,
-          dayOfWeek: day,
-          openTime: '09:00',
-          closeTime: day === 6 ? '14:00' : '18:00',
-          isOpen: day >= 1 && day <= 6,
-        },
-      });
-    }
-
-    res.status(201).json(client);
+    res.status(201).json(sanitizeClient({ ...client, addons: parseAddons(client.addons) }));
   } catch (error) {
     console.error('Create client error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -243,6 +333,8 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       plan,
       isActive,
       addons,
+      password,
+      ownerName,
     } = req.body;
 
     const websiteFields = [
@@ -323,6 +415,28 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         _count: { select: { users: true, bookings: true, services: true } },
       },
     });
+
+    if (req.user!.role === 'SUPER_ADMIN' && (password || email)) {
+      const owner = await prisma.user.findFirst({
+        where: { clientId: id, role: { in: ['ADMIN', 'CLIENT'] } },
+      });
+      if (password || owner) {
+        try {
+          await setClientOwnerAccess({
+            clientId: id,
+            email: String(email || existing.email || ''),
+            password: password || undefined,
+            name: ownerName,
+            requirePassword: Boolean(password) && !owner,
+          });
+        } catch (err) {
+          if (err instanceof OwnerAccessError) {
+            return res.status(err.status).json({ error: err.message });
+          }
+          throw err;
+        }
+      }
+    }
 
     res.json(sanitizeClient({ ...client, addons: parseAddons(client.addons) }));
   } catch (error) {

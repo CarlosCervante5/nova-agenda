@@ -234,10 +234,10 @@ class ApiClient {
   // Clients
   async getClients() { return this.request<Client[]>('/api/clients'); }
   async getClient(id: string) { return this.request<Client>(`/api/clients/${id}`); }
-  async createClient(data: Partial<Client>) {
+  async createClient(data: Partial<Client> & { password?: string; ownerName?: string }) {
     return this.request<Client>('/api/clients', { method: 'POST', body: JSON.stringify(data) });
   }
-  async updateClient(id: string, data: Partial<Client>) {
+  async updateClient(id: string, data: Partial<Client> & { password?: string; ownerName?: string }) {
     return this.request<Client>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
   async getWorkingHours(clientId: string) {

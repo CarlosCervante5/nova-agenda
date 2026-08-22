@@ -4,6 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, Client } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import PasswordInput from '@/components/PasswordInput';
+
+const emptyForm = {
+  name: '',
+  slug: '',
+  email: '',
+  phone: '',
+  primaryColor: '#2dd4bf',
+  plan: 'FREE',
+  addons: [] as string[],
+  password: '',
+  ownerName: '',
+};
 
 export default function ClientsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -12,7 +25,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
-  const [form, setForm] = useState<{ name: string; slug: string; email: string; phone: string; primaryColor: string; plan: string; addons: string[] }>({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE', addons: [] });
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     if (authLoading) return;
@@ -30,10 +43,15 @@ export default function ClientsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      if (editing) { await api.updateClient(editing.id, form); }
-      else { await api.createClient(form); }
+      const payload = {
+        ...form,
+        password: form.password.trim() || undefined,
+        ownerName: form.ownerName.trim() || undefined,
+      };
+      if (editing) { await api.updateClient(editing.id, payload); }
+      else { await api.createClient(payload); }
       setShowForm(false); setEditing(null);
-      setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE', addons: [] });
+      setForm(emptyForm);
       loadClients();
     } catch (err: any) { alert(err.message); }
   }
@@ -46,7 +64,16 @@ export default function ClientsPage() {
 
   function startEdit(client: Client) {
     setEditing(client);
-    setForm({ name: client.name, slug: client.slug, email: client.email || '', phone: client.phone || '', primaryColor: client.primaryColor, plan: client.plan, addons: client.addons || [] });
+    setForm({
+      ...emptyForm,
+      name: client.name,
+      slug: client.slug,
+      email: client.email || '',
+      phone: client.phone || '',
+      primaryColor: client.primaryColor,
+      plan: client.plan,
+      addons: client.addons || [],
+    });
     setShowForm(true);
   }
 
@@ -67,7 +94,7 @@ export default function ClientsPage() {
           <p className="font-body-md text-body-md text-on-surface-variant">Gestiona los {clients.length} negocios registrados.</p>
         </div>
         <button
-          onClick={() => { setShowForm(true); setEditing(null); setForm({ name: '', slug: '', email: '', phone: '', primaryColor: '#2dd4bf', plan: 'FREE', addons: [] }); }}
+          onClick={() => { setShowForm(true); setEditing(null); setForm(emptyForm); }}
           className="flex items-center gap-2 bg-primary text-on-primary px-md py-2.5 rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
@@ -88,8 +115,25 @@ export default function ClientsPage() {
               <input placeholder="Ej: lumina-spa" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" required />
             </div>
             <div>
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">Correo Electrónico</label>
-              <input type="email" placeholder="contacto@negocio.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Correo de acceso *</label>
+              <input type="email" placeholder="dueño@negocio.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" required />
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Con este correo entra al panel del negocio.</p>
+            </div>
+            <div>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">Nombre del dueño</label>
+              <input placeholder="Nombre de quien administra" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+            </div>
+            <div>
+              <label className="font-label-md text-label-md text-on-surface mb-xs block">
+                {editing ? 'Nueva contraseña' : 'Contraseña *'}
+              </label>
+              <PasswordInput
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder={editing ? 'Déjala vacía para no cambiarla' : 'Mínimo 6 caracteres'}
+                minLength={editing ? undefined : 6}
+                required={!editing}
+              />
             </div>
             <div>
               <label className="font-label-md text-label-md text-on-surface mb-xs block">Teléfono</label>
@@ -108,8 +152,6 @@ export default function ClientsPage() {
                 <option value="FREE">Gratis</option>
                 <option value="PRO">PRO</option>
                 <option value="CUSTOM">Personalizado</option>
-                <option value="PRO">Pro</option>
-                <option value="ENTERPRISE">Empresa</option>
               </select>
             </div>
             <div className="flex items-start gap-3 p-lg bg-primary-fixed/20 border border-outline-variant rounded-lg">
