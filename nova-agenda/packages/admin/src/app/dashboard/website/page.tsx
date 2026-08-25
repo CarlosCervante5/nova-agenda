@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth';
 import { getBookingFormUrl, getClientPortalBaseUrl, getPortalUrl } from '@/lib/booking-url';
 import ImageUpload from '@/components/ImageUpload';
 
+type CustomLink = { title: string; url: string };
+
 type WebsiteForm = {
   name: string;
   slug: string;
@@ -22,6 +24,7 @@ type WebsiteForm = {
   instagram: string;
   facebook: string;
   whatsappPhone: string;
+  customLinks: CustomLink[];
   websiteEnabled: boolean;
 };
 
@@ -40,10 +43,15 @@ const emptyForm: WebsiteForm = {
   instagram: '',
   facebook: '',
   whatsappPhone: '',
+  customLinks: [],
   websiteEnabled: true,
 };
 
 function clientToForm(client: Client): WebsiteForm {
+  let customLinks: CustomLink[] = [];
+  try {
+    if (client.customLinks) customLinks = JSON.parse(client.customLinks);
+  } catch {}
   return {
     name: client.name || '',
     slug: client.slug || '',
@@ -59,6 +67,7 @@ function clientToForm(client: Client): WebsiteForm {
     instagram: client.instagram || '',
     facebook: client.facebook || '',
     whatsappPhone: client.whatsappPhone || '',
+    customLinks,
     websiteEnabled: client.websiteEnabled !== false,
   };
 }
@@ -122,6 +131,7 @@ export default function WebsitePage() {
         instagram: form.instagram || null,
         facebook: form.facebook || null,
         whatsappPhone: form.whatsappPhone || null,
+        customLinks: JSON.stringify(form.customLinks),
         websiteEnabled: form.websiteEnabled,
       });
       setClient(updated);
@@ -379,6 +389,71 @@ export default function WebsitePage() {
                 placeholder="+52..."
                 className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
               />
+            </div>
+          </div>
+        </section>
+
+        {/* Linktree */}
+        <section className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant">
+          <h3 className="font-headline-md text-on-surface mb-lg flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">link</span>
+            Pagina Linktree
+          </h3>
+          <p className="font-body-sm text-on-surface-variant mb-lg">
+            Pagina tipo linktree con tus enlaces importantes. Tu URL:{' '}
+            <code className="text-xs bg-surface-container-low px-2 py-0.5 rounded">
+              {portalUrl || '...'}{form.slug ? `/${form.slug}/links` : ''}
+            </code>
+          </p>
+
+          <div className="mb-lg">
+            <label className="font-label-md text-on-surface mb-xs block">Links personalizados</label>
+            <p className="font-body-sm text-on-surface-variant mb-3">
+              Agrega enlaces que apareceran en tu pagina linktree (ademas de redes sociales, reserva y WhatsApp automaticos).
+            </p>
+            <div className="space-y-3">
+              {form.customLinks.map((link, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    value={link.title}
+                    onChange={(e) => {
+                      const updated = [...form.customLinks];
+                      updated[i] = { ...updated[i], title: e.target.value };
+                      updateField('customLinks', updated);
+                    }}
+                    placeholder="Titulo"
+                    className="flex-1 px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+                  />
+                  <input
+                    value={link.url}
+                    onChange={(e) => {
+                      const updated = [...form.customLinks];
+                      updated[i] = { ...updated[i], url: e.target.value };
+                      updateField('customLinks', updated);
+                    }}
+                    placeholder="https://..."
+                    className="flex-[2] px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md outline-none focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = form.customLinks.filter((_, j) => j !== i);
+                      updateField('customLinks', updated);
+                    }}
+                    className="p-3 text-error hover:bg-error-container rounded-lg"
+                  >
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => updateField('customLinks', [...form.customLinks, { title: '', url: '' }])}
+                className="flex items-center gap-2 px-4 py-3 border border-dashed border-outline-variant rounded-lg font-label-md text-on-surface-variant hover:border-primary hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">add</span>
+                Agregar link
+              </button>
             </div>
           </div>
         </section>

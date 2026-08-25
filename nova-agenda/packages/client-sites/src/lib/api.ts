@@ -28,6 +28,8 @@ export interface ClientInfo {
   instagram?: string;
   facebook?: string;
   whatsappPhone?: string;
+  linktreeUrl?: string;
+  customLinks?: string;
   websiteEnabled?: boolean;
   services: {
     id: string;

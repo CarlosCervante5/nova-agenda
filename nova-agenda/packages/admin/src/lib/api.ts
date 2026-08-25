@@ -35,6 +35,8 @@ export interface Client {
   instagram?: string | null;
   facebook?: string | null;
   whatsappPhone?: string | null;
+  linktreeUrl?: string | null;
+  customLinks?: string;
   websiteEnabled?: boolean;
   /** Espacio entre citas en minutos: 5, 10, 15 o 20 */
   slotGapMinutes?: number;
