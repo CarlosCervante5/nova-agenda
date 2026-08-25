@@ -402,7 +402,7 @@ export default function WebsitePage() {
           <p className="font-body-sm text-on-surface-variant mb-lg">
             Pagina tipo linktree con tus enlaces importantes. Tu URL:{' '}
             <code className="text-xs bg-surface-container-low px-2 py-0.5 rounded">
-              {portalUrl || '...'}{form.slug ? `/${form.slug}/links` : ''}
+              {portalUrl || '...'}{form.slug ? '/links' : ''}
             </code>
           </p>
 
