@@ -397,10 +397,10 @@ export default function WebsitePage() {
         <section className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant">
           <h3 className="font-headline-md text-on-surface mb-lg flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">link</span>
-            Pagina Linktree
+            Links Rápidos
           </h3>
           <p className="font-body-sm text-on-surface-variant mb-lg">
-            Pagina tipo linktree con tus enlaces importantes. Tu URL:{' '}
+            Pagina con tus enlaces importantes. Tu URL:{' '}
             <code className="text-xs bg-surface-container-low px-2 py-0.5 rounded">
               {portalUrl || '...'}{form.slug ? '/links' : ''}
             </code>
@@ -409,7 +409,7 @@ export default function WebsitePage() {
           <div className="mb-lg">
             <label className="font-label-md text-on-surface mb-xs block">Links personalizados</label>
             <p className="font-body-sm text-on-surface-variant mb-3">
-              Agrega enlaces que apareceran en tu pagina linktree (ademas de redes sociales, reserva y WhatsApp automaticos).
+              Agrega enlaces que apareceran en tu pagina de links (ademas de redes sociales, reserva y WhatsApp automaticos).
             </p>
             <div className="space-y-3">
               {form.customLinks.map((link, i) => (

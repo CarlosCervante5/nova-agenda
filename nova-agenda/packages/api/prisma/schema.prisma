@@ -28,7 +28,7 @@ model Client {
   facebook      String?
   whatsappPhone String?
   linktreeUrl   String?
-  // Links personalizados para la pagina linktree (JSON array de {title, url})
+  // Links personalizados para la pagina de links (JSON array de {title, url})
   customLinks   String    @default("[]")
   websiteEnabled Boolean  @default(true)
   // Minutos de espacio entre citas: 5, 10, 15 o 20

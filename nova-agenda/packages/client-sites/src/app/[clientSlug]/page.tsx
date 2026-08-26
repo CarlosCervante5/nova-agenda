@@ -1,5 +1,5 @@
 import { getClientInfo, getLoyaltyProgram, getMembershipPlans } from '@/lib/api';
-import BookingPage from './BookingPage';
+import WebsitePage from './WebsitePage';
 
 export default async function ClientPage({
   params,
@@ -55,7 +55,7 @@ export default async function ClientPage({
       ? 'memberships'
       : searchParams.loyalty === '1' && loyaltyProgram
         ? 'loyalty'
-        : 'booking';
+        : 'home';
 
   return (
     <div
@@ -82,7 +82,7 @@ export default async function ClientPage({
         .bg-primary { background-color: var(--app-primary) !important; }
         .border-primary { border-color: var(--app-primary) !important; }
       `}</style>
-      <BookingPage
+      <WebsitePage
         client={client}
         clientSlug={params.clientSlug}
         loyaltyProgram={loyaltyProgram}
