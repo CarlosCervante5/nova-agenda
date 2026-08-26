@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
 import { applyServiceSchedule, emptySlotsMessage, hoursForService, isDateBookable, loadSlotsOrAdvance, nextOpenDate } from '@/lib/schedule';
