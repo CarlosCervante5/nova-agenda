@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
+import { createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
+import { applyServiceSchedule, emptySlotsMessage, hoursForService, isDateBookable, loadSlotsOrAdvance, nextOpenDate } from '@/lib/schedule';
 import LoyaltySection from './LoyaltySection';
 import MembershipsSection from './MembershipsSection';
 
@@ -54,14 +55,24 @@ export default function WebsitePage({
     if (!selectedService) return;
     setLoadingSlots(true);
     try {
-      const data = await getAvailableSlots(clientSlug, selectedService.id, format(selectedDate, 'yyyy-MM-dd'));
-      setSlots(data.slots || []);
+      const result = await loadSlotsOrAdvance({
+        clientSlug,
+        client,
+        service: selectedService,
+        selectedDate,
+      });
+      if (result.advanced) {
+        setSelectedDate(result.date);
+        setWeekStart(startOfWeek(result.date, { weekStartsOn: 1 }));
+        setSelectedSlot(null);
+      }
+      setSlots(result.slots);
     } catch {
       setSlots([]);
     } finally {
       setLoadingSlots(false);
     }
-  }, [clientSlug, selectedService, selectedDate]);
+  }, [clientSlug, client, selectedService, selectedDate]);
 
   useEffect(() => {
     if (step === 'datetime' && selectedService) {
@@ -69,17 +80,14 @@ export default function WebsitePage({
     }
   }, [step, selectedService, selectedDate, loadSlots]);
 
-  const hoursSource =
-    selectedService?.useCustomHours && selectedService.workingHours?.length
-      ? selectedService.workingHours
-      : client.workingHours;
+  const hoursSource = hoursForService(client, selectedService);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
     const dayOfWeek = date.getDay();
-    const hours = hoursSource.find((wh) => wh.dayOfWeek === dayOfWeek);
-    return { date, dayOfWeek, isOpen: hours?.isOpen ?? false };
+    return { date, dayOfWeek, isOpen: isDateBookable(date, hoursSource) };
   });
+  const selectedDayOpen = isDateBookable(selectedDate, hoursSource);
 
   async function handleBooking() {
     if (!selectedService || !selectedSlot) return;
@@ -117,7 +125,7 @@ export default function WebsitePage({
   function selectService(service: ClientInfo['services'][0]) {
     setSelectedService(service);
     setSelectedStaff(null);
-    setSelectedSlot(null);
+    applyServiceSchedule(client, service, { setSelectedDate, setWeekStart, setSelectedSlot });
     const available = (client.staff || []).filter(
       (s) => !s.serviceIds.length || s.serviceIds.includes(service.id)
     );
@@ -232,7 +240,7 @@ export default function WebsitePage({
             selectedDate={selectedDate} setSelectedDate={setSelectedDate}
             selectedSlot={selectedSlot} setSelectedSlot={setSelectedSlot}
             slots={slots} loadingSlots={loadingSlots} weekStart={weekStart} setWeekStart={setWeekStart}
-            weekDays={weekDays} form={form} setForm={setForm}
+            weekDays={weekDays} selectedDayOpen={selectedDayOpen} form={form} setForm={setForm}
             submitting={submitting} error={error} handleBooking={handleBooking}
             staffForService={staffForService} hasStaffStep={hasStaffStep}
             stepNames={stepNames} stepLabels={stepLabels} selectService={selectService}
@@ -607,27 +615,50 @@ function PublicCalendar({
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const selectedService = client.services.find((s) => s.id === selectedServiceId) || null;
-
-  const hoursSource =
-    selectedService?.useCustomHours && selectedService.workingHours?.length
-      ? selectedService.workingHours
-      : client.workingHours;
+  const hoursSource = hoursForService(client, selectedService);
+  const selectedDayOpen = isDateBookable(selectedDate, hoursSource);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
     const dayOfWeek = date.getDay();
-    const hours = hoursSource.find((wh) => wh.dayOfWeek === dayOfWeek);
-    return { date, dayOfWeek, isOpen: hours?.isOpen ?? false };
+    return { date, dayOfWeek, isOpen: isDateBookable(date, hoursSource) };
   });
 
   useEffect(() => {
     if (!selectedService) return;
+    const next = nextOpenDate(hoursForService(client, selectedService));
+    setSelectedDate(next);
+    setWeekStart(startOfWeek(next, { weekStartsOn: 1 }));
+  }, [selectedServiceId]);
+
+  useEffect(() => {
+    if (!selectedService) return;
+    let cancelled = false;
     setLoading(true);
-    getAvailableSlots(client.slug, selectedService.id, format(selectedDate, 'yyyy-MM-dd'))
-      .then((data) => setSlots(data.slots || []))
-      .catch(() => setSlots([]))
-      .finally(() => setLoading(false));
-  }, [selectedService, selectedDate, client.slug]);
+    loadSlotsOrAdvance({
+      clientSlug: client.slug,
+      client,
+      service: selectedService,
+      selectedDate,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.advanced) {
+          setSelectedDate(result.date);
+          setWeekStart(startOfWeek(result.date, { weekStartsOn: 1 }));
+        }
+        setSlots(result.slots);
+      })
+      .catch(() => {
+        if (!cancelled) setSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedService, selectedDate, client]);
 
   return (
     <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 sm:p-8 shadow-lg">
@@ -686,7 +717,7 @@ function PublicCalendar({
               <span className="font-body-sm">Cargando horarios...</span>
             </div>
           ) : slots.length === 0 ? (
-            <p className="font-body-sm text-on-surface-variant py-4">No hay horarios disponibles para esta fecha</p>
+            <p className="font-body-sm text-on-surface-variant py-4">{emptySlotsMessage(selectedDayOpen, selectedDate)}</p>
           ) : (
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
               {slots.map((slot) => (
@@ -710,7 +741,7 @@ function BookingFlow({
   client, clientSlug, step, goToStep, selectedService, setSelectedService,
   selectedStaff, setSelectedStaff, selectedDate, setSelectedDate,
   selectedSlot, setSelectedSlot, slots, loadingSlots, weekStart, setWeekStart,
-  weekDays, form, setForm, submitting, error, handleBooking,
+  weekDays, selectedDayOpen, form, setForm, submitting, error, handleBooking,
   staffForService, hasStaffStep, stepNames, stepLabels, selectService,
   loyaltyProgram, setActiveTab,
 }: {
@@ -721,6 +752,7 @@ function BookingFlow({
   selectedSlot: string | null; setSelectedSlot: (s: string | null) => void;
   slots: string[]; loadingSlots: boolean; weekStart: Date; setWeekStart: (d: Date) => void;
   weekDays: { date: Date; dayOfWeek: number; isOpen: boolean }[];
+  selectedDayOpen: boolean;
   form: { customerName: string; customerEmail: string; customerPhone: string; notes: string };
   setForm: (f: any) => void; submitting: boolean; error: string; handleBooking: () => void;
   staffForService: any[]; hasStaffStep: boolean; stepNames: string[]; stepLabels: string[];
@@ -835,7 +867,7 @@ function BookingFlow({
                 <span className="font-body-sm">Cargando horarios...</span>
               </div>
             ) : slots.length === 0 ? (
-              <p className="font-body-sm text-on-surface-variant">No hay horarios disponibles para esta fecha</p>
+              <p className="font-body-sm text-on-surface-variant">{emptySlotsMessage(selectedDayOpen, selectedDate)}</p>
             ) : (
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {slots.map((slot: string) => (

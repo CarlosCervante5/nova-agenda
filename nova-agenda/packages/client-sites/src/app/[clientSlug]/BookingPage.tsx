@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
-import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
+import { createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
+import { applyServiceSchedule, emptySlotsMessage, hoursForService, isDateBookable, loadSlotsOrAdvance } from '@/lib/schedule';
 import LoyaltySection from './LoyaltySection';
 import MembershipsSection from './MembershipsSection';
 
@@ -48,14 +49,24 @@ export default function BookingPage({
     if (!selectedService) return;
     setLoadingSlots(true);
     try {
-      const data = await getAvailableSlots(clientSlug, selectedService.id, format(selectedDate, 'yyyy-MM-dd'));
-      setSlots(data.slots || []);
+      const result = await loadSlotsOrAdvance({
+        clientSlug,
+        client,
+        service: selectedService,
+        selectedDate,
+      });
+      if (result.advanced) {
+        setSelectedDate(result.date);
+        setWeekStart(startOfWeek(result.date, { weekStartsOn: 1 }));
+        setSelectedSlot(null);
+      }
+      setSlots(result.slots);
     } catch {
       setSlots([]);
     } finally {
       setLoadingSlots(false);
     }
-  }, [clientSlug, selectedService, selectedDate]);
+  }, [clientSlug, client, selectedService, selectedDate]);
 
   useEffect(() => {
     if (step === 'datetime' && selectedService) {
@@ -67,17 +78,14 @@ export default function BookingPage({
     setStep(newStep);
   };
 
-  const hoursSource =
-    selectedService?.useCustomHours && selectedService.workingHours?.length
-      ? selectedService.workingHours
-      : client.workingHours;
+  const hoursSource = hoursForService(client, selectedService);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
     const dayOfWeek = date.getDay();
-    const hours = hoursSource.find((wh) => wh.dayOfWeek === dayOfWeek);
-    return { date, dayOfWeek, isOpen: hours?.isOpen ?? false };
+    return { date, dayOfWeek, isOpen: isDateBookable(date, hoursSource) };
   });
+  const selectedDayOpen = isDateBookable(selectedDate, hoursSource);
 
   async function handleBooking() {
     if (!selectedService || !selectedSlot) return;
@@ -115,7 +123,7 @@ export default function BookingPage({
   function selectService(service: ClientInfo['services'][0]) {
     setSelectedService(service);
     setSelectedStaff(null);
-    setSelectedSlot(null);
+    applyServiceSchedule(client, service, { setSelectedDate, setWeekStart, setSelectedSlot });
     const available = (client.staff || []).filter(
       (s) => !s.serviceIds.length || s.serviceIds.includes(service.id)
     );
@@ -535,7 +543,9 @@ export default function BookingPage({
                     <span className="font-body-sm text-body-sm">Cargando horarios disponibles...</span>
                   </div>
                 ) : slots.length === 0 ? (
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">No hay horarios disponibles para esta fecha</p>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    {emptySlotsMessage(selectedDayOpen, selectedDate)}
+                  </p>
                 ) : (
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     {slots.map((slot) => (

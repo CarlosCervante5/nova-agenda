@@ -6,6 +6,30 @@ export function parseDateOnly(dateStr: string) {
   return { start, end, dayOfWeek: start.getDay() };
 }
 
+/** Zona horaria de los negocios (México). El servidor en Railway corre en UTC. */
+export const DEFAULT_BUSINESS_TIMEZONE =
+  process.env.BUSINESS_TIMEZONE?.trim() || 'America/Mexico_City';
+
+export function zonedNow(timeZone = DEFAULT_BUSINESS_TIMEZONE) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(new Date())
+      .map((part) => [part.type, part.value])
+  );
+  return {
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
+    minutes: Number(parts.hour) * 60 + Number(parts.minute),
+  };
+}
+
 export function bookingStorageDate(dateStr: string) {
   const { start } = parseDateOnly(dateStr);
   return start;

@@ -8,6 +8,7 @@ import {
   timeToMinutes,
   normalizeSlotGap,
   slotConflictsWithBooking,
+  zonedNow,
 } from '../utils/date-only';
 import { resolveHoursForDay } from '../lib/working-hours';
 
@@ -149,7 +150,7 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
     });
 
     if (!workingHours || !workingHours.isOpen) {
-      return res.json({ slots: [], message: 'Closed on this day' });
+      return res.json({ slots: [], closed: true, message: 'Closed on this day' });
     }
 
     const existingBookings = await prisma.booking.findMany({
@@ -166,9 +167,9 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
     const duration = service.duration;
     const gapMinutes = normalizeSlotGap(client.slotGapMinutes);
 
-    const now = new Date();
-    const isToday = start.toDateString() === now.toDateString();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const requestedDate = String(date);
+    const { dateStr: todayInBusinessTz, minutes: nowMinutes } = zonedNow();
+    const isToday = requestedDate === todayInBusinessTz;
 
     const slots: string[] = [];
     let current = openMinutes;
