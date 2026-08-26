@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api, PosProduct, PosSale, PosSummary } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { hasAddon } from '@/lib/addons';
-import { money, methodLabel } from '@/lib/pos-format';
+import { money, saleMethodLabel } from '@/lib/pos-format';
 
 type Tab = 'historial' | 'productos' | 'clientes';
 
@@ -265,7 +265,7 @@ export default function PosPage() {
                       <td className="px-lg py-3 font-body-sm text-on-surface-variant">
                         {sale.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
                       </td>
-                      <td className="px-lg py-3 font-body-sm">{methodLabel(sale.paymentMethod)}</td>
+                      <td className="px-lg py-3 font-body-sm">{saleMethodLabel(sale)}</td>
                       <td className="px-lg py-3 font-label-md">
                         {money(sale.total)}
                         {sale.status === 'VOIDED' && <span className="block text-[10px] uppercase">Anulada</span>}

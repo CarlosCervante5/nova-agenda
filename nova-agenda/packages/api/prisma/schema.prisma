@@ -70,8 +70,9 @@ model Client {
   loyaltyProgram LoyaltyProgram?
   membershipPlans MembershipPlan[]
   membershipPurchases MembershipPurchase[]
-  posProducts PosProduct[]
-  posSales    PosSale[]
+  posProducts  PosProduct[]
+  posSales     PosSale[]
+  posCustomers PosCustomer[]
 
   @@map("clients")
 }
@@ -404,24 +405,41 @@ model PosProduct {
   @@map("pos_products")
 }
 
-model PosSale {
-  id             String    @id @default(cuid())
-  customerName   String?
-  customerPhone  String?
-  subtotal       Float
-  discount       Float     @default(0)
-  total          Float
-  paymentMethod  String
-  status         String    @default("COMPLETED")
-  notes          String?
-  receivedAmount Float?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+model PosCustomer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId       String
-  soldById       String?
-  items          PosSaleItem[]
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId  String
+
+  @@index([clientId, name])
+  @@map("pos_customers")
+}
+
+model PosSale {
+  id              String    @id @default(cuid())
+  customerName    String?
+  customerPhone   String?
+  subtotal        Float
+  discount        Float     @default(0)
+  discountPercent Float     @default(0)
+  total           Float
+  paymentMethod   String
+  paymentSplits   String?
+  status          String    @default("COMPLETED")
+  notes           String?
+  receivedAmount  Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        String
+  soldById        String?
+  items           PosSaleItem[]
 
   @@index([clientId, createdAt])
   @@map("pos_sales")

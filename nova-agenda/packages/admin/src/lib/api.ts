@@ -610,11 +610,19 @@ class ApiClient {
     const q = params.toString();
     return this.request<PosSale[]>(`/api/pos/sales${q ? `?${q}` : ''}`);
   }
+  async getPosCustomers() {
+    return this.request<PosCustomer[]>('/api/pos/customers');
+  }
+  async createPosCustomer(data: { name: string; phone?: string; email?: string }) {
+    return this.request<PosCustomer>('/api/pos/customers', { method: 'POST', body: JSON.stringify(data) });
+  }
   async createPosSale(data: {
     customerName?: string;
     customerPhone?: string;
     discount?: number;
+    discountPercent?: number;
     paymentMethod: string;
+    payments?: { method: string; amount: number }[];
     notes?: string;
     receivedAmount?: number;
     items: { kind: string; name: string; quantity: number; unitPrice: number; serviceId?: string; productId?: string }[];
@@ -680,14 +688,28 @@ export interface PosSaleItem {
   total: number;
 }
 
+export interface PosCustomer {
+  id: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+}
+
+export interface PosPaymentSplit {
+  method: string;
+  amount: number;
+}
+
 export interface PosSale {
   id: string;
   customerName?: string | null;
   customerPhone?: string | null;
   subtotal: number;
   discount: number;
+  discountPercent?: number;
   total: number;
   paymentMethod: string;
+  paymentSplits?: PosPaymentSplit[] | string | null;
   status: string;
   notes?: string | null;
   receivedAmount?: number | null;
