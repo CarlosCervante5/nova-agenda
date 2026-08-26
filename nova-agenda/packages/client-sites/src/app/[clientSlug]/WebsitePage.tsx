@@ -385,6 +385,16 @@ function SiteNav({
   mobileMenuOpen: boolean; setMobileMenuOpen: (v: boolean) => void;
   scrollToSection: (id: string) => void; scrolled: boolean;
 }) {
+  const navigateToSection = (id: string) => {
+    if (activeTab !== 'home') {
+      setActiveTab('home');
+      setTimeout(() => scrollToSection(id), 100);
+    } else {
+      scrollToSection(id);
+    }
+    setMobileMenuOpen(false);
+  };
+
   const menuItems = [
     { id: 'hero', label: 'Inicio' },
     { id: 'servicios', label: 'Servicios' },
@@ -395,7 +405,7 @@ function SiteNav({
     <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-surface/95 backdrop-blur-md shadow-md border-b border-outline-variant' : 'bg-transparent'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          <button onClick={() => scrollToSection('hero')} className="flex items-center gap-3 min-w-0">
+          <button onClick={() => navigateToSection('hero')} className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-on-primary overflow-hidden shrink-0 shadow-md" style={{ backgroundColor: client.primaryColor }}>
               {client.logo ? (
                 <img src={client.logo} alt="" className="w-full h-full object-cover" />
@@ -415,7 +425,7 @@ function SiteNav({
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => scrollToSection(item.id)}
+                onClick={() => navigateToSection(item.id)}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all"
               >
                 {item.label}
@@ -436,7 +446,7 @@ function SiteNav({
               </>
             )}
             <button
-              onClick={() => scrollToSection('calendario')}
+              onClick={() => navigateToSection('calendario')}
               className="ml-2 px-5 py-2.5 text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-md hover:shadow-lg hover:opacity-90 transition-all"
               style={{ backgroundColor: client.primaryColor }}
             >
@@ -454,7 +464,7 @@ function SiteNav({
         <div className="md:hidden bg-surface-container-lowest border-t border-outline-variant shadow-lg">
           <div className="px-4 py-4 space-y-1">
             {menuItems.map((item) => (
-              <button key={item.id} onClick={() => scrollToSection(item.id)} className="block w-full text-left px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low font-medium transition-colors">
+              <button key={item.id} onClick={() => navigateToSection(item.id)} className="block w-full text-left px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-low font-medium transition-colors">
                 {item.label}
               </button>
             ))}
@@ -469,7 +479,7 @@ function SiteNav({
               </button>
             )}
             <button
-              onClick={() => { scrollToSection('calendario'); setMobileMenuOpen(false); }}
+              onClick={() => navigateToSection('calendario')}
               className="block w-full text-center px-4 py-3 text-on-primary rounded-lg font-bold mt-2"
               style={{ backgroundColor: client.primaryColor }}
             >
