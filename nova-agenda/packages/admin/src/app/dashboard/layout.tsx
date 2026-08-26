@@ -110,6 +110,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [cssVars, setCssVars] = useState('');
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -121,6 +122,14 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       router.replace(homePath(user));
     }
   }, [user, loading, router, pathname]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const isCajaPopup =
+      pathname.startsWith('/dashboard/pos/caja') &&
+      (params.get('popup') === '1' || Boolean(window.opener));
+    setCompact(isCajaPopup);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user?.clientId || isSuperAdmin(user)) return;
@@ -166,8 +175,9 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           .shadow-primary\/20 { --tw-shadow-color: var(--app-primary, #2dd4bf); }
         `}</style>
       )}
-      <Sidebar />
-      <main className="flex-1 md:ml-[280px] min-h-screen flex flex-col">
+      {!compact && <Sidebar />}
+      <main className={`flex-1 min-h-screen flex flex-col ${compact ? '' : 'md:ml-[280px]'}`}>
+        {!compact && (
         <header className="hidden md:flex justify-between items-center w-full px-lg h-16 sticky top-0 z-30 bg-surface border-b border-outline-variant shadow-sm backdrop-blur-md bg-opacity-90">
           <div className="flex items-center gap-4">
             <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
@@ -188,7 +198,8 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <div className="p-3 pt-17 md:p-lg lg:p-xl flex-1 pb-24 md:pb-lg">
+        )}
+        <div className={`flex-1 ${compact ? 'p-4' : 'p-3 pt-17 md:p-lg lg:p-xl pb-24 md:pb-lg'}`}>
           {children}
         </div>
       </main>

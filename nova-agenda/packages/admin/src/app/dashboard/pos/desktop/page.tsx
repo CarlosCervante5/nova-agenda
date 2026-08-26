@@ -22,7 +22,7 @@ export default function PosDesktopPage() {
       <div>
         <Link href="/dashboard/pos" className="inline-flex items-center gap-1 font-label-sm text-on-surface-variant hover:text-on-surface mb-4">
           <span className="material-symbols-outlined text-lg">arrow_back</span>
-          Volver a Caja
+          Volver al panel
         </Link>
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Nova Agenda POS — Escritorio</h2>
         <p className="font-body-md text-on-surface-variant">

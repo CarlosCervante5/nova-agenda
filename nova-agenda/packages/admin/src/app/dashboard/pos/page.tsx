@@ -2,64 +2,41 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  api,
-  PosCatalogService,
-  PosProduct,
-  PosSale,
-  PosSummary,
-} from '@/lib/api';
+import { api, PosProduct, PosSale, PosSummary } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { hasAddon } from '@/lib/addons';
+import { money, methodLabel } from '@/lib/pos-format';
 
-type Tab = 'caja' | 'historial' | 'productos' | 'clientes';
-type CartLine = {
-  key: string;
-  kind: 'SERVICE' | 'PRODUCT' | 'CUSTOM';
-  name: string;
-  unitPrice: number;
-  quantity: number;
-  serviceId?: string;
-  productId?: string;
-};
+type Tab = 'historial' | 'productos' | 'clientes';
 
-const METHODS = [
-  { value: 'CASH', label: 'Efectivo', icon: 'payments' },
-  { value: 'CARD', label: 'Tarjeta', icon: 'credit_card' },
-  { value: 'TRANSFER', label: 'Transferencia', icon: 'account_balance' },
-];
+const CAJA_FEATURES = 'popup=yes,width=1280,height=860,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
 
-function money(n: number) {
-  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n || 0);
-}
-
-function methodLabel(value: string) {
-  return METHODS.find((m) => m.value === value)?.label || value;
+function openCajaPopup() {
+  const w = 1280;
+  const h = 860;
+  const left = Math.max(0, Math.round((window.screen.width - w) / 2));
+  const top = Math.max(0, Math.round((window.screen.height - h) / 2));
+  const popup = window.open(
+    '/dashboard/pos/caja?popup=1',
+    'nova-pos-caja',
+    `${CAJA_FEATURES},left=${left},top=${top}`
+  );
+  if (!popup) {
+    window.location.href = '/dashboard/pos/caja';
+  } else {
+    popup.focus();
+  }
 }
 
 export default function PosPage() {
   const { user } = useAuth();
   const [addons, setAddons] = useState<string[]>(user?.client?.addons || []);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>('caja');
-  const [services, setServices] = useState<PosCatalogService[]>([]);
-  const [products, setProducts] = useState<PosProduct[]>([]);
+  const [tab, setTab] = useState<Tab>('historial');
   const [allProducts, setAllProducts] = useState<PosProduct[]>([]);
   const [sales, setSales] = useState<PosSale[]>([]);
   const [summary, setSummary] = useState<PosSummary | null>(null);
-  const [cart, setCart] = useState<CartLine[]>([]);
-  const [search, setSearch] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [discount, setDiscount] = useState('0');
-  const [notes, setNotes] = useState('');
-  const [method, setMethod] = useState('CASH');
-  const [received, setReceived] = useState('');
-  const [customName, setCustomName] = useState('');
-  const [customPrice, setCustomPrice] = useState('');
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [lastSale, setLastSale] = useState<PosSale | null>(null);
   const [productForm, setProductForm] = useState({ name: '', price: '', sku: '', description: '' });
 
   useEffect(() => {
@@ -78,90 +55,27 @@ export default function PosPage() {
   }, [user?.clientId]);
 
   async function loadPos() {
-    const [catalog, productList, saleList, day] = await Promise.all([
-      api.getPosCatalog(),
+    const [productList, saleList, day] = await Promise.all([
       api.getPosProducts(),
       api.getPosSales(),
       api.getPosSummary(),
     ]);
-    setServices(catalog.services);
-    setProducts(catalog.products);
     setAllProducts(productList);
     setSales(saleList);
     setSummary(day);
   }
 
-  const subtotal = cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-  const discountNum = Math.min(subtotal, Math.max(0, Number(discount) || 0));
-  const total = Math.max(0, subtotal - discountNum);
-  const receivedNum = Number(received) || 0;
-  const change = method === 'CASH' && receivedNum > 0 ? Math.max(0, receivedNum - total) : 0;
-
-  const filteredServices = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return services.filter((s) => !q || s.name.toLowerCase().includes(q));
-  }, [services, search]);
-  const filteredProducts = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return products.filter((p) => !q || p.name.toLowerCase().includes(q));
-  }, [products, search]);
-
-  function addLine(line: Omit<CartLine, 'key' | 'quantity'> & { quantity?: number }) {
-    setCart((prev) => {
-      const existing = prev.find(
-        (l) => l.kind === line.kind && l.name === line.name && l.unitPrice === line.unitPrice && l.serviceId === line.serviceId && l.productId === line.productId
-      );
-      if (existing) {
-        return prev.map((l) => (l.key === existing.key ? { ...l, quantity: l.quantity + 1 } : l));
-      }
-      return [...prev, { ...line, quantity: line.quantity || 1, key: `${line.kind}-${line.serviceId || line.productId || line.name}-${Date.now()}` }];
-    });
-    setMessage('');
-  }
-
-  function setQty(key: string, quantity: number) {
-    if (quantity < 1) {
-      setCart((prev) => prev.filter((l) => l.key !== key));
-      return;
-    }
-    setCart((prev) => prev.map((l) => (l.key === key ? { ...l, quantity } : l)));
-  }
-
-  async function checkout() {
-    if (cart.length === 0) return;
-    setSaving(true);
-    setMessage('');
-    try {
-      const sale = await api.createPosSale({
-        customerName: customerName.trim() || undefined,
-        customerPhone: customerPhone.trim() || undefined,
-        discount: discountNum,
-        paymentMethod: method,
-        notes: notes.trim() || undefined,
-        receivedAmount: method === 'CASH' && receivedNum > 0 ? receivedNum : undefined,
-        items: cart.map((l) => ({
-          kind: l.kind,
-          name: l.name,
-          quantity: l.quantity,
-          unitPrice: l.unitPrice,
-          serviceId: l.serviceId,
-          productId: l.productId,
-        })),
-      });
-      setLastSale(sale);
-      setCart([]);
-      setCustomerName('');
-      setCustomerPhone('');
-      setDiscount('0');
-      setNotes('');
-      setReceived('');
-      await loadPos();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'No se pudo cobrar');
-    } finally {
-      setSaving(false);
-    }
-  }
+  const completedSales = useMemo(() => sales.filter((s) => s.status !== 'VOIDED'), [sales]);
+  const uniqueClients = useMemo(() => {
+    const keys = new Set(
+      completedSales
+        .map((s) => s.customerPhone || s.customerName)
+        .filter(Boolean)
+    );
+    return keys.size;
+  }, [completedSales]);
+  const avgTicket = summary && summary.todayCount > 0 ? summary.todayTotal / summary.todayCount : 0;
+  const activeProducts = allProducts.filter((p) => p.isActive).length;
 
   async function voidSale(id: string) {
     if (!confirm('¿Anular esta venta? No se borra, queda marcada como anulada.')) return;
@@ -193,6 +107,9 @@ export default function PosPage() {
     return (
       <div className="space-y-gutter animate-pulse">
         <div className="glass-card rounded-xl h-12" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+          {[1, 2, 3, 4].map((i) => <div key={i} className="glass-card rounded-xl h-28" />)}
+        </div>
         <div className="glass-card rounded-xl h-96" />
       </div>
     );
@@ -221,39 +138,94 @@ export default function PosPage() {
     );
   }
 
+  const kpis = [
+    { label: 'Ventas de hoy', value: money(summary?.todayTotal || 0), icon: 'payments', hint: 'Ingresos del día' },
+    { label: 'Tickets hoy', value: String(summary?.todayCount || 0), icon: 'receipt_long', hint: 'Cobros completados' },
+    { label: 'Ticket promedio', value: money(avgTicket), icon: 'analytics', hint: 'Promedio por venta' },
+    { label: 'Productos activos', value: String(activeProducts), icon: 'inventory_2', hint: 'Catálogo de caja' },
+  ];
+
   return (
     <div className="space-y-gutter">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-md">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-md">
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Punto de venta</h2>
-          <p className="font-body-md text-on-surface-variant">Cobra servicios, productos o un monto libre.</p>
+          <p className="font-body-md text-on-surface-variant">Resumen, historial y catálogo. La caja se abre en otra ventana.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={openCajaPopup}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold hover:opacity-90"
+          >
+            <span className="material-symbols-outlined">open_in_new</span>
+            Abrir caja
+          </button>
           <a
             href="/dashboard/pos/desktop"
             className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-lg font-label-sm text-on-surface hover:bg-surface-container-highest transition-colors"
           >
             <span className="material-symbols-outlined text-lg">download</span>
-            Descargar POS
+            App escritorio
           </a>
-          {summary && (
-            <div className="flex gap-2">
-              <div className="px-4 py-2 rounded-lg bg-surface-container-low">
-                <p className="font-label-sm text-on-surface-variant">Hoy</p>
-                <p className="font-headline-md text-on-surface">{money(summary.todayTotal)}</p>
-              </div>
-              <div className="px-4 py-2 rounded-lg bg-surface-container-low">
-                <p className="font-label-sm text-on-surface-variant">Ventas</p>
-                <p className="font-headline-md text-on-surface">{summary.todayCount}</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-gutter">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary-container/40 text-primary flex items-center justify-center">
+                <span className="material-symbols-outlined">{kpi.icon}</span>
+              </div>
+              <span className="font-label-sm text-on-surface-variant">{kpi.hint}</span>
+            </div>
+            <p className="font-label-md text-on-surface-variant">{kpi.label}</p>
+            <p className="font-headline-lg text-on-surface mt-1">{kpi.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {summary && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-gutter">
+          {([
+            ['CASH', 'Efectivo', 'payments'],
+            ['CARD', 'Tarjeta', 'credit_card'],
+            ['TRANSFER', 'Transferencia', 'account_balance'],
+          ] as const).map(([key, label, icon]) => (
+            <div key={key} className="bg-surface-container-low rounded-xl p-lg flex items-center gap-3">
+              <span className="material-symbols-outlined text-on-surface-variant">{icon}</span>
+              <div>
+                <p className="font-label-sm text-on-surface-variant">{label} hoy</p>
+                <p className="font-headline-md text-on-surface">{money(summary.byMethod?.[key] || 0)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+        <button type="button" onClick={() => setTab('historial')} className="text-left bg-surface-container-lowest rounded-xl border border-outline-variant p-lg hover:border-primary transition-all">
+          <span className="material-symbols-outlined text-primary mb-2">history</span>
+          <p className="font-headline-md text-on-surface">Historial</p>
+          <p className="font-body-sm text-on-surface-variant">{completedSales.length} ventas recientes · {uniqueClients} clientes</p>
+        </button>
+        <button type="button" onClick={() => setTab('productos')} className="text-left bg-surface-container-lowest rounded-xl border border-outline-variant p-lg hover:border-primary transition-all">
+          <span className="material-symbols-outlined text-primary mb-2">inventory_2</span>
+          <p className="font-headline-md text-on-surface">Productos</p>
+          <p className="font-body-sm text-on-surface-variant">{activeProducts} activos en catálogo</p>
+        </button>
+        <button type="button" onClick={() => setTab('clientes')} className="text-left bg-surface-container-lowest rounded-xl border border-outline-variant p-lg hover:border-primary transition-all">
+          <span className="material-symbols-outlined text-primary mb-2">group</span>
+          <p className="font-headline-md text-on-surface">Clientes</p>
+          <p className="font-body-sm text-on-surface-variant">Quienes compraron en caja</p>
+        </button>
+      </div>
+
+      {message && <div className="p-4 bg-error-container text-on-error-container rounded-lg">{message}</div>}
+
       <div className="flex gap-2 bg-surface-container-low rounded-lg p-1 w-fit">
         {([
-          ['caja', 'Caja'],
           ['historial', 'Historial'],
           ['productos', 'Productos'],
           ['clientes', 'Clientes'],
@@ -268,161 +240,10 @@ export default function PosPage() {
         ))}
       </div>
 
-      {message && <div className="p-4 bg-error-container text-on-error-container rounded-lg">{message}</div>}
-
-      {lastSale && tab === 'caja' && (
-        <div className="p-4 rounded-xl border border-secondary-container bg-secondary-container/20 flex items-start justify-between gap-3">
-          <div>
-            <p className="font-medium text-on-surface">Venta cobrada · {money(lastSale.total)}</p>
-            <p className="font-body-sm text-on-surface-variant">
-              {methodLabel(lastSale.paymentMethod)}
-              {lastSale.receivedAmount ? ` · Recibido ${money(lastSale.receivedAmount)}` : ''}
-            </p>
-          </div>
-          <button onClick={() => setLastSale(null)} className="font-label-sm text-on-surface-variant">Cerrar</button>
-        </div>
-      )}
-
-      {tab === 'caja' && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-gutter">
-          <div className="space-y-md">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar servicio o producto…"
-              className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg outline-none focus:border-primary"
-            />
-            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg">
-              <h3 className="font-headline-md text-on-surface mb-md">Servicios</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {filteredServices.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => addLine({ kind: 'SERVICE', name: s.name, unitPrice: s.price || 0, serviceId: s.id })}
-                    className="text-left p-3 rounded-lg border border-outline-variant hover:border-primary transition-all"
-                  >
-                    <p className="font-label-md text-on-surface">{s.name}</p>
-                    <p className="font-body-sm text-on-surface-variant">{s.duration} min · {money(s.price || 0)}</p>
-                  </button>
-                ))}
-                {filteredServices.length === 0 && <p className="font-body-sm text-on-surface-variant col-span-full">No hay servicios activos.</p>}
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg">
-              <h3 className="font-headline-md text-on-surface mb-md">Productos</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {filteredProducts.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => addLine({ kind: 'PRODUCT', name: p.name, unitPrice: p.price, productId: p.id })}
-                    className="text-left p-3 rounded-lg border border-outline-variant hover:border-primary transition-all"
-                  >
-                    <p className="font-label-md text-on-surface">{p.name}</p>
-                    <p className="font-body-sm text-on-surface-variant">{money(p.price)}</p>
-                  </button>
-                ))}
-                {filteredProducts.length === 0 && <p className="font-body-sm text-on-surface-variant col-span-full">Aún no hay productos de caja.</p>}
-              </div>
-            </div>
-            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg">
-              <h3 className="font-headline-md text-on-surface mb-md">Cobro libre</h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="Concepto" className="flex-1 px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" />
-                <input type="number" min="0" step="0.01" value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} placeholder="Monto" className="sm:w-32 px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!customName.trim() || !(Number(customPrice) > 0)) return;
-                    addLine({ kind: 'CUSTOM', name: customName.trim(), unitPrice: Number(customPrice) });
-                    setCustomName('');
-                    setCustomPrice('');
-                  }}
-                  className="px-4 py-3 bg-surface-container-high rounded-lg font-label-md font-bold"
-                >
-                  Agregar
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg h-fit xl:sticky xl:top-4">
-            <h3 className="font-headline-md text-on-surface mb-md">Ticket</h3>
-            {cart.length === 0 ? (
-              <p className="font-body-sm text-on-surface-variant mb-lg">Toca un servicio o producto para agregarlo.</p>
-            ) : (
-              <ul className="space-y-2 mb-lg">
-                {cart.map((line) => (
-                  <li key={line.key} className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-label-md text-on-surface truncate">{line.name}</p>
-                      <p className="font-body-sm text-on-surface-variant">{money(line.unitPrice)}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => setQty(line.key, line.quantity - 1)} className="w-8 h-8 rounded-lg border border-outline-variant">−</button>
-                      <span className="w-6 text-center font-label-md">{line.quantity}</span>
-                      <button onClick={() => setQty(line.key, line.quantity + 1)} className="w-8 h-8 rounded-lg border border-outline-variant">+</button>
-                    </div>
-                    <span className="w-20 text-right font-label-md">{money(line.unitPrice * line.quantity)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="space-y-3 mb-lg">
-              <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Cliente (opcional)" className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" />
-              <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Teléfono (opcional)" className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" />
-              <div>
-                <label className="font-label-sm text-on-surface-variant mb-1 block">Descuento</label>
-                <input type="number" min="0" step="0.01" value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" />
-              </div>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas" className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg min-h-[64px]" />
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 mb-lg">
-              {METHODS.map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setMethod(m.value)}
-                  className={`py-2 rounded-lg border font-label-sm ${method === m.value ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant'}`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-
-            {method === 'CASH' && (
-              <div className="mb-lg">
-                <label className="font-label-sm text-on-surface-variant mb-1 block">Recibido</label>
-                <input type="number" min="0" step="0.01" value={received} onChange={(e) => setReceived(e.target.value)} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" />
-                {receivedNum > 0 && <p className="font-body-sm mt-1">Cambio: <strong>{money(change)}</strong></p>}
-              </div>
-            )}
-
-            <div className="flex justify-between font-body-sm text-on-surface-variant mb-1">
-              <span>Subtotal</span><span>{money(subtotal)}</span>
-            </div>
-            <div className="flex justify-between font-body-sm text-on-surface-variant mb-3">
-              <span>Descuento</span><span>{money(discountNum)}</span>
-            </div>
-            <div className="flex justify-between font-headline-md text-on-surface mb-lg">
-              <span>Total</span><span>{money(total)}</span>
-            </div>
-            <button
-              disabled={saving || cart.length === 0}
-              onClick={checkout}
-              className="w-full py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold disabled:opacity-50"
-            >
-              {saving ? 'Cobrando…' : `Cobrar ${money(total)}`}
-            </button>
-          </div>
-        </div>
-      )}
-
       {tab === 'historial' && (
         <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
           {sales.length === 0 ? (
-            <p className="p-xl text-on-surface-variant">Aún no hay ventas.</p>
+            <p className="p-xl text-on-surface-variant">Aún no hay ventas. Abre la caja para registrar el primer cobro.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -495,7 +316,7 @@ export default function PosPage() {
             ))}
             {allProducts.length === 0 && (
               <p className="p-xl bg-surface-container-lowest rounded-xl border border-outline-variant text-on-surface-variant">
-                Crea productos de mostrador (shampoo, kit, etc.) para venderlos en caja.
+                Crea productos de mostrador (bebidas, calcetines, etc.) para venderlos en caja.
               </p>
             )}
           </div>
