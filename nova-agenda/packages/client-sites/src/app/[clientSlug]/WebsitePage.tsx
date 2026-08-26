@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import { getAvailableSlots, createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib/api';
 import LoyaltySection from './LoyaltySection';
@@ -483,11 +483,19 @@ function SiteNav({
 }
 
 function ServicesGrid({ client, onSelectService }: { client: ClientInfo; onSelectService: (s: ClientInfo['services'][0]) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    const amount = 320;
+    scrollRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
+  };
+
   const renderServiceCard = (service: ClientInfo['services'][0]) => (
     <button
       key={service.id}
       onClick={() => onSelectService(service)}
-      className="group relative p-6 rounded-2xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-xl transition-all duration-300 cursor-pointer text-left"
+      className="group relative p-6 rounded-2xl border border-outline-variant bg-surface-container-lowest hover:border-primary-container hover:shadow-xl transition-all duration-300 cursor-pointer text-left min-w-[280px] max-w-[320px] shrink-0 snap-start"
     >
       <div className="flex justify-between items-start mb-4">
         <span className="p-3 rounded-xl" style={{ backgroundColor: service.color + '20', color: service.color }}>
@@ -509,42 +517,67 @@ function ServicesGrid({ client, onSelectService }: { client: ClientInfo; onSelec
   );
 
   const categories = client.categories || [];
-  if (categories.length === 0) {
-    return <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{client.services.map(renderServiceCard)}</div>;
-  }
 
-  const usedIds = new Set<string>();
-  const sections: { title: string; color: string; services: ClientInfo['services'] }[] = [];
-
-  for (const cat of categories) {
-    for (const child of cat.children || []) {
-      const childServices = client.services.filter((s) => s.categoryId === child.id);
-      childServices.forEach((s) => usedIds.add(s.id));
-      if (childServices.length > 0) {
-        sections.push({ title: `${cat.name} › ${child.name}`, color: child.color || cat.color, services: childServices });
+  const buildServices = () => {
+    if (categories.length === 0) {
+      return [{ title: '', color: client.primaryColor, services: client.services }];
+    }
+    const usedIds = new Set<string>();
+    const sections: { title: string; color: string; services: ClientInfo['services'] }[] = [];
+    for (const cat of categories) {
+      for (const child of cat.children || []) {
+        const childServices = client.services.filter((s) => s.categoryId === child.id);
+        childServices.forEach((s) => usedIds.add(s.id));
+        if (childServices.length > 0) {
+          sections.push({ title: `${cat.name} › ${child.name}`, color: child.color || cat.color, services: childServices });
+        }
+      }
+      const onParent = client.services.filter((s) => s.categoryId === cat.id);
+      onParent.forEach((s) => usedIds.add(s.id));
+      if (onParent.length > 0) {
+        sections.push({ title: cat.name, color: cat.color, services: onParent });
       }
     }
-    const onParent = client.services.filter((s) => s.categoryId === cat.id);
-    onParent.forEach((s) => usedIds.add(s.id));
-    if (onParent.length > 0) {
-      sections.push({ title: cat.name, color: cat.color, services: onParent });
+    const uncategorized = client.services.filter((s) => !usedIds.has(s.id));
+    if (uncategorized.length > 0) {
+      sections.push({ title: 'Otros servicios', color: client.primaryColor, services: uncategorized });
     }
-  }
+    return sections;
+  };
 
-  const uncategorized = client.services.filter((s) => !usedIds.has(s.id));
-  if (uncategorized.length > 0) {
-    sections.push({ title: 'Otros servicios', color: client.primaryColor, services: uncategorized });
-  }
+  const sections = buildServices();
+  const allServices = sections.flatMap((s) => s.services);
 
   return (
     <div className="space-y-12">
       {sections.map((section) => (
-        <div key={section.title}>
-          <h3 className="font-headline-md text-on-surface mb-6 flex items-center gap-3 text-xl">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: section.color }} />
-            {section.title}
-          </h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{section.services.map(renderServiceCard)}</div>
+        <div key={section.title || 'all'}>
+          {section.title && (
+            <h3 className="font-headline-md text-on-surface mb-6 flex items-center gap-3 text-xl">
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: section.color }} />
+              {section.title}
+            </h3>
+          )}
+          <div className="relative group/carousel">
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 z-10 w-10 h-10 rounded-full bg-surface-container-lowest shadow-lg border border-outline-variant flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined text-on-surface">chevron_left</span>
+            </button>
+            <div
+              ref={scrollRef}
+              className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scrollbar pb-4"
+            >
+              {section.services.map(renderServiceCard)}
+            </div>
+            <button
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 z-10 w-10 h-10 rounded-full bg-surface-container-lowest shadow-lg border border-outline-variant flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined text-on-surface">chevron_right</span>
+            </button>
+          </div>
         </div>
       ))}
     </div>
