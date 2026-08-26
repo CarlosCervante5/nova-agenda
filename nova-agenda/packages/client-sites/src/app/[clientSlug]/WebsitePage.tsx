@@ -670,7 +670,19 @@ function BookingFlow({
   weekDays, form, setForm, submitting, error, handleBooking,
   staffForService, hasStaffStep, stepNames, stepLabels, selectService,
   loyaltyProgram, setActiveTab,
-}: any) {
+}: {
+  client: ClientInfo; clientSlug: string; step: string; goToStep: (s: any) => void;
+  selectedService: any; setSelectedService: (s: any) => void;
+  selectedStaff: any; setSelectedStaff: (s: any) => void;
+  selectedDate: Date; setSelectedDate: (d: Date) => void;
+  selectedSlot: string | null; setSelectedSlot: (s: string | null) => void;
+  slots: string[]; loadingSlots: boolean; weekStart: Date; setWeekStart: (d: Date) => void;
+  weekDays: { date: Date; dayOfWeek: number; isOpen: boolean }[];
+  form: { customerName: string; customerEmail: string; customerPhone: string; notes: string };
+  setForm: (f: any) => void; submitting: boolean; error: string; handleBooking: () => void;
+  staffForService: any[]; hasStaffStep: boolean; stepNames: string[]; stepLabels: string[];
+  selectService: (s: any) => void; loyaltyProgram?: LoyaltyProgram | null; setActiveTab: (t: any) => void;
+}) {
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8">
       <div className="lg:col-span-8 space-y-8">
