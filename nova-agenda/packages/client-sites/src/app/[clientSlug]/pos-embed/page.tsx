@@ -70,6 +70,7 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerForm, setCustomerForm] = useState({ name: '', phone: '', email: '' });
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [method, setMethod] = useState('CASH');
   const [splitMode, setSplitMode] = useState(false);
   const [splits, setSplits] = useState<SplitRow[]>([
@@ -305,7 +306,7 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
               />
               <div className="bg-[#1a1a2e] rounded-xl border border-[#2a2a3e] p-5">
                 <h3 className="text-base font-semibold text-white mb-3">Servicios</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto pr-1">
                   {filteredServices.map((s) => (
                     <button
                       key={s.id}
@@ -321,7 +322,7 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
               </div>
               <div className="bg-[#1a1a2e] rounded-xl border border-[#2a2a3e] p-5">
                 <h3 className="text-base font-semibold text-white mb-3">Productos</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto pr-1">
                   {filteredProducts.map((p) => (
                     <button
                       key={p.id}
@@ -400,20 +401,14 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
                     +
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {DISCOUNT_PERCENTS.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setDiscountPercent(p)}
-                      className={`px-3 py-2 rounded-lg border text-sm ${
-                        discountPercent === p ? 'border-[#a855f7] bg-[rgba(168,85,247,0.15)] text-white' : 'border-[#2a2a3e] text-[#888]'
-                      }`}
-                    >
-                      {p === 0 ? 'Sin desc.' : `${p}%`}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDiscountModal(true)}
+                  className="w-full px-4 py-3 bg-[#12121e] border border-[#2a2a3e] rounded-lg text-white text-sm flex items-center justify-between"
+                >
+                  <span>{discountPercent ? `Descuento ${discountPercent}%` : 'Sin descuento'}</span>
+                  <span className="text-[#888]">%</span>
+                </button>
               </div>
 
               <div className="flex items-center justify-between mb-2">
@@ -552,6 +547,35 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
           </div>
         )}
       </div>
+
+      {showDiscountModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowDiscountModal(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-[#1a1a2e] border border-[#2a2a3e] rounded-xl p-5 space-y-3"
+          >
+            <h3 className="text-base font-semibold text-white">Descuento</h3>
+            <p className="text-xs text-[#888]">Subtotal {money(subtotal)}{discountPercent ? ` · se descuentan ${money(discountNum)}` : ''}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {DISCOUNT_PERCENTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => {
+                    setDiscountPercent(p);
+                    setShowDiscountModal(false);
+                  }}
+                  className={`px-4 py-3 rounded-lg border text-sm ${
+                    discountPercent === p ? 'border-[#a855f7] bg-[rgba(168,85,247,0.15)] text-white' : 'border-[#2a2a3e] text-[#888]'
+                  }`}
+                >
+                  {p === 0 ? 'Sin descuento' : `${p}%`}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCustomerModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCustomerModal(false)}>

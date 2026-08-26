@@ -37,6 +37,7 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
   const [customerForm, setCustomerForm] = useState({ name: '', phone: '', email: '' });
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [method, setMethod] = useState('CASH');
   const [splitMode, setSplitMode] = useState(false);
@@ -233,7 +234,7 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
           />
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg">
             <h3 className="font-headline-md text-on-surface mb-md">Servicios</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto pr-1">
               {filteredServices.map((s) => (
                 <button
                   key={s.id}
@@ -249,7 +250,7 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
           </div>
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg">
             <h3 className="font-headline-md text-on-surface mb-md">Productos</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 max-h-[240px] overflow-y-auto pr-1">
               {filteredProducts.map((p) => (
                 <button
                   key={p.id}
@@ -336,20 +337,16 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
 
             <div>
               <label className="font-label-sm text-on-surface-variant mb-1 block">Descuento</label>
-              <div className="flex flex-wrap gap-1.5">
-                {POS_DISCOUNT_PERCENTS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setDiscountPercent(p)}
-                    className={`px-3 py-2 rounded-lg border font-label-sm ${
-                      discountPercent === p ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant'
-                    }`}
-                  >
-                    {p === 0 ? 'Sin desc.' : `${p}%`}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowDiscountModal(true)}
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg flex items-center justify-between hover:border-primary"
+              >
+                <span className="font-label-md text-on-surface">
+                  {discountPercent ? `${discountPercent}%` : 'Sin descuento'}
+                </span>
+                <span className="material-symbols-outlined text-on-surface-variant">percent</span>
+              </button>
             </div>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas" className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg min-h-[64px]" />
           </div>
@@ -465,6 +462,47 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
           </button>
         </div>
       </div>
+
+      {showDiscountModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setShowDiscountModal(false)}>
+          <div
+            className="bg-surface-container-lowest rounded-xl shadow-xl w-full max-w-md border border-outline-variant"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-lg py-md border-b border-outline-variant flex items-center justify-between">
+              <h3 className="font-headline-md text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">percent</span>
+                Descuento
+              </h3>
+              <button type="button" onClick={() => setShowDiscountModal(false)} className="p-1 rounded-lg hover:bg-surface-container-high">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-lg space-y-md">
+              <p className="font-body-sm text-on-surface-variant">
+                Subtotal {money(subtotal)}{discountPercent ? ` · se descuentan ${money(discountNum)}` : ''}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {POS_DISCOUNT_PERCENTS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => {
+                      setDiscountPercent(p);
+                      setShowDiscountModal(false);
+                    }}
+                    className={`px-4 py-3 rounded-lg border font-label-md ${
+                      discountPercent === p ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant hover:border-primary'
+                    }`}
+                  >
+                    {p === 0 ? 'Sin descuento' : `${p}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCustomerModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setShowCustomerModal(false)}>
