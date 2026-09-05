@@ -357,12 +357,12 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
               </div>
             </div>
 
-            <div className="bg-[#1a1a2e] rounded-xl border border-[#2a2a3e] p-5 h-fit xl:sticky xl:top-4">
-              <h3 className="text-base font-semibold text-white mb-3">Ticket</h3>
+            <div className="bg-[#1a1a2e] rounded-xl border border-[#2a2a3e] p-5 xl:sticky xl:top-4 flex flex-col overflow-hidden max-h-[calc(100dvh-5rem)]">
+              <h3 className="text-base font-semibold text-white mb-3 shrink-0">Ticket</h3>
               {cart.length === 0 ? (
-                <p className="text-xs text-[#888] mb-6">Selecciona un servicio o producto para agregarlo.</p>
+                <p className="text-xs text-[#888] mb-6 shrink-0">Selecciona un servicio o producto para agregarlo.</p>
               ) : (
-                <ul className="space-y-2 mb-6">
+                <ul className="space-y-2 mb-6 overflow-y-auto min-h-0 flex-1 max-h-[28vh] pr-1">
                   {cart.map((line) => (
                     <li key={line.key} className="flex items-center gap-2">
                       <div className="flex-1 min-w-0">
@@ -380,7 +380,7 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
                 </ul>
               )}
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3 mb-6 shrink-0">
                 <div className="flex gap-2">
                   <select
                     value={selectedCustomerId}
@@ -411,6 +411,7 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
                 </button>
               </div>
 
+              <div className="shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs text-[#888]">Pago</p>
                 {!splitMode ? (
@@ -505,6 +506,7 @@ export default function PosEmbedPage(props: { params: Promise<{ clientSlug: stri
               >
                 {saving ? 'Cobrando...' : `Cobrar ${money(total)}`}
               </button>
+              </div>
             </div>
           </div>
         )}

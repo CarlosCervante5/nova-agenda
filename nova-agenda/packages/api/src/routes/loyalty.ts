@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { awardLoyaltyStampForBooking } from '../services/loyalty';
 import { getPlanLevel } from '../middleware/plan-check';
+import { whatsappService } from '../services/whatsapp';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -984,13 +985,22 @@ router.post('/cards/:cardId/whatsapp', authenticate, async (req: AuthRequest, re
       `Sellos: ${card.stampsEarned}/${card.program.stampsToReward}\n\n` +
       `Muestra este QR en tu próxima visita:\n${qrCodeUrl}`;
 
-    // TODO: Integrate with WhatsApp API to send the message
-    // For now, return the message and QR code URL
+    const text = message || defaultMessage;
+    const wa = await prisma.whatsAppConfig.findUnique({ where: { clientId: card.program.clientId } });
+    let sent = false;
+    if (wa?.isActive && wa.twilioAccountSid && wa.twilioAuthToken && wa.phoneNumberId) {
+      sent = await whatsappService.sendMessage(card.customerPhone, text, {
+        accountSid: wa.twilioAccountSid,
+        authToken: wa.twilioAuthToken,
+        fromNumber: wa.phoneNumberId,
+      });
+    }
+
     res.json({
-      message: message || defaultMessage,
+      message: text,
       qrCodeUrl,
       customerPhone: card.customerPhone,
-      sent: false, // Set to true when WhatsApp integration is complete
+      sent,
     });
   } catch (error) {
     console.error('WhatsApp card send error:', error);

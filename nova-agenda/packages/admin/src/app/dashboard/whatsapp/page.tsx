@@ -1,18 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { api } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { api, WhatsAppConfig } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-
-interface WhatsAppConfig {
-  id?: string;
-  phoneNumberId?: string;
-  apiKey?: string;
-  instanceId?: string;
-  isOpenAIEnabled: boolean;
-  aiPersonality: string;
-  isActive: boolean;
-}
+import PasswordInput from '@/components/PasswordInput';
 
 interface WhatsAppLog {
   id: string;
@@ -23,60 +14,33 @@ interface WhatsAppLog {
   createdAt: string;
 }
 
+const DEFAULT_AI =
+  'Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.';
+
 export default function WhatsAppPage() {
   const { user } = useAuth();
   const [clientPlan, setClientPlan] = useState<string>('FREE');
   const [clientAddons, setClientAddons] = useState<string[]>([]);
   const [config, setConfig] = useState<WhatsAppConfig>({
     isOpenAIEnabled: true,
-    aiPersonality:
-      'Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.',
+    aiPersonality: DEFAULT_AI,
     isActive: false,
   });
+  const [accountSid, setAccountSid] = useState('');
+  const [authToken, setAuthToken] = useState('');
+  const [fromNumber, setFromNumber] = useState('');
   const [logs, setLogs] = useState<WhatsAppLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'unknown'>('unknown');
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [loadingQr, setLoadingQr] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
   const [message, setMessage] = useState('');
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const clientId = user?.clientId;
-
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, []);
-
-  const refreshConnection = useCallback(async () => {
-    if (!clientId) return null;
-    try {
-      const status = await api.getWhatsAppConnection(clientId);
-      setConnectionStatus(status.connected ? 'connected' : 'disconnected');
-      if (status.connected) {
-        setQrCode(null);
-        setConfig((prev) => ({ ...prev, isActive: true }));
-        stopPolling();
-      }
-      return status;
-    } catch {
-      try {
-        const fallback = await api.getWhatsAppStatus(clientId);
-        setConnectionStatus(fallback.connected ? 'connected' : 'disconnected');
-        return fallback;
-      } catch {
-        setConnectionStatus('unknown');
-        return null;
-      }
-    }
-  }, [clientId, stopPolling]);
 
   async function loadData() {
     if (!clientId) return;
@@ -86,19 +50,18 @@ export default function WhatsAppPage() {
         api.getWhatsAppLogs(clientId, 30),
       ]);
       if (configData) {
-        setConfig({
-          id: configData.id,
-          phoneNumberId: configData.phoneNumberId,
-          instanceId: configData.instanceId,
-          isOpenAIEnabled: configData.isOpenAIEnabled ?? true,
-          aiPersonality:
-            configData.aiPersonality ||
-            'Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.',
-          isActive: configData.isActive ?? false,
-        });
+        setConfig(configData);
+        setAccountSid(configData.twilioAccountSid || '');
+        setFromNumber(configData.phoneNumberId || '');
+        setAuthToken(configData.hasAuthToken ? configData.twilioAuthTokenMasked || '' : '');
       }
       setLogs(logsData.logs || []);
-      await refreshConnection();
+      try {
+        const status = await api.getWhatsAppConnection(clientId);
+        setConnectionStatus(status.connected ? 'connected' : 'disconnected');
+      } catch {
+        setConnectionStatus(configData?.isConfigured ? 'unknown' : 'disconnected');
+      }
     } catch (error) {
       console.error('Error loading WhatsApp data:', error);
     } finally {
@@ -107,66 +70,39 @@ export default function WhatsAppPage() {
   }
 
   useEffect(() => {
-    if (clientId) {
-      loadData();
-      api.getClient(clientId).then((c) => {
-        setClientPlan(c.plan);
-        setClientAddons(c.addons || []);
-      }).catch(() => {});
-    }
-    return () => stopPolling();
+    if (!clientId) return;
+    loadData();
+    api.getClient(clientId).then((c) => {
+      setClientPlan(c.plan);
+      setClientAddons(c.addons || []);
+    }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
-  async function handleLoadQr() {
+  async function handleSaveCredentials() {
     if (!clientId) return;
-    setLoadingQr(true);
+    setSaving(true);
     setMessage('');
     try {
-      const data = await api.getWhatsAppQR(clientId);
-      if (data.connected) {
-        setConnectionStatus('connected');
-        setQrCode(null);
-        setMessage('WhatsApp ya está conectado');
-        return;
-      }
-
-      const raw = data.qrCode || '';
-      const src =
-        raw.startsWith('data:') || raw.startsWith('http')
-          ? raw
-          : `data:image/png;base64,${raw}`;
-      setQrCode(src);
-      setConnectionStatus('disconnected');
-      setMessage('Escanea el código QR con WhatsApp en tu teléfono');
-
-      stopPolling();
-      pollRef.current = setInterval(() => {
-        refreshConnection();
-      }, 3000);
-    } catch (error: any) {
-      setMessage('Error: ' + (error.message || 'No se pudo obtener el QR'));
-      setQrCode(null);
+      const tokenChanged = authToken.trim() && !authToken.includes('•');
+      const saved = await api.updateWhatsAppConfig(clientId, {
+        twilioAccountSid: accountSid.trim(),
+        phoneNumberId: fromNumber.trim(),
+        ...(tokenChanged ? { twilioAuthToken: authToken.trim() } : {}),
+        isOpenAIEnabled: config.isOpenAIEnabled,
+        aiPersonality: config.aiPersonality,
+      });
+      setConfig(saved);
+      setAccountSid(saved.twilioAccountSid || '');
+      setFromNumber(saved.phoneNumberId || '');
+      setAuthToken(saved.hasAuthToken ? saved.twilioAuthTokenMasked || '' : '');
+      setMessage('Credenciales de Twilio guardadas');
+      const status = await api.getWhatsAppConnection(clientId);
+      setConnectionStatus(status.connected ? 'connected' : 'disconnected');
+    } catch (error: unknown) {
+      setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudo guardar'));
     } finally {
-      setLoadingQr(false);
-    }
-  }
-
-  async function handleDisconnect() {
-    if (!clientId) return;
-    setDisconnecting(true);
-    setMessage('');
-    try {
-      await api.disconnectWhatsApp(clientId);
-      setConnectionStatus('disconnected');
-      setConfig((prev) => ({ ...prev, isActive: false }));
-      setQrCode(null);
-      setMessage('WhatsApp desconectado');
-      stopPolling();
-    } catch (error: any) {
-      setMessage('Error: ' + error.message);
-    } finally {
-      setDisconnecting(false);
+      setSaving(false);
     }
   }
 
@@ -175,33 +111,56 @@ export default function WhatsAppPage() {
     setSaving(true);
     setMessage('');
     try {
-      await api.updateWhatsAppConfig(clientId, {
+      const saved = await api.updateWhatsAppConfig(clientId, {
         isOpenAIEnabled: config.isOpenAIEnabled,
         aiPersonality: config.aiPersonality,
       });
+      setConfig((prev) => ({ ...prev, ...saved }));
       setMessage('Configuración de IA guardada');
-      loadData();
-    } catch (error: any) {
-      setMessage('Error: ' + error.message);
+    } catch (error: unknown) {
+      setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudo guardar'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleToggle() {
+    if (!clientId) return;
+    setToggling(true);
+    setMessage('');
+    try {
+      const result = await api.toggleWhatsApp(clientId);
+      setConfig((prev) => ({ ...prev, isActive: result.isActive }));
+      setMessage(result.isActive ? 'WhatsApp activado' : 'WhatsApp pausado');
+    } catch (error: unknown) {
+      setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudo cambiar el estado'));
+    } finally {
+      setToggling(false);
     }
   }
 
   async function handleTestMessage() {
     if (!clientId || !testPhone || !testMessage) return;
     setSendingTest(true);
+    setMessage('');
     try {
       await api.sendWhatsAppTest(clientId, testPhone, testMessage);
       setMessage('Mensaje de prueba enviado');
       setTestMessage('');
       const logsData = await api.getWhatsAppLogs(clientId, 30);
       setLogs(logsData.logs || []);
-    } catch (error: any) {
-      setMessage('Error: ' + error.message);
+    } catch (error: unknown) {
+      setMessage('Error: ' + (error instanceof Error ? error.message : 'No se pudo enviar'));
     } finally {
       setSendingTest(false);
     }
+  }
+
+  async function copyWebhook() {
+    if (!config.webhookUrl) return;
+    await navigator.clipboard.writeText(config.webhookUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   if (loading) {
@@ -221,7 +180,7 @@ export default function WhatsAppPage() {
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">WhatsApp con IA</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Conecta WhatsApp con IA para atender citas automáticamente
+            Conecta WhatsApp con Twilio para atender citas automáticamente
           </p>
         </div>
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm text-center py-16">
@@ -232,20 +191,18 @@ export default function WhatsAppPage() {
             Addon: WhatsApp con IA + Chatbot
           </h3>
           <p className="font-body-md text-body-md text-on-surface-variant mb-lg max-w-md mx-auto">
-            Este es un addon de <strong>$499/mes</strong> aparte de tu plan. Incluye chatbot con IA 24/7,
-            reserva de citas por chat y conexión con tu número real por código QR.
+            Este es un addon de <strong>$499/mes</strong> aparte de tu plan. Incluye chatbot con IA 24/7
+            y reserva de citas por WhatsApp usando tu cuenta de Twilio.
           </p>
-          <div className="inline-flex flex-col sm:flex-row items-center gap-2 mb-lg">
-            <a
-              href="mailto:ventas@novagenda.com?subject=Quiero%20el%20addon%20de%20WhatsApp%20con%20IA%20(%24499%2Fmes)"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
-            >
-              <span className="material-symbols-outlined">upgrade</span>
-              Solicitar addon de WhatsApp
-            </a>
-          </div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Plan actual: {clientPlan} · Se activa con un cobro mensual de $499 vía Stripe.
+          <a
+            href="mailto:ventas@novagenda.com?subject=Quiero%20el%20addon%20de%20WhatsApp%20con%20IA%20(%24499%2Fmes)"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all"
+          >
+            <span className="material-symbols-outlined">upgrade</span>
+            Solicitar addon de WhatsApp
+          </a>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-lg">
+            Plan actual: {clientPlan}
           </p>
         </div>
       </div>
@@ -253,6 +210,7 @@ export default function WhatsAppPage() {
   }
 
   const isConnected = connectionStatus === 'connected';
+  const readyToTest = Boolean(config.isConfigured && config.isActive);
 
   return (
     <div className="space-y-gutter">
@@ -260,34 +218,34 @@ export default function WhatsAppPage() {
         <div>
           <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">WhatsApp Business</h2>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Conecta tu WhatsApp escaneando un código QR. Sin configurar servidores.
+            Conecta tu número con Twilio. Por ahora pegas las credenciales a mano.
           </p>
         </div>
-        <div
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            isConnected
-              ? 'bg-secondary-container/30 text-on-secondary-container'
-              : connectionStatus === 'disconnected'
-                ? 'bg-error-container/30 text-on-error-container'
-                : 'bg-surface-container-high text-on-surface-variant'
-          }`}
-        >
-          <span
-            className={`w-2 h-2 rounded-full ${
+        <div className="flex items-center gap-2">
+          <div
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
               isConnected
-                ? 'bg-secondary'
-                : connectionStatus === 'disconnected'
-                  ? 'bg-error'
-                  : 'bg-on-surface-variant'
+                ? 'bg-secondary-container/30 text-on-secondary-container'
+                : 'bg-surface-container-high text-on-surface-variant'
             }`}
-          />
-          <span className="font-label-md text-label-md">
-            {isConnected
-              ? 'Conectado'
-              : connectionStatus === 'disconnected'
-                ? 'Desconectado'
-                : 'Estado desconocido'}
-          </span>
+          >
+            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-secondary' : 'bg-on-surface-variant'}`} />
+            <span className="font-label-md text-label-md">
+              {isConnected ? 'Twilio válido' : config.isConfigured ? 'Revisa las credenciales' : 'Sin configurar'}
+            </span>
+          </div>
+          {config.isConfigured && (
+            <button
+              type="button"
+              onClick={handleToggle}
+              disabled={toggling}
+              className={`px-4 py-2 rounded-lg font-label-md ${
+                config.isActive ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface'
+              }`}
+            >
+              {toggling ? '…' : config.isActive ? 'Activo' : 'Pausado'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -307,93 +265,71 @@ export default function WhatsAppPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
-        {/* Conexión QR */}
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-lg flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">qr_code_2</span>
-            Conectar WhatsApp
+            <span className="material-symbols-outlined text-primary">key</span>
+            Credenciales de Twilio
           </h3>
-
-          {isConnected ? (
-            <div className="text-center space-y-lg py-md">
-              <div className="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mx-auto">
-                <span className="material-symbols-outlined text-3xl text-on-secondary-container">
-                  check_circle
-                </span>
-              </div>
-              <div>
-                <p className="font-label-md text-label-md text-on-surface mb-xs">Tu WhatsApp está conectado</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  El asistente puede recibir y responder mensajes de tus clientes.
-                </p>
-              </div>
-              <button
-                onClick={handleDisconnect}
-                disabled={disconnecting}
-                className="px-md py-2.5 rounded-lg font-label-md text-label-md font-bold bg-error-container text-on-error-container hover:bg-error/20 disabled:opacity-50 transition-all"
-              >
-                {disconnecting ? 'Desconectando...' : 'Desconectar'}
-              </button>
+          <ol className="space-y-2 mb-lg font-body-sm text-on-surface-variant">
+            <li>1. En Twilio Console copia el Account SID y el Auth Token.</li>
+            <li>2. Activa WhatsApp (Sandbox o número aprobado) y copia el número.</li>
+            <li>3. En Messaging, pega la URL de webhook de abajo en “When a message comes in” (POST).</li>
+          </ol>
+          <div className="space-y-md">
+            <div>
+              <label className="font-label-md text-on-surface mb-xs block">Account SID</label>
+              <input
+                value={accountSid}
+                onChange={(e) => setAccountSid(e.target.value)}
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg outline-none focus:border-primary"
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              />
             </div>
-          ) : (
-            <div className="space-y-lg">
-              <ol className="space-y-md text-on-surface-variant">
-                <li className="flex gap-3">
-                  <span className="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 font-bold text-sm">
-                    1
-                  </span>
-                  <p className="font-body-sm text-body-sm pt-1">
-                    Pulsa <strong className="text-on-surface">Mostrar código QR</strong>
-                  </p>
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 font-bold text-sm">
-                    2
-                  </span>
-                  <p className="font-body-sm text-body-sm pt-1">
-                    En el teléfono: WhatsApp → Dispositivos vinculados → Vincular dispositivo
-                  </p>
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 font-bold text-sm">
-                    3
-                  </span>
-                  <p className="font-body-sm text-body-sm pt-1">Escanea el código. La conexión se detecta sola.</p>
-                </li>
-              </ol>
-
-              {qrCode ? (
-                <div className="flex flex-col items-center gap-md">
-                  <div className="bg-white p-4 rounded-xl border border-outline-variant shadow-sm">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qrCode} alt="Código QR de WhatsApp" className="w-56 h-56 object-contain" />
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant text-center">
-                    Esperando escaneo… se actualizará automáticamente
-                  </p>
-                  <button
-                    onClick={handleLoadQr}
-                    disabled={loadingQr}
-                    className="font-label-md text-label-md text-primary hover:underline disabled:opacity-50"
-                  >
-                    {loadingQr ? 'Actualizando…' : 'Actualizar QR'}
-                  </button>
-                </div>
-              ) : (
+            <div>
+              <label className="font-label-md text-on-surface mb-xs block">Auth Token</label>
+              <PasswordInput
+                value={authToken}
+                onChange={(e) => setAuthToken(e.target.value)}
+                placeholder="Pega el token (se guarda cifrado en el servidor)"
+              />
+            </div>
+            <div>
+              <label className="font-label-md text-on-surface mb-xs block">Número de WhatsApp</label>
+              <input
+                value={fromNumber}
+                onChange={(e) => setFromNumber(e.target.value)}
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg outline-none focus:border-primary"
+                placeholder="+14155238886"
+              />
+              <p className="font-body-sm text-on-surface-variant mt-1">Formato internacional, con +.</p>
+            </div>
+            <div>
+              <label className="font-label-md text-on-surface mb-xs block">Webhook de mensajes entrantes</label>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={config.webhookUrl || ''}
+                  className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm"
+                />
                 <button
-                  onClick={handleLoadQr}
-                  disabled={loadingQr}
-                  className="w-full py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={copyWebhook}
+                  className="px-4 py-3 rounded-lg border border-outline-variant font-label-md"
                 >
-                  <span className="material-symbols-outlined">qr_code_scanner</span>
-                  {loadingQr ? 'Generando QR…' : 'Mostrar código QR'}
+                  {copied ? 'Copiado' : 'Copiar'}
                 </button>
-              )}
+              </div>
             </div>
-          )}
+            <button
+              onClick={handleSaveCredentials}
+              disabled={saving}
+              className="w-full py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold disabled:opacity-50"
+            >
+              {saving ? 'Guardando…' : 'Guardar Twilio'}
+            </button>
+          </div>
         </div>
 
-        {/* IA */}
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-lg flex items-center gap-2">
             <span className="material-symbols-outlined text-tertiary">smart_toy</span>
@@ -402,10 +338,8 @@ export default function WhatsAppPage() {
           <div className="space-y-lg">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-label-md text-label-md text-on-surface">Asistente IA habilitado</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Responder mensajes automáticamente con OpenAI
-                </p>
+                <p className="font-label-md text-on-surface">Asistente IA habilitado</p>
+                <p className="font-body-sm text-on-surface-variant">Responde mensajes automáticamente</p>
               </div>
               <button
                 type="button"
@@ -422,28 +356,24 @@ export default function WhatsAppPage() {
               </button>
             </div>
             <div>
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">
-                Personalidad del asistente
-              </label>
+              <label className="font-label-md text-on-surface mb-xs block">Personalidad del asistente</label>
               <textarea
                 value={config.aiPersonality}
                 onChange={(e) => setConfig({ ...config, aiPersonality: e.target.value })}
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg outline-none focus:border-primary"
                 rows={5}
-                placeholder="Instrucciones para el asistente de IA..."
               />
             </div>
             <button
               onClick={handleSaveAi}
               disabled={saving}
-              className="w-full py-3 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all"
+              className="w-full py-3 bg-primary text-on-primary rounded-lg font-label-md font-bold disabled:opacity-50"
             >
               {saving ? 'Guardando…' : 'Guardar IA'}
             </button>
           </div>
         </div>
 
-        {/* Prueba */}
         <div className="bg-surface-container-lowest p-xl rounded-xl border border-outline-variant shadow-sm">
           <h3 className="font-headline-md text-headline-md text-on-surface mb-lg flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">send</span>
@@ -451,61 +381,55 @@ export default function WhatsAppPage() {
           </h3>
           <div className="space-y-lg">
             <div>
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">
-                Número de WhatsApp
-              </label>
+              <label className="font-label-md text-on-surface mb-xs block">Número de destino</label>
               <input
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                placeholder="Ej: 5491155551234"
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg outline-none focus:border-primary"
+                placeholder="+52155..."
               />
             </div>
             <div>
-              <label className="font-label-md text-label-md text-on-surface mb-xs block">Mensaje</label>
+              <label className="font-label-md text-on-surface mb-xs block">Mensaje</label>
               <textarea
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
-                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg outline-none focus:border-primary"
                 rows={3}
-                placeholder="Escribe un mensaje de prueba..."
               />
             </div>
             <button
               onClick={handleTestMessage}
-              disabled={sendingTest || !testPhone || !testMessage || !isConnected}
-              className="w-full py-3 bg-secondary text-on-secondary rounded-lg font-label-md text-label-md font-bold shadow-lg shadow-secondary/20 hover:opacity-90 disabled:opacity-50 transition-all"
+              disabled={sendingTest || !testPhone || !testMessage || !readyToTest}
+              className="w-full py-3 bg-secondary text-on-secondary rounded-lg font-label-md font-bold disabled:opacity-50"
             >
               {sendingTest ? 'Enviando…' : 'Enviar prueba'}
             </button>
-            {!isConnected && (
-              <p className="font-body-sm text-body-sm text-on-surface-variant text-center">
-                Conecta WhatsApp primero para enviar pruebas
+            {!readyToTest && (
+              <p className="font-body-sm text-on-surface-variant text-center">
+                Guarda Twilio y deja el canal activo para enviar pruebas.
               </p>
             )}
           </div>
         </div>
 
-        {/* Logs */}
         <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
           <div className="px-lg py-md border-b border-outline-variant bg-surface-container-low">
-            <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+            <h3 className="font-headline-md text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">chat</span>
               Historial de conversaciones
             </h3>
           </div>
-          <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[420px] overflow-y-auto">
             {logs.length === 0 ? (
-              <div className="p-lg text-center text-on-surface-variant font-body-sm text-body-sm">
-                No hay mensajes aún
-              </div>
+              <div className="p-lg text-center text-on-surface-variant font-body-sm">No hay mensajes aún</div>
             ) : (
               <div className="divide-y divide-outline-variant">
                 {logs.map((log) => (
-                  <div key={log.id} className="p-md hover:bg-surface-container-low/50 transition-colors">
+                  <div key={log.id} className="p-md">
                     <div className="flex items-start gap-3">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                           log.direction === 'INBOUND'
                             ? 'bg-primary-container text-on-primary-container'
                             : 'bg-secondary-container text-on-secondary-container'
@@ -517,22 +441,17 @@ export default function WhatsAppPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-label-sm text-label-sm text-on-surface">{log.phoneNumber}</span>
+                          <span className="font-label-sm text-on-surface">{log.phoneNumber}</span>
                           {log.intent && (
                             <span className="px-2 py-0.5 bg-primary-fixed text-on-primary-fixed-variant rounded text-[10px] font-bold uppercase">
                               {log.intent}
                             </span>
                           )}
-                          <span className="font-body-sm text-body-sm text-on-surface-variant ml-auto">
-                            {new Date(log.createdAt).toLocaleTimeString('es-ES', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                          <span className="font-body-sm text-on-surface-variant ml-auto">
+                            {new Date(log.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
-                          {log.message}
-                        </p>
+                        <p className="font-body-sm text-on-surface-variant line-clamp-2">{log.message}</p>
                       </div>
                     </div>
                   </div>

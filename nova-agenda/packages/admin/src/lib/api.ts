@@ -389,21 +389,16 @@ class ApiClient {
 
   // WhatsApp
   async getWhatsAppConfig(clientId: string) {
-    return this.request<any>(`/api/whatsapp/config/${clientId}`);
+    return this.request<WhatsAppConfig>(`/api/whatsapp/config/${clientId}`);
   }
-  async updateWhatsAppConfig(clientId: string, data: any) {
-    return this.request<any>(`/api/whatsapp/config/${clientId}`, { method: 'PUT', body: JSON.stringify(data) });
+  async updateWhatsAppConfig(clientId: string, data: Partial<WhatsAppConfig> & { twilioAuthToken?: string }) {
+    return this.request<WhatsAppConfig>(`/api/whatsapp/config/${clientId}`, { method: 'PUT', body: JSON.stringify(data) });
   }
   async toggleWhatsApp(clientId: string) {
     return this.request<{ isActive: boolean }>(`/api/whatsapp/config/${clientId}/toggle`, { method: 'PATCH' });
   }
   async getWhatsAppStatus(clientId: string) {
-    return this.request<{ connected: boolean; isActive: boolean }>(`/api/whatsapp/config/${clientId}/status`);
-  }
-  async getWhatsAppQR(clientId: string) {
-    return this.request<{ qrCode: string; instanceName: string; connected: boolean }>(
-      `/api/whatsapp/qr/${clientId}`
-    );
+    return this.request<{ connected: boolean; isActive: boolean; isConfigured?: boolean }>(`/api/whatsapp/config/${clientId}/status`);
   }
   async getWhatsAppConnection(clientId: string) {
     return this.request<{
@@ -412,11 +407,6 @@ class ApiClient {
       isActive: boolean;
       phoneNumber?: string;
     }>(`/api/whatsapp/connection/${clientId}`);
-  }
-  async disconnectWhatsApp(clientId: string) {
-    return this.request<{ message: string }>(`/api/whatsapp/disconnect/${clientId}`, {
-      method: 'POST',
-    });
   }
   async getWhatsAppLogs(clientId: string, limit = 50, offset = 0) {
     return this.request<{ logs: any[]; total: number }>(`/api/whatsapp/logs/${clientId}?limit=${limit}&offset=${offset}`);
@@ -644,6 +634,7 @@ export interface MembershipPlan {
   benefits: string[];
   isActive: boolean;
   sortOrder: number;
+  classesPerPeriod?: number;
   _count?: { purchases: number };
 }
 
@@ -658,6 +649,8 @@ export interface MembershipPurchase {
   customerPhone?: string | null;
   status: string;
   currentPeriodEnd?: string | null;
+  creditsTotal?: number;
+  creditsUsed?: number;
   createdAt: string;
   plan?: { name: string; interval: string; price: number; currency: string };
 }
@@ -721,6 +714,20 @@ export interface PosSummary {
   todayCount: number;
   todayTotal: number;
   byMethod: Record<string, number>;
+}
+
+export interface WhatsAppConfig {
+  id?: string;
+  provider?: string;
+  phoneNumberId?: string;
+  twilioAccountSid?: string;
+  twilioAuthTokenMasked?: string;
+  hasAuthToken?: boolean;
+  isConfigured?: boolean;
+  isOpenAIEnabled: boolean;
+  aiPersonality: string;
+  isActive: boolean;
+  webhookUrl?: string;
 }
 
 export const api = new ApiClient();

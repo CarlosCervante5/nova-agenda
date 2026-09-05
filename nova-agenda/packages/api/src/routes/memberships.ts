@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { getClientStripeClient, getClientStripeConfig, formatStripeError } from '../services/stripe-config';
+import { activateClassSession } from './studio';
+import { creditsForPlan } from '../lib/studio';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -70,6 +72,14 @@ async function activateFromSession(clientId: string, session: Stripe.Checkout.Se
     periodEnd = addInterval(new Date(), purchase.plan.interval);
   }
 
+  if (purchase.status === 'ACTIVE' && purchase.creditsTotal > 0) {
+    return purchase;
+  }
+
+  const creditsTotal = purchase.creditsTotal > 0
+    ? purchase.creditsTotal
+    : creditsForPlan(purchase.plan);
+
   return prisma.membershipPurchase.update({
     where: { id: purchaseId },
     data: {
@@ -81,8 +91,9 @@ async function activateFromSession(clientId: string, session: Stripe.Checkout.Se
           ? session.customer
           : session.customer?.id || null,
       currentPeriodEnd: periodEnd,
+      creditsTotal,
     },
-    include: { plan: { select: { name: true, interval: true, price: true, currency: true } } },
+    include: { plan: { select: { name: true, interval: true, price: true, currency: true, classesPerPeriod: true } } },
   });
 }
 
@@ -259,6 +270,36 @@ router.post('/webhook/:clientId', async (req: Request, res: Response) => {
       if (session.metadata?.type === 'membership') {
         await activateFromSession(clientId, session, stripe);
       }
+      if (session.metadata?.type === 'studio_class') {
+        await activateClassSession(clientId, session.id);
+      }
+    }
+
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subscriptionId =
+        typeof invoice.subscription === 'string'
+          ? invoice.subscription
+          : invoice.subscription?.id || null;
+      if (subscriptionId && invoice.billing_reason === 'subscription_cycle') {
+        const existing = await prisma.membershipPurchase.findFirst({
+          where: { clientId, stripeSubscriptionId: subscriptionId },
+          include: { plan: true },
+        });
+        if (existing) {
+          await prisma.membershipPurchase.update({
+            where: { id: existing.id },
+            data: {
+              status: 'ACTIVE',
+              creditsTotal: creditsForPlan(existing.plan) || existing.creditsTotal,
+              creditsUsed: 0,
+              currentPeriodEnd: invoice.lines.data[0]?.period?.end
+                ? new Date(invoice.lines.data[0].period.end * 1000)
+                : existing.currentPeriodEnd,
+            },
+          });
+        }
+      }
     }
 
     if (event.type === 'customer.subscription.deleted') {
@@ -319,7 +360,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     const clientId = resolveClientId(req, req.body.clientId);
     if (!clientId) return res.status(400).json({ error: 'No hay negocio asociado' });
 
-    const { name, description, price, currency, interval, benefits, isActive, sortOrder } = req.body;
+    const { name, description, price, currency, interval, benefits, isActive, sortOrder, classesPerPeriod } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' });
     const amount = Number(price);
     if (!Number.isFinite(amount) || amount < 0) {
@@ -337,6 +378,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         benefits: JSON.stringify(parseBenefits(benefits)),
         isActive: isActive !== false,
         sortOrder: Number(sortOrder) || 0,
+        classesPerPeriod: Math.max(0, Number(classesPerPeriod) || 0),
       },
     });
     res.status(201).json(serializePlan(plan));
@@ -353,7 +395,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const { name, description, price, currency, interval, benefits, isActive, sortOrder } = req.body;
+    const { name, description, price, currency, interval, benefits, isActive, sortOrder, classesPerPeriod } = req.body;
     const plan = await prisma.membershipPlan.update({
       where: { id: existing.id },
       data: {
@@ -365,6 +407,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         ...(benefits !== undefined && { benefits: JSON.stringify(parseBenefits(benefits)) }),
         ...(typeof isActive === 'boolean' && { isActive }),
         ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) || 0 }),
+        ...(classesPerPeriod !== undefined && { classesPerPeriod: Math.max(0, Number(classesPerPeriod) || 0) }),
       },
     });
     res.json(serializePlan(plan));

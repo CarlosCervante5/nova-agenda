@@ -373,7 +373,7 @@ export default function SettingsPage() {
   const tabs: Array<{ id: Tab; label: string; icon: string }> = isSuperAdmin
     ? [
         { id: 'stripe', label: 'Stripe (Pagos)', icon: 'payment' },
-        { id: 'evo_cloud', label: 'Evo Cloud (WhatsApp)', icon: 'chat' },
+        { id: 'evo_cloud', label: 'WhatsApp (legado)', icon: 'chat' },
         { id: 'openai', label: 'OpenAI (IA)', icon: 'smart_toy' },
       ]
     : [
@@ -507,14 +507,14 @@ export default function SettingsPage() {
                 <span className="material-symbols-outlined text-white">chat</span>
               </div>
               <div>
-                <h3 className="font-headline-md text-headline-md text-on-surface">Evo Cloud</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">API global de WhatsApp para todos los negocios</p>
+                <h3 className="font-headline-md text-headline-md text-on-surface">WhatsApp legado</h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Ya no se usa. Cada negocio configura Twilio en WhatsApp.</p>
               </div>
             </div>
 
             <div className="p-4 bg-tertiary-container/30 rounded-lg mb-lg">
               <p className="font-body-sm text-body-sm text-on-tertiary-fixed-variant">
-                Esta configuración es global. Cada negocio tendrá su propio número de WhatsApp pero usa estas credenciales de la plataforma.
+                El canal activo es Twilio. El cliente pega Account SID, Auth Token y número desde su panel. Esta sección queda solo por compatibilidad.
               </p>
             </div>
 

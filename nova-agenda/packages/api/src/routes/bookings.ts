@@ -28,19 +28,24 @@ async function hasScheduleConflict(
     endTime: string;
     gapMinutes: number;
     staffId?: string | null;
+    serviceId?: string;
+    capacity?: number;
   }
 ) {
+  const capacity = params.capacity && params.capacity > 1 ? params.capacity : 1;
   const where: {
     clientId: string;
     date: { gte: Date; lte: Date };
     status: { not: string };
     staffId?: string;
+    serviceId?: string;
   } = {
     clientId: params.clientId,
     date: { gte: params.dayStart, lte: params.dayEnd },
     status: { not: 'CANCELLED' },
   };
   if (params.staffId) where.staffId = params.staffId;
+  if (capacity > 1 && params.serviceId) where.serviceId = params.serviceId;
 
   const bookings = await db.booking.findMany({
     where,
@@ -49,10 +54,10 @@ async function hasScheduleConflict(
 
   const slotStart = timeToMinutes(params.startTime);
   const slotEnd = timeToMinutes(params.endTime);
-
-  return bookings.some((b) =>
+  const overlaps = bookings.filter((b) =>
     slotConflictsWithBooking(slotStart, slotEnd, b.startTime, b.endTime, params.gapMinutes)
   );
+  return overlaps.length >= capacity;
 }
 
 class ScheduleConflictError extends Error {
@@ -190,6 +195,8 @@ router.post('/admin', authenticate, async (req: AuthRequest, res: Response) => {
           endTime,
           gapMinutes,
           staffId: resolvedStaffId,
+          serviceId: service.id,
+          capacity: service.capacity,
         });
 
         if (conflict) {
@@ -248,6 +255,9 @@ router.post('/', async (req, res: Response) => {
 
     if (client.bookingFormEnabled === false) {
       return res.status(403).json({ error: 'Las reservas en línea están temporalmente desactivadas.' });
+    }
+    if (client.studioBooking || client.slug.toLowerCase() === 'wellness-club') {
+      return res.status(400).json({ error: 'Este estudio reserva clases con créditos o pago anticipado.' });
     }
 
     if (client.bookingRequirePhone && !customerPhone?.trim()) {
@@ -314,6 +324,8 @@ router.post('/', async (req, res: Response) => {
           endTime,
           gapMinutes,
           staffId: resolvedStaffId,
+          serviceId: service.id,
+          capacity: service.capacity,
         });
 
         if (conflict) {

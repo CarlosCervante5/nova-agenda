@@ -6,6 +6,8 @@ import { createBooking, ClientInfo, LoyaltyProgram, MembershipPlan } from '@/lib
 import { applyServiceSchedule, emptySlotsMessage, hoursForService, isDateBookable, loadSlotsOrAdvance, nextOpenDate } from '@/lib/schedule';
 import LoyaltySection from './LoyaltySection';
 import MembershipsSection from './MembershipsSection';
+import StudioBooking from './StudioBooking';
+import StudioPolicies from './StudioPolicies';
 
 type Tab = 'home' | 'booking' | 'loyalty' | 'memberships';
 
@@ -16,6 +18,8 @@ interface Props {
   membershipPlans?: MembershipPlan[];
   membershipStatus?: 'success' | 'canceled' | null;
   membershipSessionId?: string | null;
+  classStatus?: 'success' | 'canceled' | null;
+  classSessionId?: string | null;
   initialTab?: Tab;
 }
 
@@ -28,6 +32,8 @@ export default function WebsitePage({
   membershipPlans = [],
   membershipStatus = null,
   membershipSessionId = null,
+  classStatus = null,
+  classSessionId = null,
   initialTab = 'home',
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
@@ -142,8 +148,10 @@ export default function WebsitePage({
     setMobileMenuOpen(false);
   };
 
+  const studioMode = Boolean(client.studioBooking);
   const showMemberships = membershipPlans.length > 0 || Boolean(membershipStatus);
-  const showTabs = Boolean(loyaltyProgram) || showMemberships;
+  const showTabs = studioMode || Boolean(loyaltyProgram) || showMemberships;
+  const navLoyalty = studioMode ? null : loyaltyProgram;
 
   if (step === 'success') {
     return (
@@ -207,11 +215,16 @@ export default function WebsitePage({
   if (activeTab === 'loyalty' && loyaltyProgram) {
     return (
       <div className="min-h-screen bg-background">
-        <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={loyaltyProgram} showMemberships={showMemberships} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
+        <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={navLoyalty} showMemberships={showMemberships} studioMode={studioMode} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
           <LoyaltySection clientId={client.id} clientName={client.name} primaryColor={client.primaryColor} program={loyaltyProgram} />
         </main>
         <SiteFooter client={client} />
+        {studioMode && client.whatsappPhone && (
+          <a href={`https://wa.me/${client.whatsappPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white" style={{ backgroundColor: '#25D366' }} aria-label="WhatsApp">
+            <span className="material-symbols-outlined">chat</span>
+          </a>
+        )}
       </div>
     );
   }
@@ -219,11 +232,16 @@ export default function WebsitePage({
   if (activeTab === 'memberships') {
     return (
       <div className="min-h-screen bg-background">
-        <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={loyaltyProgram} showMemberships={showMemberships} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
+        <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={navLoyalty} showMemberships={showMemberships} studioMode={studioMode} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-          <MembershipsSection clientSlug={clientSlug} clientName={client.name} primaryColor={client.primaryColor} plans={membershipPlans} checkoutStatus={membershipStatus} sessionId={membershipSessionId} />
+          <MembershipsSection clientSlug={clientSlug} clientName={client.name} primaryColor={client.primaryColor} plans={membershipPlans} checkoutStatus={membershipStatus} sessionId={membershipSessionId} studioMode={studioMode} />
         </main>
         <SiteFooter client={client} />
+        {studioMode && client.whatsappPhone && (
+          <a href={`https://wa.me/${client.whatsappPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white" style={{ backgroundColor: '#25D366' }} aria-label="WhatsApp">
+            <span className="material-symbols-outlined">chat</span>
+          </a>
+        )}
       </div>
     );
   }
@@ -231,8 +249,17 @@ export default function WebsitePage({
   if (activeTab === 'booking') {
     return (
       <div className="min-h-screen bg-background">
-        <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={loyaltyProgram} showMemberships={showMemberships} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
+        <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={navLoyalty} showMemberships={showMemberships} studioMode={studioMode} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+          {studioMode ? (
+            <StudioBooking
+              client={client}
+              clientSlug={clientSlug}
+              plans={membershipPlans}
+              classStatus={classStatus}
+              classSessionId={classSessionId}
+            />
+          ) : (
           <BookingFlow
             client={client} clientSlug={clientSlug} step={step} goToStep={goToStep}
             selectedService={selectedService} setSelectedService={setSelectedService}
@@ -246,15 +273,21 @@ export default function WebsitePage({
             stepNames={stepNames} stepLabels={stepLabels} selectService={selectService}
             loyaltyProgram={loyaltyProgram} setActiveTab={setActiveTab}
           />
+          )}
         </main>
         <SiteFooter client={client} />
+        {studioMode && client.whatsappPhone && (
+          <a href={`https://wa.me/${client.whatsappPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white" style={{ backgroundColor: '#25D366' }} aria-label="WhatsApp">
+            <span className="material-symbols-outlined">chat</span>
+          </a>
+        )}
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={loyaltyProgram} showMemberships={showMemberships} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
+      <SiteNav client={client} activeTab={activeTab} setActiveTab={setActiveTab} showTabs={showTabs} loyaltyProgram={navLoyalty} showMemberships={showMemberships} studioMode={studioMode} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} scrollToSection={scrollToSection} scrolled={scrolled} />
 
       <section id="hero" className="relative overflow-hidden">
         {client.coverImage ? (
@@ -286,6 +319,26 @@ export default function WebsitePage({
               </p>
             )}
             <div className="flex flex-wrap gap-4">
+              {studioMode ? (
+                <>
+                  <button
+                    onClick={() => setActiveTab('booking')}
+                    className="px-8 py-4 bg-white text-on-primary rounded-xl font-label-lg text-label-lg font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
+                    style={{ color: client.primaryColor }}
+                  >
+                    Reservar Mi Clase
+                  </button>
+                  {showMemberships && (
+                    <button
+                      onClick={() => setActiveTab('memberships')}
+                      className="px-8 py-4 bg-white/20 backdrop-blur-sm text-white border-2 border-white/40 rounded-xl font-label-lg text-label-lg font-bold hover:bg-white/30 transition-all"
+                    >
+                      Ver Membresías
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
               <button
                 onClick={() => scrollToSection('servicios')}
                 className="px-8 py-4 bg-white text-on-primary rounded-xl font-label-lg text-label-lg font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
@@ -299,6 +352,8 @@ export default function WebsitePage({
               >
                 Reservar Ahora
               </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -321,10 +376,16 @@ export default function WebsitePage({
                   {client.phone}
                 </a>
               )}
-              {client.email && (
+              {client.email && !studioMode && (
                 <a href={`mailto:${client.email}`} className="flex items-center gap-2 hover:text-primary transition-colors">
                   <span className="material-symbols-outlined text-primary">mail</span>
                   {client.email}
+                </a>
+              )}
+              {studioMode && client.whatsappPhone && (
+                <a href={`https://wa.me/${client.whatsappPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-primary transition-colors">
+                  <span className="material-symbols-outlined text-primary">chat</span>
+                  WhatsApp
                 </a>
               )}
             </div>
@@ -332,6 +393,19 @@ export default function WebsitePage({
         </section>
       )}
 
+      {studioMode ? (
+      <section id="servicios" className="py-16 sm:py-20 lg:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="font-headline-lg text-3xl sm:text-4xl text-on-surface mb-4">Cómo reservar</h2>
+            <p className="font-body-md text-lg text-on-surface-variant">
+              {client.bookingIntroText || 'Elige el día, reserva tu clase y confirma el lugar con tu membresía o un pago.'}
+            </p>
+          </div>
+          <StudioPolicies primaryColor={client.primaryColor} />
+        </div>
+      </section>
+      ) : (
       <section id="servicios" className="py-16 sm:py-20 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 sm:mb-16">
@@ -343,26 +417,32 @@ export default function WebsitePage({
           <ServicesGrid client={client} onSelectService={selectService} />
         </div>
       </section>
+      )}
 
       <section id="cta" className="py-16 sm:py-20" style={{ backgroundColor: client.primaryColor + '08' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-surface-container-lowest rounded-3xl p-8 sm:p-12 lg:p-16 shadow-xl border border-outline-variant">
             <span className="material-symbols-outlined text-5xl mb-6" style={{ color: client.primaryColor }}>calendar_month</span>
-            <h2 className="font-headline-lg text-3xl sm:text-4xl text-on-surface mb-4">¿Listo para Reservar?</h2>
+            <h2 className="font-headline-lg text-3xl sm:text-4xl text-on-surface mb-4">
+              {studioMode ? '¿Lista para tu clase?' : '¿Listo para Reservar?'}
+            </h2>
             <p className="font-body-md text-lg text-on-surface-variant mb-8 max-w-xl mx-auto">
-              Agenda tu cita en solo unos clics. Selecciona tu servicio favorito y elige el horario que mejor se adapte a ti.
+              {studioMode
+                ? 'Reserva tu lugar desde el calendario. El pago o un crédito confirma tu cupo.'
+                : 'Agenda tu cita en solo unos clics. Selecciona tu servicio favorito y elige el horario que mejor se adapte a ti.'}
             </p>
             <button
-              onClick={() => scrollToSection('calendario')}
+              onClick={() => studioMode ? setActiveTab('booking') : scrollToSection('calendario')}
               className="px-10 py-4 text-on-primary rounded-xl font-label-lg text-label-lg font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
               style={{ backgroundColor: client.primaryColor }}
             >
-              Reservar Mi Cita
+              {studioMode ? 'Reservar Mi Clase' : 'Reservar Mi Cita'}
             </button>
           </div>
         </div>
       </section>
 
+      {!studioMode && (
       <section id="calendario" className="py-16 sm:py-20 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -378,18 +458,32 @@ export default function WebsitePage({
           }} />
         </div>
       </section>
+      )}
 
       <SiteFooter client={client} />
+      {studioMode && client.whatsappPhone && (
+        <a
+          href={`https://wa.me/${client.whatsappPhone.replace(/\D/g, '')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-5 right-5 z-40 w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white"
+          style={{ backgroundColor: '#25D366' }}
+          aria-label="WhatsApp"
+        >
+          <span className="material-symbols-outlined">chat</span>
+        </a>
+      )}
     </div>
   );
 }
 
 function SiteNav({
   client, activeTab, setActiveTab, showTabs, loyaltyProgram, showMemberships,
-  mobileMenuOpen, setMobileMenuOpen, scrollToSection, scrolled,
+  studioMode, mobileMenuOpen, setMobileMenuOpen, scrollToSection, scrolled,
 }: {
   client: ClientInfo; activeTab: string; setActiveTab: (t: Tab) => void; showTabs: boolean;
   loyaltyProgram?: LoyaltyProgram | null; showMemberships: boolean;
+  studioMode?: boolean;
   mobileMenuOpen: boolean; setMobileMenuOpen: (v: boolean) => void;
   scrollToSection: (id: string) => void; scrolled: boolean;
 }) {
@@ -403,11 +497,13 @@ function SiteNav({
     setMobileMenuOpen(false);
   };
 
-  const menuItems = [
-    { id: 'hero', label: 'Inicio' },
-    { id: 'servicios', label: 'Servicios' },
-    { id: 'calendario', label: 'Calendario' },
-  ];
+  const menuItems = studioMode
+    ? [{ id: 'hero', label: 'Inicio' }]
+    : [
+        { id: 'hero', label: 'Inicio' },
+        { id: 'servicios', label: 'Servicios' },
+        { id: 'calendario', label: 'Calendario' },
+      ];
 
   return (
     <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-surface/95 backdrop-blur-md shadow-md border-b border-outline-variant' : 'bg-transparent'}`}>
@@ -454,11 +550,11 @@ function SiteNav({
               </>
             )}
             <button
-              onClick={() => navigateToSection('calendario')}
+              onClick={() => studioMode ? (setActiveTab('booking'), setMobileMenuOpen(false)) : navigateToSection('calendario')}
               className="ml-2 px-5 py-2.5 text-on-primary rounded-lg font-label-md text-label-md font-bold shadow-md hover:shadow-lg hover:opacity-90 transition-all"
               style={{ backgroundColor: client.primaryColor }}
             >
-              Reservar
+              {studioMode ? 'Reservar' : 'Reservar'}
             </button>
           </nav>
 
@@ -487,11 +583,11 @@ function SiteNav({
               </button>
             )}
             <button
-              onClick={() => navigateToSection('calendario')}
+              onClick={() => studioMode ? (setActiveTab('booking'), setMobileMenuOpen(false)) : navigateToSection('calendario')}
               className="block w-full text-center px-4 py-3 text-on-primary rounded-lg font-bold mt-2"
               style={{ backgroundColor: client.primaryColor }}
             >
-              Reservar Ahora
+              {studioMode ? 'Reservar Mi Clase' : 'Reservar Ahora'}
             </button>
           </div>
         </div>

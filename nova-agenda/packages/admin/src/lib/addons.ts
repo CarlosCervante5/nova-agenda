@@ -3,7 +3,7 @@ export const ADDON_OPTIONS = [
     key: 'WHATSAPP_AI',
     name: 'WhatsApp con IA + Chatbot',
     price: 499,
-    description: 'Chatbot con IA 24/7 y reserva de citas por WhatsApp.',
+    description: 'Chatbot con IA 24/7 y reserva de citas por WhatsApp (Twilio).',
     icon: 'smart_toy',
   },
   {

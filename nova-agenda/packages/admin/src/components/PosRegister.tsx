@@ -285,12 +285,12 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
           </div>
         </div>
 
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg h-fit xl:sticky xl:top-4">
-          <h3 className="font-headline-md text-on-surface mb-md">Ticket</h3>
+        <div className={`bg-surface-container-lowest rounded-xl border border-outline-variant p-lg xl:sticky xl:top-4 flex flex-col overflow-hidden ${compact ? 'max-h-[calc(100dvh-5rem)]' : 'max-h-[calc(100dvh-7rem)]'}`}>
+          <h3 className="font-headline-md text-on-surface mb-md shrink-0">Ticket</h3>
           {cart.length === 0 ? (
-            <p className="font-body-sm text-on-surface-variant mb-lg">Toca un servicio o producto para agregarlo.</p>
+            <p className="font-body-sm text-on-surface-variant mb-lg shrink-0">Toca un servicio o producto para agregarlo.</p>
           ) : (
-            <ul className="space-y-2 mb-lg">
+            <ul className="space-y-2 mb-lg overflow-y-auto min-h-0 flex-1 max-h-[28vh] pr-1">
               {cart.map((line) => (
                 <li key={line.key} className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
@@ -308,7 +308,7 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
             </ul>
           )}
 
-          <div className="space-y-3 mb-lg">
+          <div className="space-y-3 mb-lg shrink-0">
             <div>
               <label className="font-label-sm text-on-surface-variant mb-1 block">Cliente</label>
               <div className="flex gap-2">
@@ -348,9 +348,10 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
                 <span className="material-symbols-outlined text-on-surface-variant">percent</span>
               </button>
             </div>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas" className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg min-h-[64px]" />
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas" className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg min-h-[48px]" />
           </div>
 
+          <div className="shrink-0">
           <div className="flex items-center justify-between mb-2">
             <p className="font-label-sm text-on-surface-variant">Pago</p>
             {!splitMode ? (
@@ -460,6 +461,7 @@ export default function PosRegister({ compact = false, onSale }: { compact?: boo
           >
             {saving ? 'Cobrando…' : `Cobrar ${money(total)}`}
           </button>
+          </div>
         </div>
       </div>
 

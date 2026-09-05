@@ -47,6 +47,8 @@ export interface ClientInfo {
       parent?: { id: string; name: string; color: string } | null;
     } | null;
     useCustomHours?: boolean;
+    capacity?: number;
+    kind?: string;
     workingHours?: { dayOfWeek: number; openTime: string; closeTime: string; isOpen: boolean }[];
   }[];
   categories?: {
@@ -77,6 +79,7 @@ export interface ClientInfo {
   bookingIntroText?: string;
   bookingSuccessText?: string;
   bookingConfirmAuto?: boolean;
+  studioBooking?: boolean;
   slotGapMinutes?: number;
 }
 
@@ -210,6 +213,120 @@ export interface MembershipPlan {
   currency: string;
   interval: string;
   benefits: string[];
+  classesPerPeriod?: number;
+}
+
+export interface StudioClass {
+  serviceId: string;
+  name: string;
+  description?: string | null;
+  duration: number;
+  price: number;
+  color: string;
+  category?: { id: string; name: string; color: string } | null;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  taken: number;
+  remaining: number;
+  full: boolean;
+  past: boolean;
+}
+
+export interface StudioAccountBooking {
+  id: string;
+  serviceName: string;
+  serviceColor: string;
+  duration: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod?: string | null;
+  canCancelWithCredit: boolean;
+  canReschedule: boolean;
+  hoursLeft: number;
+}
+
+export interface StudioAccount {
+  creditsLeft: number;
+  creditsTotal: number;
+  planName: string | null;
+  validUntil: string | null;
+  purchaseId: string | null;
+  trialUsed: boolean;
+  bookings: StudioAccountBooking[];
+}
+
+async function studioRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Error de reserva' }));
+    throw new Error(error.error || 'Error de reserva');
+  }
+  return res.json();
+}
+
+export async function getStudioDay(slug: string, date: string): Promise<{ date: string; classes: StudioClass[]; dropInPrice: number }> {
+  return studioRequest(`/api/studio/${slug}/day?date=${date}`);
+}
+
+export async function getStudioAccount(slug: string, data: { phone?: string; email?: string }): Promise<StudioAccount> {
+  const params = new URLSearchParams();
+  if (data.phone) params.set('phone', data.phone);
+  if (data.email) params.set('email', data.email);
+  return studioRequest(`/api/studio/${slug}/account?${params.toString()}`);
+}
+
+export async function bookStudioClass(slug: string, data: {
+  serviceId: string;
+  date: string;
+  startTime: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone: string;
+  method: 'CREDIT' | 'RECEPTION' | 'STRIPE' | 'TRIAL';
+  promoCode?: string;
+  returnUrl?: string;
+}): Promise<{ url?: string; booking?: { id: string; service?: { name: string } }; creditsUsed?: number }> {
+  return studioRequest(`/api/studio/${slug}/book`, { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function confirmStudioClass(slug: string, sessionId: string) {
+  return studioRequest(`/api/studio/${slug}/confirm`, { method: 'POST', body: JSON.stringify({ sessionId }) });
+}
+
+export async function cancelStudioClass(slug: string, data: { bookingId: string; customerPhone?: string; customerEmail?: string }) {
+  return studioRequest<{ cancelled: boolean; creditRestored: boolean; message: string }>(`/api/studio/${slug}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function rescheduleStudioClass(slug: string, data: {
+  bookingId: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  serviceId: string;
+  date: string;
+  startTime: string;
+}) {
+  return studioRequest(`/api/studio/${slug}/reschedule`, { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function joinStudioWaitlist(slug: string, data: {
+  serviceId: string;
+  date: string;
+  startTime: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone: string;
+}) {
+  return studioRequest(`/api/studio/${slug}/waitlist`, { method: 'POST', body: JSON.stringify(data) });
 }
 
 export async function getMembershipPlans(slug: string): Promise<MembershipPlan[]> {

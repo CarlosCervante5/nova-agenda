@@ -6,7 +6,7 @@ export default async function ClientPage({
   searchParams,
 }: {
   params: { clientSlug: string };
-  searchParams: { loyalty?: string; membership?: string; session_id?: string };
+  searchParams: { loyalty?: string; membership?: string; class?: string; session_id?: string };
 }) {
   const client = await getClientInfo(params.clientSlug);
 
@@ -49,9 +49,15 @@ export default async function ClientPage({
     searchParams.membership === 'success' || searchParams.membership === 'canceled'
       ? searchParams.membership
       : null;
+  const classStatus =
+    searchParams.class === 'success' || searchParams.class === 'canceled'
+      ? searchParams.class
+      : null;
 
   const initialTab =
-    membershipStatus
+    classStatus
+      ? 'booking'
+      : membershipStatus
       ? 'memberships'
       : searchParams.loyalty === '1' && loyaltyProgram
         ? 'loyalty'
@@ -88,7 +94,9 @@ export default async function ClientPage({
         loyaltyProgram={loyaltyProgram}
         membershipPlans={membershipPlans}
         membershipStatus={membershipStatus}
-        membershipSessionId={searchParams.session_id || null}
+        membershipSessionId={searchParams.membership ? searchParams.session_id || null : null}
+        classStatus={classStatus}
+        classSessionId={searchParams.class ? searchParams.session_id || null : null}
         initialTab={initialTab}
       />
     </div>

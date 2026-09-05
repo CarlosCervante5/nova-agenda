@@ -1,267 +1,80 @@
-import axios from 'axios';
-import { PrismaClient } from '@prisma/client';
+import twilio from 'twilio';
 
-const prisma = new PrismaClient();
-
-export interface WhatsAppMessage {
-  to: string;
-  message: string;
+export interface TwilioWhatsAppConfig {
+  accountSid: string;
+  authToken: string;
+  fromNumber: string;
 }
 
-export interface WhatsAppConfig {
-  phoneNumberId: string;
-  apiKey: string;
-  instanceId?: string;
+export function normalizeE164(phone: string): string {
+  const raw = String(phone || '').replace(/^whatsapp:/i, '').trim();
+  const digits = raw.replace(/[^\d+]/g, '');
+  if (!digits) return '';
+  return digits.startsWith('+') ? digits : `+${digits.replace(/\D/g, '')}`;
+}
+
+export function toWhatsAppAddress(phone: string): string {
+  const e164 = normalizeE164(phone);
+  return e164 ? `whatsapp:${e164}` : '';
+}
+
+export function fromWhatsAppAddress(address: string): string {
+  return normalizeE164(address);
+}
+
+export function hasTwilioCredentials(config?: Partial<TwilioWhatsAppConfig> | null): config is TwilioWhatsAppConfig {
+  return Boolean(config?.accountSid && config?.authToken && config?.fromNumber);
 }
 
 class WhatsAppService {
-  private async getGlobalConfig(): Promise<{ apiUrl: string; apiKey: string; instanceId: string }> {
-    const configs = await prisma.platformConfig.findMany({
-      where: {
-        key: { in: ['evo_cloud_api_url', 'evo_cloud_api_key', 'evo_cloud_instance_id'] },
-      },
-    });
-
-    const map: Record<string, string> = {};
-    configs.forEach(c => { map[c.key] = c.value; });
-
-    return {
-      apiUrl: map['evo_cloud_api_url'] || process.env.EVO_CLOUD_API_URL || 'https://api.evo.cloud',
-      apiKey: map['evo_cloud_api_key'] || process.env.EVO_CLOUD_API_KEY || '',
-      instanceId: map['evo_cloud_instance_id'] || process.env.EVO_CLOUD_INSTANCE_ID || '',
-    };
+  private client(config: TwilioWhatsAppConfig) {
+    return twilio(config.accountSid, config.authToken);
   }
 
-  private async getHeaders(config?: WhatsAppConfig): Promise<Record<string, string>> {
-    const global = await this.getGlobalConfig();
-    const apiKey = config?.apiKey || global.apiKey;
-    return {
-      'apikey': apiKey,
-      'Content-Type': 'application/json',
-    };
-  }
+  async sendMessage(to: string, message: string, config?: TwilioWhatsAppConfig | null): Promise<boolean> {
+    if (!hasTwilioCredentials(config)) {
+      console.error('[WhatsApp] Faltan credenciales de Twilio');
+      return false;
+    }
+    const dest = toWhatsAppAddress(to);
+    const from = toWhatsAppAddress(config.fromNumber);
+    if (!dest || !from) {
+      console.error('[WhatsApp] Número origen o destino inválido');
+      return false;
+    }
 
-  private async getInstanceId(config?: WhatsAppConfig): Promise<string> {
-    const global = await this.getGlobalConfig();
-    return config?.instanceId || global.instanceId;
-  }
-
-  private async getApiUrl(config?: WhatsAppConfig): Promise<string> {
-    const global = await this.getGlobalConfig();
-    return global.apiUrl;
-  }
-
-  async sendMessage(to: string, message: string, config?: WhatsAppConfig): Promise<boolean> {
     try {
-      const instanceId = await this.getInstanceId(config);
-      const apiUrl = await this.getApiUrl(config);
-      const headers = await this.getHeaders(config);
-      const url = `${apiUrl}/message/sendText/${instanceId}`;
-
-      const payload = {
-        number: to,
-        text: message,
-      };
-
-      console.log(`[WhatsApp] Enviando mensaje a ${to}:`, message.substring(0, 100) + '...');
-
-      const response = await axios.post(url, payload, {
-        headers,
-        timeout: 10000,
+      const result = await this.client(config).messages.create({
+        from,
+        to: dest,
+        body: message,
       });
-
-      console.log(`[WhatsApp] Mensaje enviado exitosamente:`, response.data);
+      console.log(`[WhatsApp] Enviado a ${dest}: ${result.sid}`);
       return true;
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error enviando mensaje:`, error.response?.data || error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('[WhatsApp] Error enviando mensaje:', err.message || error);
       return false;
     }
   }
 
-  async sendInteractiveButtons(
-    to: string,
-    message: string,
-    buttons: Array<{ id: string; text: string }>,
-    config?: WhatsAppConfig
-  ): Promise<boolean> {
+  async checkConnection(config?: TwilioWhatsAppConfig | null): Promise<boolean> {
+    if (!hasTwilioCredentials(config)) return false;
     try {
-      const instanceId = await this.getInstanceId(config);
-      const apiUrl = await this.getApiUrl(config);
-      const headers = await this.getHeaders(config);
-      const url = `${apiUrl}/message/sendButtons/${instanceId}`;
-
-      const payload = {
-        number: to,
-        title: '',
-        description: message,
-        buttons: buttons.map(btn => ({
-          buttonId: btn.id,
-          buttonText: { displayText: btn.text },
-          type: 1,
-        })),
-      };
-
-      const response = await axios.post(url, payload, {
-        headers,
-        timeout: 10000,
-      });
-
-      console.log(`[WhatsApp] Botones interactivos enviados:`, response.data);
-      return true;
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error enviando botones:`, error.response?.data || error.message);
+      const account = await this.client(config).api.accounts(config.accountSid).fetch();
+      return account.status === 'active';
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('[WhatsApp] Error verificando Twilio:', err.message || error);
       return false;
     }
   }
 
-  async sendListMenu(
-    to: string,
-    title: string,
-    description: string,
-    buttonText: string,
-    sections: Array<{
-      title: string;
-      rows: Array<{ id: string; title: string; description?: string }>;
-    }>,
-    config?: WhatsAppConfig
-  ): Promise<boolean> {
+  validateWebhookSignature(authToken: string, signature: string, url: string, params: Record<string, string>): boolean {
+    if (!authToken || !signature || !url) return false;
     try {
-      const instanceId = await this.getInstanceId(config);
-      const apiUrl = await this.getApiUrl(config);
-      const headers = await this.getHeaders(config);
-      const url = `${apiUrl}/message/sendList/${instanceId}`;
-
-      const payload = {
-        number: to,
-        title,
-        description,
-        buttonText,
-        footerText: '',
-        sections,
-      };
-
-      const response = await axios.post(url, payload, {
-        headers,
-        timeout: 10000,
-      });
-
-      console.log(`[WhatsApp] Lista interactiva enviada:`, response.data);
-      return true;
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error enviando lista:`, error.response?.data || error.message);
-      return false;
-    }
-  }
-
-  async checkConnection(config?: WhatsAppConfig): Promise<boolean> {
-    try {
-      const instanceId = await this.getInstanceId(config);
-      const apiUrl = await this.getApiUrl(config);
-      const headers = await this.getHeaders(config);
-      const url = `${apiUrl}/instance/connectionState/${instanceId}`;
-
-      const response = await axios.get(url, {
-        headers,
-        timeout: 10000,
-      });
-
-      return response.data?.state === 'open';
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error verificando conexión:`, error.message);
-      return false;
-    }
-  }
-
-  async getQRCode(instanceName: string): Promise<{ base64: string; qrCode: string }> {
-    try {
-      const global = await this.getGlobalConfig();
-      const url = `${global.apiUrl}/instance/qrcode/${instanceName}`;
-      const headers = {
-        'apikey': global.apiKey,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await axios.get(url, {
-        headers,
-        timeout: 15000,
-      });
-
-      return {
-        base64: response.data?.base64 || '',
-        qrCode: response.data?.qrcode || '',
-      };
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error getting QR code:`, error.message);
-      throw new Error('No se pudo obtener el código QR');
-    }
-  }
-
-  async getConnectionState(instanceName: string): Promise<string> {
-    try {
-      const global = await this.getGlobalConfig();
-      const url = `${global.apiUrl}/instance/connectionState/${instanceName}`;
-      const headers = {
-        'apikey': global.apiKey,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await axios.get(url, {
-        headers,
-        timeout: 10000,
-      });
-
-      return response.data?.state || 'close';
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error getting connection state:`, error.message);
-      return 'close';
-    }
-  }
-
-  async createInstance(instanceName: string, webhookUrl?: string): Promise<boolean> {
-    try {
-      const global = await this.getGlobalConfig();
-      const url = `${global.apiUrl}/instance/create`;
-      const headers = {
-        'apikey': global.apiKey,
-        'Content-Type': 'application/json',
-      };
-
-      const payload = {
-        instanceName,
-        qrcode: true,
-        webhook_url: webhookUrl || `${global.apiUrl}/webhook`,
-      };
-
-      const response = await axios.post(url, payload, {
-        headers,
-        timeout: 10000,
-      });
-
-      console.log(`[WhatsApp] Instance created:`, response.data);
-      return true;
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error creating instance:`, error.response?.data || error.message);
-      return false;
-    }
-  }
-
-  async disconnectInstance(instanceName: string): Promise<boolean> {
-    try {
-      const global = await this.getGlobalConfig();
-      const url = `${global.apiUrl}/instance/logout/${instanceName}`;
-      const headers = {
-        'apikey': global.apiKey,
-        'Content-Type': 'application/json',
-      };
-
-      await axios.post(url, {}, {
-        headers,
-        timeout: 10000,
-      });
-
-      return true;
-    } catch (error: any) {
-      console.error(`[WhatsApp] Error disconnecting instance:`, error.message);
+      return twilio.validateRequest(authToken, signature, url, params);
+    } catch {
       return false;
     }
   }

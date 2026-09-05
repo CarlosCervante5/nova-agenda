@@ -1,16 +1,17 @@
-import { Router, Request } from 'express';
+import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, canAccessTenant, AuthRequest } from '../middleware/auth';
 import { whatsappHandler } from '../services/whatsapp-handler';
-import { whatsappService } from '../services/whatsapp';
+import { fromWhatsAppAddress, hasTwilioCredentials, normalizeE164, whatsappService } from '../services/whatsapp';
 import { getPlanLevel } from '../middleware/plan-check';
 import { parseAddons } from '../middleware/plan-limits';
+import { config as appConfig } from '../config';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-function denyUnlessTenant(req: AuthRequest, res: import('express').Response, clientId: string) {
+function denyUnlessTenant(req: AuthRequest, res: Response, clientId: string) {
   if (!canAccessTenant(req, clientId)) {
     res.status(403).json({ error: 'Not authorized' });
     return false;
@@ -21,18 +22,14 @@ function denyUnlessTenant(req: AuthRequest, res: import('express').Response, cli
 function extractWebhookToken(req: Request): string {
   const header = req.headers['x-webhook-token'];
   if (typeof header === 'string' && header.trim()) return header.trim();
-
   const apikey = req.headers.apikey;
   if (typeof apikey === 'string' && apikey.trim()) return apikey.trim();
-
   const auth = req.headers.authorization;
   if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
     return auth.slice(7).trim();
   }
-
   const query = req.query.token;
   if (typeof query === 'string' && query.trim()) return query.trim();
-
   return typeof req.body?.token === 'string' ? req.body.token.trim() : '';
 }
 
@@ -47,7 +44,63 @@ function newWebhookToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// Helper: WhatsApp es un ADDON ($499/mes) además del plan PRO
+function publicApiBase(req: Request) {
+  if (appConfig.publicApiUrl) return appConfig.publicApiUrl;
+  const proto = String(req.headers['x-forwarded-proto'] || req.protocol).split(',')[0];
+  return `${proto}://${req.get('host')}`;
+}
+
+function twilioWebhookUrl(req: Request, slug: string) {
+  return `${publicApiBase(req)}/api/whatsapp/twilio/webhook/${encodeURIComponent(slug)}`;
+}
+
+function maskSecret(value?: string | null) {
+  if (!value) return '';
+  if (value.length <= 4) return '••••';
+  return `${'•'.repeat(Math.min(12, value.length - 4))}${value.slice(-4)}`;
+}
+
+function twilioFromRow(row: { twilioAccountSid: string; twilioAuthToken: string; phoneNumberId: string }) {
+  return {
+    accountSid: row.twilioAccountSid,
+    authToken: row.twilioAuthToken,
+    fromNumber: row.phoneNumberId,
+  };
+}
+
+function serializeConfig(
+  req: Request,
+  clientSlug: string,
+  row: {
+    id: string;
+    phoneNumberId: string;
+    twilioAccountSid: string;
+    twilioAuthToken: string;
+    isOpenAIEnabled: boolean;
+    aiPersonality: string;
+    isActive: boolean;
+    webhookToken: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+) {
+  return {
+    id: row.id,
+    provider: 'TWILIO',
+    phoneNumberId: row.phoneNumberId,
+    twilioAccountSid: row.twilioAccountSid,
+    twilioAuthTokenMasked: maskSecret(row.twilioAuthToken),
+    hasAuthToken: Boolean(row.twilioAuthToken),
+    isConfigured: hasTwilioCredentials(twilioFromRow(row)),
+    isOpenAIEnabled: row.isOpenAIEnabled,
+    aiPersonality: row.aiPersonality,
+    isActive: row.isActive,
+    webhookUrl: twilioWebhookUrl(req, clientSlug),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 async function requireWhatsappAddon(clientId: string): Promise<{ allowed: boolean; error?: string }> {
   const client = await prisma.client.findUnique({
     where: { id: clientId },
@@ -66,19 +119,78 @@ async function requireWhatsappAddon(clientId: string): Promise<{ allowed: boolea
   return { allowed: true };
 }
 
-// Webhook endpoint - receives messages from Evo Cloud
+async function clientSlugById(clientId: string) {
+  const client = await prisma.client.findUnique({ where: { id: clientId }, select: { slug: true } });
+  return client?.slug || '';
+}
+
+router.post('/twilio/webhook/:clientSlug', async (req, res) => {
+  try {
+    const { clientSlug } = req.params;
+    const client = await prisma.client.findUnique({
+      where: { slug: clientSlug },
+      select: {
+        id: true,
+        plan: true,
+        addons: true,
+        whatsappConfig: true,
+      },
+    });
+
+    const wa = client?.whatsappConfig;
+    if (!client || !wa?.twilioAuthToken) {
+      return res.status(404).type('text/xml').send('<Response></Response>');
+    }
+
+    const signature = String(req.headers['x-twilio-signature'] || '');
+    const params = Object.fromEntries(
+      Object.entries(req.body || {}).map(([key, value]) => [key, String(value ?? '')])
+    );
+    const url = twilioWebhookUrl(req, clientSlug);
+    const valid = whatsappService.validateWebhookSignature(wa.twilioAuthToken, signature, url, params);
+    if (!valid) {
+      console.warn('[WhatsApp Twilio] Firma inválida para', clientSlug);
+      return res.status(403).type('text/xml').send('<Response></Response>');
+    }
+
+    if (wa.twilioAccountSid && params.AccountSid && params.AccountSid !== wa.twilioAccountSid) {
+      return res.status(403).type('text/xml').send('<Response></Response>');
+    }
+
+    if (
+      getPlanLevel(client.plan) < getPlanLevel('PRO') ||
+      !parseAddons(client.addons).includes('WHATSAPP_AI')
+    ) {
+      return res.status(403).type('text/xml').send('<Response></Response>');
+    }
+
+    const phone = fromWhatsAppAddress(params.From || '');
+    const message = (params.Body || '').trim();
+    if (phone && message && wa.isActive) {
+      whatsappHandler.processIncomingMessage({
+        phone,
+        message,
+        timestamp: new Date().toISOString(),
+        clientSlug,
+      }).catch((err) => console.error('[WhatsApp Twilio] Error processing:', err));
+    }
+
+    res.status(200).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+  } catch (error) {
+    console.error('[WhatsApp Twilio] Webhook error:', error);
+    res.status(200).type('text/xml').send('<Response></Response>');
+  }
+});
+
 router.post('/webhook', async (req, res) => {
   try {
     const { phone, message, timestamp, clientSlug } = req.body;
-
     if (!phone || !message || !clientSlug) {
       return res.status(400).json({ error: 'Missing required fields: phone, message, clientSlug' });
     }
 
     const providedToken = extractWebhookToken(req);
-    if (!providedToken) {
-      return res.status(401).json({ error: 'Webhook token required' });
-    }
+    if (!providedToken) return res.status(401).json({ error: 'Webhook token required' });
 
     const client = await prisma.client.findUnique({
       where: { slug: clientSlug },
@@ -107,334 +219,201 @@ router.post('/webhook', async (req, res) => {
       message,
       timestamp,
       clientSlug,
-    }).catch(err => console.error('[WhatsApp Webhook] Error processing:', err));
+    }).catch((err) => console.error('[WhatsApp Webhook] Error processing:', err));
 
     res.status(200).json({ status: 'ok' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[WhatsApp Webhook] Error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Get WhatsApp config for a client
 router.get('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
-
-    // Authorization check
     if (!denyUnlessTenant(req, res, clientId)) return;
-
-    // Plan check
     const planCheck = await requireWhatsappAddon(clientId);
-    if (!planCheck.allowed) {
-      return res.status(403).json({ error: planCheck.error });
-    }
+    if (!planCheck.allowed) return res.status(403).json({ error: planCheck.error });
 
-    let config = await prisma.whatsAppConfig.findUnique({
-      where: { clientId },
-      select: {
-        id: true,
-        phoneNumberId: true,
+    const slug = await clientSlugById(clientId);
+    const row = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!row) {
+      return res.json({
+        provider: 'TWILIO',
+        phoneNumberId: '',
+        twilioAccountSid: '',
+        twilioAuthTokenMasked: '',
+        hasAuthToken: false,
+        isConfigured: false,
         isOpenAIEnabled: true,
-        aiPersonality: true,
-        isActive: true,
-        webhookToken: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (config && !config.webhookToken) {
-      config = await prisma.whatsAppConfig.update({
-        where: { clientId },
-        data: { webhookToken: newWebhookToken() },
-        select: {
-          id: true,
-          phoneNumberId: true,
-          isOpenAIEnabled: true,
-          aiPersonality: true,
-          isActive: true,
-          webhookToken: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        aiPersonality:
+          'Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.',
+        isActive: false,
+        webhookUrl: slug ? twilioWebhookUrl(req, slug) : '',
       });
     }
 
-    res.json(config || null);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.json(serializeConfig(req, slug, row));
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 
-// Create or update WhatsApp config
 router.put('/config/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
-    const { phoneNumberId, apiKey, instanceId, webhookToken, isOpenAIEnabled, aiPersonality } = req.body;
-
-    // Authorization check
+    const { phoneNumberId, twilioAccountSid, twilioAuthToken, isOpenAIEnabled, aiPersonality, isActive } = req.body;
     if (!denyUnlessTenant(req, res, clientId)) return;
-
-    // Plan check
     const planCheck = await requireWhatsappAddon(clientId);
-    if (!planCheck.allowed) {
-      return res.status(403).json({ error: planCheck.error });
-    }
+    if (!planCheck.allowed) return res.status(403).json({ error: planCheck.error });
 
     const existing = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    const resolvedToken = webhookToken || existing?.webhookToken || newWebhookToken();
+    const sid = String(twilioAccountSid ?? existing?.twilioAccountSid ?? '').trim();
+    const from = normalizeE164(String(phoneNumberId ?? existing?.phoneNumberId ?? ''));
+    const incomingToken = typeof twilioAuthToken === 'string' ? twilioAuthToken.trim() : '';
+    const tokenLooksMasked = incomingToken.includes('•') || incomingToken.includes('*');
+    const authToken = incomingToken && !tokenLooksMasked ? incomingToken : (existing?.twilioAuthToken || '');
 
-    let config;
-    if (existing) {
-      config = await prisma.whatsAppConfig.update({
-        where: { clientId },
-        data: {
-          ...(phoneNumberId && { phoneNumberId }),
-          ...(apiKey && { apiKey }),
-          ...(instanceId !== undefined && { instanceId }),
-          webhookToken: resolvedToken,
-          ...(isOpenAIEnabled !== undefined && { isOpenAIEnabled }),
-          ...(aiPersonality !== undefined && { aiPersonality }),
-        },
-      });
-    } else {
-      config = await prisma.whatsAppConfig.create({
-        data: {
-          clientId,
-          phoneNumberId: phoneNumberId || '',
-          apiKey: apiKey || '',
-          instanceId: instanceId || `client_${clientId}`,
-          webhookToken: resolvedToken,
-          isOpenAIEnabled: isOpenAIEnabled ?? true,
-          aiPersonality: aiPersonality || 'Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.',
-          isActive: false,
-        },
-      });
+    if (sid && !sid.startsWith('AC')) {
+      return res.status(400).json({ error: 'El Account SID de Twilio debe empezar con AC' });
     }
 
-    res.json({
-      id: config.id,
-      phoneNumberId: config.phoneNumberId,
-      isActive: config.isActive,
-      webhookToken: config.webhookToken,
-    });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    const data = {
+      provider: 'TWILIO',
+      phoneNumberId: from,
+      twilioAccountSid: sid,
+      twilioAuthToken: authToken,
+      webhookToken: existing?.webhookToken || newWebhookToken(),
+      ...(isOpenAIEnabled !== undefined && { isOpenAIEnabled: Boolean(isOpenAIEnabled) }),
+      ...(aiPersonality !== undefined && { aiPersonality: String(aiPersonality) }),
+      ...(typeof isActive === 'boolean' && { isActive }),
+    };
+
+    const row = existing
+      ? await prisma.whatsAppConfig.update({ where: { clientId }, data })
+      : await prisma.whatsAppConfig.create({
+          data: {
+            clientId,
+            apiKey: '',
+            isActive: typeof isActive === 'boolean' ? isActive : false,
+            ...data,
+          },
+        });
+
+    const slug = await clientSlugById(clientId);
+    res.json(serializeConfig(req, slug, row));
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 
-// Toggle WhatsApp active status
 router.patch('/config/:clientId/toggle', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
-
     if (!denyUnlessTenant(req, res, clientId)) return;
-
     const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    if (!config) {
-      return res.status(404).json({ error: 'WhatsApp config not found' });
+    if (!config) return res.status(404).json({ error: 'Guarda primero las credenciales de Twilio' });
+
+    if (!config.isActive && !hasTwilioCredentials(twilioFromRow(config))) {
+      return res.status(400).json({ error: 'Completa Account SID, Auth Token y el número de WhatsApp' });
     }
 
     const updated = await prisma.whatsAppConfig.update({
       where: { clientId },
       data: { isActive: !config.isActive },
     });
-
     res.json({ isActive: updated.isActive });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 
-// Check WhatsApp connection status
 router.get('/config/:clientId/status', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
-
     if (!denyUnlessTenant(req, res, clientId)) return;
-
-    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    if (!config) {
-      return res.status(404).json({ error: 'WhatsApp config not found' });
-    }
-
-    const connected = await whatsappService.checkConnection({
-      phoneNumberId: config.phoneNumberId,
-      apiKey: config.apiKey,
-      instanceId: config.instanceId || undefined,
-    });
-
-    res.json({ connected, isActive: config.isActive });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    const row = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!row) return res.json({ connected: false, isActive: false, isConfigured: false });
+    const connected = await whatsappService.checkConnection(twilioFromRow(row));
+    res.json({ connected, isActive: row.isActive, isConfigured: hasTwilioCredentials(twilioFromRow(row)) });
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 
-// Get QR code for client to scan (Business plan only)
-router.get('/qr/:clientId', authenticate, async (req: AuthRequest, res) => {
-  try {
-    const { clientId } = req.params;
-
-    if (!denyUnlessTenant(req, res, clientId)) return;
-
-    const planCheck = await requireWhatsappAddon(clientId);
-    if (!planCheck.allowed) {
-      return res.status(403).json({ error: planCheck.error });
-    }
-
-    let config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    const instanceName = `client_${clientId}`;
-
-    if (!config) {
-      await whatsappService.createInstance(instanceName);
-      config = await prisma.whatsAppConfig.create({
-        data: {
-          clientId,
-          phoneNumberId: '',
-          apiKey: '',
-          instanceId: instanceName,
-          webhookToken: newWebhookToken(),
-          isActive: false,
-        },
-      });
-    } else if (!config.instanceId) {
-      await whatsappService.createInstance(instanceName);
-      config = await prisma.whatsAppConfig.update({
-        where: { clientId },
-        data: { instanceId: instanceName },
-      });
-    }
-
-    const qrResponse = await whatsappService.getQRCode(config.instanceId || instanceName);
-
-    res.json({
-      qrCode: qrResponse.base64 || qrResponse.qrCode,
-      instanceName: config.instanceId || instanceName,
-      connected: config.isActive,
-    });
-  } catch (error: any) {
-    console.error('[WhatsApp QR] Error:', error);
-    res.status(500).json({ error: error.message || 'Error getting QR code' });
-  }
-});
-
-// Check connection status by client instance
 router.get('/connection/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
-
     if (!denyUnlessTenant(req, res, clientId)) return;
-
     const planCheck = await requireWhatsappAddon(clientId);
-    if (!planCheck.allowed) {
-      return res.status(403).json({ error: planCheck.error });
+    if (!planCheck.allowed) return res.status(403).json({ error: planCheck.error });
+
+    const row = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!row || !hasTwilioCredentials(twilioFromRow(row))) {
+      return res.json({ connected: false, state: 'missing', isActive: false, phoneNumber: '' });
     }
 
-    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    if (!config) {
-      return res.status(404).json({ error: 'WhatsApp config not found' });
-    }
-
-    const instanceName = config.instanceId || `client_${clientId}`;
-    const connectionState = await whatsappService.getConnectionState(instanceName);
-    const connected = connectionState === 'open' || connectionState === 'CONNECTED';
-
-    if (connected && !config.isActive) {
-      await prisma.whatsAppConfig.update({
-        where: { clientId },
-        data: { isActive: true },
-      });
-    }
-
+    const connected = await whatsappService.checkConnection(twilioFromRow(row));
     res.json({
       connected,
-      state: connectionState,
-      isActive: connected || config.isActive,
-      phoneNumber: config.phoneNumberId,
+      state: connected ? 'ready' : 'invalid',
+      isActive: row.isActive,
+      phoneNumber: row.phoneNumberId,
     });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 
-// Disconnect WhatsApp
-router.post('/disconnect/:clientId', authenticate, async (req: AuthRequest, res) => {
-  try {
-    const { clientId } = req.params;
-
-    if (!denyUnlessTenant(req, res, clientId)) return;
-
-    const planCheck = await requireWhatsappAddon(clientId);
-    if (!planCheck.allowed) {
-      return res.status(403).json({ error: planCheck.error });
-    }
-
-    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    if (!config) {
-      return res.status(404).json({ error: 'WhatsApp config not found' });
-    }
-
-    const instanceName = config.instanceId || `client_${clientId}`;
-    await whatsappService.disconnectInstance(instanceName);
-
-    await prisma.whatsAppConfig.update({
-      where: { clientId },
-      data: { isActive: false },
-    });
-
-    res.json({ message: 'WhatsApp disconnected' });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get WhatsApp logs for a client
 router.get('/logs/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
-
     if (!denyUnlessTenant(req, res, clientId)) return;
 
-    const logs = await prisma.whatsAppLog.findMany({
-      where: { clientId },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
-    });
-
-    const total = await prisma.whatsAppLog.count({ where: { clientId } });
-
+    const [logs, total] = await Promise.all([
+      prisma.whatsAppLog.findMany({
+        where: { clientId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.whatsAppLog.count({ where: { clientId } }),
+    ]);
     res.json({ logs, total });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 
-// Send a test message
 router.post('/test/:clientId', authenticate, async (req: AuthRequest, res) => {
   try {
     const { clientId } = req.params;
     const { phone, message } = req.body;
-
     if (!denyUnlessTenant(req, res, clientId)) return;
 
-    const config = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
-    if (!config) {
-      return res.status(404).json({ error: 'WhatsApp config not found' });
+    const row = await prisma.whatsAppConfig.findUnique({ where: { clientId } });
+    if (!row || !hasTwilioCredentials(twilioFromRow(row))) {
+      return res.status(400).json({ error: 'Guarda las credenciales de Twilio antes de enviar una prueba' });
     }
 
-    const sent = await whatsappService.sendMessage(phone, message, {
-      phoneNumberId: config.phoneNumberId,
-      apiKey: config.apiKey,
-      instanceId: config.instanceId || undefined,
-    });
-
-    res.json({ sent });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    const sent = await whatsappService.sendMessage(String(phone || ''), String(message || ''), twilioFromRow(row));
+    if (sent) {
+      await prisma.whatsAppLog.create({
+        data: {
+          clientId,
+          phoneNumber: normalizeE164(String(phone || '')),
+          direction: 'OUTBOUND',
+          message: String(message || ''),
+          intent: 'TEST',
+        },
+      });
+    }
+    if (!sent) return res.status(502).json({ error: 'Twilio no pudo enviar el mensaje. Revisa número y credenciales.' });
+    res.json({ sent: true });
+  } catch (error: unknown) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Error' });
   }
 });
 

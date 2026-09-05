@@ -41,6 +41,8 @@ model Client {
   bookingIntroText     String?
   bookingSuccessText   String?
   bookingConfirmAuto   Boolean @default(false)
+  // Reserva tipo estudio: calendario de clases, créditos de membresía y pago al reservar
+  studioBooking Boolean @default(false)
   isActive      Boolean   @default(true)
   plan          String    @default("FREE")
   stripeCustomerId     String?
@@ -70,6 +72,8 @@ model Client {
   loyaltyProgram LoyaltyProgram?
   membershipPlans MembershipPlan[]
   membershipPurchases MembershipPurchase[]
+  classPromos   ClassPromo[]
+  classWaitlist ClassWaitlist[]
   posProducts  PosProduct[]
   posSales     PosSale[]
   posCustomers PosCustomer[]
@@ -131,7 +135,11 @@ model Service {
   bookings      Booking[]
   staffServices StaffService[]
   useCustomHours Boolean @default(false)
+  capacity      Int      @default(1)
+  // standard | class | access
+  kind          String   @default("standard")
   workingHours  ServiceWorkingHours[]
+  waitlist      ClassWaitlist[]
 
   @@map("services")
 }
@@ -203,6 +211,14 @@ model Booking {
   staff         StaffMember? @relation(fields: [staffId], references: [id], onDelete: SetNull)
   staffId       String?
   loyaltyStamp  LoyaltyStamp?
+  paymentStatus String    @default("NONE")
+  paymentMethod String?
+  membershipPurchaseId String?
+  membershipPurchase   MembershipPurchase? @relation(fields: [membershipPurchaseId], references: [id], onDelete: SetNull)
+  stripeCheckoutSessionId String?
+  amountPaid    Float?
+  promoCode     String?
+  isTrial       Boolean   @default(false)
 
   @@map("bookings")
 }
@@ -222,19 +238,22 @@ model WorkingHours {
 }
 
 model WhatsAppConfig {
-  id              String   @id @default(cuid())
-  clientId        String   @unique
-  phoneNumberId   String
-  apiKey          String
-  instanceId      String?
-  webhookToken    String?
-  isOpenAIEnabled Boolean  @default(true)
-  aiPersonality   String   @default("Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.")
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  clientId          String   @unique
+  provider          String   @default("TWILIO")
+  phoneNumberId     String
+  apiKey            String   @default("")
+  instanceId        String?
+  twilioAccountSid  String   @default("")
+  twilioAuthToken   String   @default("")
+  webhookToken      String?
+  isOpenAIEnabled   Boolean  @default(true)
+  aiPersonality     String   @default("Eres un asistente amable y profesional de un negocio de belleza. Tu objetivo es ayudar a los clientes con información y reservar citas.")
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@map("whatsapp_config")
 }
@@ -354,6 +373,7 @@ model MembershipPlan {
   price       Float
   currency    String   @default("mxn")
   interval    String   @default("month")
+  classesPerPeriod Int @default(0)
   benefits    String   @default("[]")
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
@@ -377,6 +397,8 @@ model MembershipPurchase {
   stripeSubscriptionId    String?
   stripeCustomerId        String?
   currentPeriodEnd        DateTime?
+  creditsTotal            Int       @default(0)
+  creditsUsed             Int       @default(0)
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -384,9 +406,44 @@ model MembershipPurchase {
   clientId    String
   plan        MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   planId      String
+  bookings    Booking[]
 
   @@index([clientId, status])
   @@map("membership_purchases")
+}
+
+model ClassPromo {
+  id                 String   @id @default(cuid())
+  code               String
+  price              Float
+  maxUsesPerCustomer Int      @default(1)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  client             Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId           String
+
+  @@unique([clientId, code])
+  @@map("class_promos")
+}
+
+model ClassWaitlist {
+  id            String   @id @default(cuid())
+  date          DateTime
+  startTime     String
+  customerName  String
+  customerEmail String?
+  customerPhone String
+  status        String   @default("WAITING")
+  createdAt     DateTime @default(now())
+
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId      String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceId     String
+
+  @@index([clientId, serviceId, date, startTime, status])
+  @@map("class_waitlist")
 }
 
 model PosProduct {

@@ -39,6 +39,8 @@ export class WhatsAppHandler {
     // 2. Log incoming message
     await this.logMessage(client.id, phone, 'INBOUND', message);
 
+    if (!config.isOpenAIEnabled) return;
+
     // 3. Get business context
     const [services, workingHours, customerBookings] = await Promise.all([
       prisma.service.findMany({
@@ -114,11 +116,10 @@ export class WhatsAppHandler {
         break;
     }
 
-    // 6. Send response via WhatsApp
     await whatsappService.sendMessage(phone, responseText, {
-      phoneNumberId: config.phoneNumberId,
-      apiKey: config.apiKey,
-      instanceId: config.instanceId || undefined,
+      accountSid: config.twilioAccountSid,
+      authToken: config.twilioAuthToken,
+      fromNumber: config.phoneNumberId,
     });
 
     // 7. Log outgoing message
@@ -351,9 +352,9 @@ export class WhatsAppHandler {
       );
 
       await whatsappService.sendMessage(booking.customerPhone, message, {
-        phoneNumberId: config.phoneNumberId,
-        apiKey: config.apiKey,
-        instanceId: config.instanceId || undefined,
+        accountSid: config.twilioAccountSid,
+        authToken: config.twilioAuthToken,
+        fromNumber: config.phoneNumberId,
       });
 
       await this.logMessage(
@@ -400,9 +401,9 @@ export class WhatsAppHandler {
       );
 
       await whatsappService.sendMessage(booking.customerPhone, message, {
-        phoneNumberId: config.phoneNumberId,
-        apiKey: config.apiKey,
-        instanceId: config.instanceId || undefined,
+        accountSid: config.twilioAccountSid,
+        authToken: config.twilioAuthToken,
+        fromNumber: config.phoneNumberId,
       });
 
       await this.logMessage(

@@ -19,6 +19,7 @@ const emptyForm = {
   interval: 'month',
   benefits: '',
   isActive: true,
+  classesPerPeriod: '0',
 };
 
 function intervalLabel(value: string) {
@@ -85,6 +86,7 @@ export default function MembershipsPage() {
       interval: plan.interval || 'month',
       benefits: (plan.benefits || []).join('\n'),
       isActive: plan.isActive,
+      classesPerPeriod: String(plan.classesPerPeriod || 0),
     });
     setShowForm(true);
     setMessage('');
@@ -102,6 +104,7 @@ export default function MembershipsPage() {
       interval: form.interval,
       benefits: form.benefits,
       isActive: form.isActive,
+      classesPerPeriod: Number(form.classesPerPeriod) || 0,
     };
     try {
       if (editing) await api.updateMembership(editing.id, payload);
@@ -206,6 +209,11 @@ export default function MembershipsPage() {
               {INTERVALS.map((i) => <option key={i.value} value={i.value}>{i.label}</option>)}
             </select>
           </div>
+          <div>
+            <label className="font-label-md text-on-surface mb-xs block">Clases / créditos por periodo</label>
+            <input type="number" min="0" step="1" value={form.classesPerPeriod} onChange={(e) => setForm({ ...form, classesPerPeriod: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg" placeholder="0 = sin créditos" />
+            <p className="font-body-sm text-on-surface-variant mt-1">Para estudios: START 4, ELITE 8, etc. 0 deja la membresía sin cupos de clase.</p>
+          </div>
           <div className="md:col-span-2">
             <label className="font-label-md text-on-surface mb-xs block">Descripción</label>
             <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-3 bg-surface-bright border border-outline-variant rounded-lg min-h-[80px]" />
@@ -251,6 +259,9 @@ export default function MembershipsPage() {
                 </span>
               </div>
               {plan.description && <p className="font-body-sm text-on-surface-variant mb-3">{plan.description}</p>}
+              {(plan.classesPerPeriod || 0) > 0 && (
+                <p className="font-label-sm text-primary mb-3">{plan.classesPerPeriod} créditos por periodo</p>
+              )}
               <ul className="space-y-1 mb-4">
                 {(plan.benefits || []).map((b) => (
                   <li key={b} className="font-body-sm text-on-surface flex gap-2">
@@ -283,6 +294,7 @@ export default function MembershipsPage() {
                     <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Cliente</th>
                     <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Membresía</th>
                     <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Estado</th>
+                    <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Créditos</th>
                     <th className="px-lg py-3 font-label-sm text-on-surface-variant uppercase">Fecha</th>
                   </tr>
                 </thead>
@@ -296,6 +308,9 @@ export default function MembershipsPage() {
                       <td className="px-lg py-3 font-body-sm">{p.plan?.name}</td>
                       <td className="px-lg py-3">
                         <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-surface-container-high">{p.status}</span>
+                      </td>
+                      <td className="px-lg py-3 font-body-sm text-on-surface-variant">
+                        {(p.creditsTotal || 0) > 0 ? `${Math.max(0, (p.creditsTotal || 0) - (p.creditsUsed || 0))} / ${p.creditsTotal}` : '—'}
                       </td>
                       <td className="px-lg py-3 font-body-sm text-on-surface-variant">
                         {new Date(p.createdAt).toLocaleDateString('es-MX')}

@@ -31,4 +31,5 @@ export const config = {
   jwtSecret: resolveJwtSecret(),
   corsOrigin: process.env.CORS_ORIGIN?.split(',') || defaultOrigins,
   baseDomain: process.env.MULTI_TENANT_BASE_DOMAIN || 'localhost',
+  publicApiUrl: (process.env.API_URL || '').replace(/\/$/, ''),
 };

@@ -14,6 +14,7 @@ import loyaltyRoutes from './routes/loyalty';
 import staffRoutes from './routes/staff';
 import serviceCategoryRoutes from './routes/service-categories';
 import membershipRoutes from './routes/memberships';
+import studioRoutes from './routes/studio';
 import uploadRoutes from './routes/uploads';
 import posRoutes from './routes/pos';
 import { ensureUploadDir, getUploadDir } from './lib/uploads';
@@ -49,9 +50,11 @@ app.use(cors(corsOptions));
 // Stripe webhook needs raw body; no aplicar express.json() a esa ruta
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/memberships/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/whatsapp/twilio/webhook', express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   if (req.originalUrl.startsWith('/api/stripe/webhook')) return next();
   if (req.originalUrl.startsWith('/api/memberships/webhook')) return next();
+  if (req.originalUrl.startsWith('/api/whatsapp/twilio/webhook')) return next();
   return express.json()(req, res, next);
 });
 
@@ -69,6 +72,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/memberships', membershipRoutes);
+app.use('/api/studio', studioRoutes);
 app.use('/api/uploads/files', express.static(ensureUploadDir(getUploadDir()), { maxAge: '7d' }));
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/pos', posRoutes);

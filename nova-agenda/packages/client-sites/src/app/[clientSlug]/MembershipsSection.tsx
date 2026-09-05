@@ -6,6 +6,7 @@ import {
   createMembershipCheckout,
   MembershipPlan,
 } from '@/lib/api';
+import StudioPolicies from './StudioPolicies';
 
 interface Props {
   clientSlug: string;
@@ -14,6 +15,7 @@ interface Props {
   plans: MembershipPlan[];
   checkoutStatus?: 'success' | 'canceled' | null;
   sessionId?: string | null;
+  studioMode?: boolean;
 }
 
 const INTERVALS: Record<string, string> = {
@@ -37,6 +39,7 @@ export default function MembershipsSection({
   plans,
   checkoutStatus,
   sessionId,
+  studioMode = false,
 }: Props) {
   const [selected, setSelected] = useState<MembershipPlan | null>(null);
   const [form, setForm] = useState({ customerName: '', customerEmail: '', customerPhone: '' });
@@ -97,7 +100,9 @@ export default function MembershipsSection({
         </div>
         <h1 className="font-headline-lg text-on-surface mb-2">Membresías</h1>
         <p className="font-body-md text-body-md text-on-surface-variant">
-          Elige un plan de {clientName} y págalo de forma segura con Stripe.
+          {studioMode
+            ? `Elige tu plan de ${clientName}. Los créditos son del mes en que compras y no se transfieren.`
+            : `Elige un plan de ${clientName} y págalo de forma segura con Stripe.`}
         </p>
       </div>
 
@@ -143,6 +148,9 @@ export default function MembershipsSection({
               {plan.description && (
                 <p className="font-body-sm text-on-surface-variant mt-3">{plan.description}</p>
               )}
+              {studioMode && plan.classesPerPeriod ? (
+                <p className="font-label-md mt-2" style={{ color: primaryColor }}>{plan.classesPerPeriod} créditos / mes</p>
+              ) : null}
               <ul className="space-y-2 my-5 flex-1">
                 {(plan.benefits || []).map((benefit) => (
                   <li key={benefit} className="flex gap-2 font-body-sm text-on-surface">
@@ -153,10 +161,11 @@ export default function MembershipsSection({
               </ul>
               <button
                 onClick={() => { setSelected(plan); setError(''); }}
-                className="w-full py-3 text-on-primary rounded-xl font-semibold shadow-lg hover:opacity-90"
+                className="w-full py-3 text-on-primary rounded-xl font-semibold shadow-lg hover:opacity-90 flex items-center justify-center gap-2"
                 style={{ backgroundColor: primaryColor }}
               >
-                Adquirir
+                {studioMode ? <span className="material-symbols-outlined">shopping_cart</span> : null}
+                {studioMode ? 'Agregar' : 'Adquirir'}
               </button>
             </div>
           ))}
@@ -223,6 +232,13 @@ export default function MembershipsSection({
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {studioMode && (
+        <div className="mt-12">
+          <h2 className="font-headline-md text-on-surface mb-4 text-center">Políticas del estudio</h2>
+          <StudioPolicies primaryColor={primaryColor} />
         </div>
       )}
     </div>

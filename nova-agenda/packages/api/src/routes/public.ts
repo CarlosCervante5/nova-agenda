@@ -153,11 +153,13 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
       return res.json({ slots: [], closed: true, message: 'Closed on this day' });
     }
 
+    const groupCapacity = service.capacity > 1 ? service.capacity : 1;
     const existingBookings = await prisma.booking.findMany({
       where: {
         clientId: client.id,
         date: { gte: start, lte: end },
         status: { not: 'CANCELLED' },
+        ...(groupCapacity > 1 ? { serviceId: service.id } : {}),
       },
       select: { startTime: true, endTime: true },
     });
@@ -180,17 +182,16 @@ router.get('/slots', resolveTenant, async (req: TenantRequest, res: Response) =>
       const slotEndMin = current + duration;
 
       const isPast = isToday && current <= nowMinutes;
-      const isAvailable =
-        !isPast &&
-        !existingBookings.some((booking) =>
-          slotConflictsWithBooking(
-            current,
-            slotEndMin,
-            booking.startTime,
-            booking.endTime,
-            gapMinutes
-          )
-        );
+      const overlaps = existingBookings.filter((booking) =>
+        slotConflictsWithBooking(
+          current,
+          slotEndMin,
+          booking.startTime,
+          booking.endTime,
+          gapMinutes
+        )
+      );
+      const isAvailable = !isPast && overlaps.length < groupCapacity;
 
       if (isAvailable) {
         slots.push(slotStart);
@@ -242,6 +243,11 @@ router.get('/client/:slug', async (req, res: Response) => {
         bookingIntroText: true,
         bookingSuccessText: true,
         bookingConfirmAuto: true,
+        studioBooking: true,
+        headlineColor: true,
+        bodyTextColor: true,
+        labelTextColor: true,
+        surfaceBgColor: true,
         plan: true,
         services: {
           where: { isActive: true },
@@ -254,6 +260,8 @@ router.get('/client/:slug', async (req, res: Response) => {
             color: true,
             categoryId: true,
             useCustomHours: true,
+            capacity: true,
+            kind: true,
             workingHours: {
               select: { dayOfWeek: true, openTime: true, closeTime: true, isOpen: true },
             },
@@ -348,7 +356,12 @@ router.get('/client/:slug', async (req, res: Response) => {
         : client.serviceCategories.filter((c) => !c.parentId);
 
     const { staffMembers: _staffMembers, serviceCategories: _cats, ...rest } = client;
-    res.json({ ...rest, staff, categories });
+    res.json({
+      ...rest,
+      studioBooking: rest.studioBooking || rest.slug.toLowerCase() === 'wellness-club',
+      staff,
+      categories,
+    });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
